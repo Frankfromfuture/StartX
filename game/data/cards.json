@@ -1,0 +1,42 @@
+{
+  "founder":          { "name": "创始人",   "type": "employee",      "workTags": ["sales","dev","admin","any"], "salary": 1, "capacity": 2, "sell": 0 },
+
+  "sales_rep":        { "name": "销售专员", "type": "employee",      "workTags": ["sales","any"], "salary": 2, "capacity": 3, "sell": 1 },
+  "sales_mgr":        { "name": "销售经理", "type": "employee",      "workTags": ["sales","any"], "salary": 4, "capacity": 6, "sell": 2 },
+  "sales_dir":        { "name": "销售总监", "type": "employee",      "workTags": ["sales","any"], "salary": 7, "capacity": 10, "sell": 3 },
+
+  "dev_rep":          { "name": "研发专员", "type": "employee",      "workTags": ["dev","any"],   "salary": 2, "capacity": 3, "sell": 1 },
+  "dev_mgr":          { "name": "研发经理", "type": "employee",      "workTags": ["dev","any"],   "salary": 4, "capacity": 6, "sell": 2 },
+  "dev_dir":          { "name": "研发总监", "type": "employee",      "workTags": ["dev","any"],   "salary": 7, "capacity": 10, "sell": 3 },
+
+  "admin_rep":        { "name": "行政专员", "type": "employee",      "workTags": ["admin","any"], "salary": 2, "capacity": 3, "sell": 1 },
+  "admin_mgr":        { "name": "行政经理", "type": "employee",      "workTags": ["admin","any"], "salary": 4, "capacity": 6, "sell": 2 },
+  "admin_dir":        { "name": "行政总监", "type": "employee",      "workTags": ["admin","any"], "salary": 7, "capacity": 10, "sell": 3 },
+
+  "market_lead_pool": { "name": "线索池",   "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 3 },
+  "client_demand":    { "name": "客户需求", "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 3 },
+  "talent_market":    { "name": "人才市场", "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 3 },
+  "market_research":  { "name": "市场调研", "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 3 },
+  "data_source":      { "name": "数据源",   "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 4 },
+  "lab_equipment":    { "name": "实验室设备", "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0, "maxUses": 12 },
+  "research_bench":   { "name": "研发台",   "type": "resource_node", "salary": 0, "capacity": 0, "sell": 0 },
+
+  "office":           { "name": "办公室",   "type": "facility",      "salary": 1, "capacity": 0, "sell": 0 },
+  "crm":              { "name": "CRM系统",  "type": "facility",      "salary": 1, "capacity": 0, "sell": 0 },
+  "dev_studio":       { "name": "开发室",   "type": "facility",      "salary": 1, "capacity": 0, "sell": 0 },
+  "business_school":  { "name": "商学院",   "type": "facility",      "salary": 2, "capacity": 0, "sell": 0 },
+
+  "cash":             { "name": "现金",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "training":         { "name": "培训",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "lead":             { "name": "线索",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "opportunity":      { "name": "商机",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 2 },
+  "requirement":      { "name": "需求",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "prd":              { "name": "PRD",      "type": "resource",      "salary": 0, "capacity": 0, "sell": 2 },
+  "prototype":        { "name": "原型",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 3 },
+  "product":          { "name": "产品",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 6 },
+  "contract":         { "name": "合同",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 4 },
+  "data":             { "name": "数据",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "insight":          { "name": "洞察",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 2 },
+  "user":             { "name": "用户",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 1 },
+  "revenue":          { "name": "回款",     "type": "resource",      "salary": 0, "capacity": 0, "sell": 12 }
+}

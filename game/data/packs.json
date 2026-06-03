@@ -1,0 +1,99 @@
+{
+  "startup": {
+    "name": "创业起步包",
+    "stage": 0,
+    "price": 3,
+    "minCards": 3,
+    "maxCards": 4,
+    "slots": [
+      [ { "id": "sales_rep", "w": 40 }, { "id": "market_lead_pool", "w": 60 } ],
+      [ { "id": "market_research", "w": 50 }, { "id": "market_lead_pool", "w": 50 } ],
+      [ { "id": "lead", "w": 60 }, { "id": "office", "w": 25 }, { "id": "business_school", "w": 15 } ],
+      [ { "id": "lead", "w": 100 } ]
+    ]
+  },
+  "sales_growth": {
+    "name": "销售增长包",
+    "stage": 1,
+    "price": 6,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "sales_rep", "w": 35 }, { "id": "lead", "w": 65 } ],
+      [ { "id": "market_lead_pool", "w": 30 }, { "id": "opportunity", "w": 40 }, { "id": "lead", "w": 30 } ],
+      [ { "id": "crm", "w": 40 }, { "id": "lead", "w": 60 } ],
+      [ { "id": "market_research", "w": 25 }, { "id": "lead", "w": 60 }, { "id": "business_school", "w": 15 } ],
+      [ { "id": "lead", "w": 80 }, { "id": "opportunity", "w": 20 } ]
+    ]
+  },
+  "product_lab": {
+    "name": "产品研发包",
+    "stage": 2,
+    "price": 10,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "dev_mgr", "w": 40 }, { "id": "client_demand", "w": 60 } ],
+      [ { "id": "client_demand", "w": 50 }, { "id": "prd", "w": 50 } ],
+      [ { "id": "research_bench", "w": 50 }, { "id": "market_research", "w": 50 } ],
+      [ { "id": "prd", "w": 60 }, { "id": "requirement", "w": 40 } ],
+      [ { "id": "client_demand", "w": 100 } ]
+    ]
+  },
+  "engineering": {
+    "name": "工程研发包",
+    "stage": 3,
+    "price": 16,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "dev_rep", "w": 45 }, { "id": "research_bench", "w": 55 } ],
+      [ { "id": "dev_studio", "w": 40 }, { "id": "prototype", "w": 60 } ],
+      [ { "id": "prd", "w": 50 }, { "id": "prototype", "w": 50 } ],
+      [ { "id": "lab_equipment", "w": 50 }, { "id": "research_bench", "w": 50 } ],
+      [ { "id": "dev_rep", "w": 100 } ]
+    ]
+  },
+  "data_growth": {
+    "name": "数据增长包",
+    "stage": 4,
+    "price": 22,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "admin_rep", "w": 45 }, { "id": "data_source", "w": 55 } ],
+      [ { "id": "data_source", "w": 50 }, { "id": "insight", "w": 50 } ],
+      [ { "id": "data", "w": 60 }, { "id": "crm", "w": 40 } ],
+      [ { "id": "insight", "w": 50 }, { "id": "product", "w": 50 } ],
+      [ { "id": "admin_rep", "w": 100 } ]
+    ]
+  },
+  "scale_pack": {
+    "name": "规模扩张包",
+    "stage": 5,
+    "price": 34,
+    "minCards": 4,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "business_school", "w": 40 }, { "id": "product", "w": 60 } ],
+      [ { "id": "dev_mgr", "w": 50 }, { "id": "dev_rep", "w": 50 } ],
+      [ { "id": "lab_equipment", "w": 100 } ],
+      [ { "id": "product", "w": 60 }, { "id": "contract", "w": 40 } ],
+      [ { "id": "dev_studio", "w": 50 }, { "id": "data_source", "w": 50 } ]
+    ]
+  },
+  "capital": {
+    "name": "融资上市包",
+    "stage": 6,
+    "price": 50,
+    "minCards": 4,
+    "maxCards": 5,
+    "slots": [
+      [ { "id": "founder", "w": 30 }, { "id": "dev_rep", "w": 70 } ],
+      [ { "id": "business_school", "w": 50 }, { "id": "product", "w": 50 } ],
+      [ { "id": "product", "w": 100 } ],
+      [ { "id": "admin_rep", "w": 50 }, { "id": "data_source", "w": 50 } ],
+      [ { "id": "contract", "w": 50 }, { "id": "product", "w": 50 } ]
+    ]
+  }
+}

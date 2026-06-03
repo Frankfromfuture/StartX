@@ -1,0 +1,63 @@
+{
+  "0": [
+    "idea_mvp",
+    "idea_auto",
+    "idea_hr",
+    "idea_costctrl",
+    "idea_contractlaw",
+    "idea_metrics"
+  ],
+  "1": [
+    "idea_quality",
+    "idea_prototype",
+    "idea_consult",
+    "idea_train",
+    "idea_policy",
+    "idea_finance",
+    "idea_legal",
+    "idea_bi"
+  ],
+  "2": [
+    "idea_platform",
+    "idea_microservice",
+    "idea_growth",
+    "idea_brand",
+    "idea_riskcom",
+    "idea_raise",
+    "idea_dataroom",
+    "idea_subsidy",
+    "idea_license",
+    "idea_data",
+    "idea_valmodel"
+  ],
+  "3": [
+    "idea_devops",
+    "idea_channel",
+    "idea_keyaccount",
+    "idea_autoflow",
+    "idea_culture",
+    "idea_seriesA",
+    "idea_govmarket",
+    "idea_audit",
+    "idea_investornet"
+  ],
+  "4": [
+    "idea_ai_rnd",
+    "idea_globalsales",
+    "idea_okr",
+    "idea_capital",
+    "idea_ma",
+    "idea_compliance",
+    "idea_pr",
+    "idea_marketcap"
+  ],
+  "5": [
+    "idea_rnd_org",
+    "idea_salesengine",
+    "idea_orgscale",
+    "idea_treasury",
+    "idea_pubco",
+    "idea_ipo"
+  ],
+  "6": []
+}

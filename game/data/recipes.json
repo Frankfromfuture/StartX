@@ -1,0 +1,31 @@
+[
+  { "id": "gather_lead_pro", "name": "高效获客", "requiredIdeaId": "idea_auto", "worker_tags": ["sales","any"], "inputs": [{ "id": "market_lead_pool", "count": 1, "consume": false }], "duration": 3.0, "outputs": [{ "id": "lead", "count": 2 }] },
+  { "id": "gather_lead", "name": "线索开发", "worker_tags": ["sales","any"], "inputs": [{ "id": "market_lead_pool", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "lead", "count": 1 }] },
+  { "id": "deep_research", "name": "深耕市场调研", "worker_tags": ["sales","dev","any"], "inputs": [{ "id": "market_research", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "lead", "count": 1 }], "output_zone": "market" },
+
+  { "id": "nurture_opp", "name": "孵化商机", "worker_tags": ["sales","any"], "inputs": [{ "id": "lead", "count": 1, "consume": true }, { "id": "crm", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "opportunity", "count": 1 }] },
+  { "id": "close_deal", "name": "拿下大单", "worker_tags": ["sales"], "inputs": [{ "id": "opportunity", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "contract", "count": 2 }] },
+  { "id": "sign_contract", "name": "成交回款", "worker_tags": ["sales"], "inputs": [{ "id": "lead", "count": 1, "consume": true }], "duration": 5.0, "outputs": [{ "id": "revenue", "count": 1 }] },
+
+  { "id": "gather_req", "name": "需求发现", "requiredIdeaId": "idea_mvp", "worker_tags": ["dev"], "inputs": [{ "id": "client_demand", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "requirement", "count": 1 }] },
+  { "id": "write_prd", "name": "撰写PRD", "requiredIdeaId": "idea_mvp", "worker_tags": ["dev"], "inputs": [{ "id": "requirement", "count": 2, "consume": true }], "duration": 5.0, "outputs": [{ "id": "prd", "count": 1 }] },
+  { "id": "build_proto", "name": "做原型", "worker_tags": ["dev","any"], "inputs": [{ "id": "prd", "count": 1, "consume": true }, { "id": "research_bench", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "prototype", "count": 1 }] },
+  { "id": "ship_product", "name": "打磨产品", "worker_tags": ["dev","any"], "inputs": [{ "id": "prototype", "count": 2, "consume": true }], "duration": 6.0, "outputs": [{ "id": "product", "count": 1 }] },
+
+  { "id": "collect_data", "name": "采集数据", "worker_tags": ["dev","any"], "inputs": [{ "id": "data_source", "count": 1, "consume": false }], "duration": 3.0, "outputs": [{ "id": "data", "count": 1 }] },
+  { "id": "analyze", "name": "数据分析", "worker_tags": ["dev","any"], "inputs": [{ "id": "data", "count": 2, "consume": true }], "duration": 4.0, "outputs": [{ "id": "insight", "count": 1 }] },
+  { "id": "growth_user", "name": "增长获客", "worker_tags": ["sales","dev","any"], "inputs": [{ "id": "insight", "count": 1, "consume": true }, { "id": "product", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "user", "count": 2 }] },
+
+  { "id": "deliver_premium", "name": "交付(含PRD)", "requiredIdeaId": "idea_growth", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }, { "id": "prd", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 2 }] },
+  { "id": "deliver_product", "name": "产品交付", "requiredIdeaId": "idea_growth", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }, { "id": "product", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 4 }] },
+  { "id": "deliver_revenue", "name": "交付回款", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 1 }] },
+
+  { "id": "make_training", "name": "组织培训", "worker_tags": ["admin","any"], "inputs": [{ "id": "office", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "training", "count": 1 }] },
+
+  { "id": "promote_sales_mgr", "name": "晋升·销售经理", "worker_tags": ["sales"], "inputs": [{ "id": "sales_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "sales_mgr", "count": 1 }] },
+  { "id": "promote_sales_dir", "name": "晋升·销售总监", "worker_tags": ["sales"], "inputs": [{ "id": "sales_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "sales_dir", "count": 1 }] },
+  { "id": "promote_dev_mgr", "name": "晋升·研发经理", "worker_tags": ["dev"], "inputs": [{ "id": "dev_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "dev_mgr", "count": 1 }] },
+  { "id": "promote_dev_dir", "name": "晋升·研发总监", "worker_tags": ["dev"], "inputs": [{ "id": "dev_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "dev_dir", "count": 1 }] },
+  { "id": "promote_admin_mgr", "name": "晋升·行政经理", "worker_tags": ["admin"], "inputs": [{ "id": "admin_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "admin_mgr", "count": 1 }] },
+  { "id": "promote_admin_dir", "name": "晋升·行政总监", "worker_tags": ["admin"], "inputs": [{ "id": "admin_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "admin_dir", "count": 1 }] }
+]

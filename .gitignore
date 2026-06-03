@@ -1,0 +1,19 @@
+.DS_Store
+
+# Godot generated/import cache
+game/.godot/
+game/.import/
+*.import
+
+# Node dependencies and build output
+node_modules/
+dist/
+build/
+
+# Local MCP tooling
+godot-mcp/
+
+# Logs and temporary files
+*.log
+tmp/
+temp/

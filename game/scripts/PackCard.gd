@@ -90,15 +90,15 @@ func _draw() -> void:
 	# 像素图标（白色），居中偏上
 	var tex := _icon_tex()
 	if tex != null:
-		var isz := 138.0
+		var isz := 110.4
 		var ix := (W - isz) * 0.5
-		var iy := 30.0
+		var iy := 43.8
 		draw_texture_rect(tex, Rect2(ix, iy, isz, isz), false)
 
 	# 分隔细线 + 包名文字（白）
-	draw_line(Vector2(34, 182), Vector2(W - 34, 182), Color(1, 1, 1, 0.35), 2.0)
+	draw_line(Vector2(34, 174), Vector2(W - 34, 174), Color(1, 1, 1, 0.35), 2.0)
 	var f := _ui_font()
-	draw_string(f, Vector2(16, 218), pack_name, HORIZONTAL_ALIGNMENT_CENTER, W - 32, 26, PAPER)
+	draw_string(f, Vector2(16, 210), _display_pack_name(), HORIZONTAL_ALIGNMENT_CENTER, W - 32, 26, PAPER)
 
 	# 剩余张数角标（右上）：点一张少一张
 	var n := contents.size()
@@ -127,6 +127,9 @@ func _icon_tex() -> Texture2D:
 	_tex_cache[pack_id] = tex
 	return tex
 
+func _display_pack_name() -> String:
+	return pack_name if pack_name.ends_with("包") else pack_name + "包"
+
 func _tint_svg(txt: String, color_hex: String) -> String:
 	var out := txt
 	out = out.replace("#141414", color_hex)
@@ -141,6 +144,7 @@ func _ui_font() -> Font:
 	if pixel_font != null:
 		return pixel_font
 	var candidates := [
+		"res://fonts/SmileySans-Oblique.ttf",
 		"res://fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/Users/frankfan/Library/Fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/System/Library/Fonts/STHeiti Medium.ttc",

@@ -63,6 +63,7 @@ func _ui_font() -> Font:
 	if pixel_font != null:
 		return pixel_font
 	var candidates := [
+		"res://fonts/SmileySans-Oblique.ttf",
 		"res://fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/Users/frankfan/Library/Fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/System/Library/Fonts/STHeiti Medium.ttc",

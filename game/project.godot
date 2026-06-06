@@ -16,22 +16,6 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 DataLoader="*res://scripts/DataLoader.gd"
 GameState="*res://scripts/GameState.gd"
 

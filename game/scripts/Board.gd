@@ -5,6 +5,7 @@ extends Node2D
 
 const CardScript = preload("res://scripts/Card.gd")
 const PackCardScript = preload("res://scripts/PackCard.gd")
+const FloatingCostScript = preload("res://scripts/FloatingCost.gd")
 const CARD_SCALE := 1.0               # 卡按 120×180 设计，节点不再额外缩放
 const CW := 180.0                     # square card, keeping the old long side
 const CH := 180.0
@@ -16,7 +17,7 @@ const BASE_W := 1920.0
 const BASE_H := 1080.0
 const HUD_H := 78.0
 const DRAW_Y0 := 52.0
-const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|银行同排）
+const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|出售同排）
 const MID_Y0 := 160.0           # 画布上边（锚定在 UI 区下方）
 const MID_Y1 := 2552.0          # 画布下边（画布区再翻倍：高 1196→2392）
 const ORG_Y0 := 2552.0          # 组织/部门折叠区位于画布底部
@@ -62,7 +63,7 @@ var press_pos: Vector2 = Vector2.ZERO     # 按下点（判定 tap vs 拖动）
 var press_moved: bool = false             # 本次按下后是否真的移动过
 const DRAG_TAP_PX := 6.0                   # 位移超过此值才算"拖动"，否则视为点击
 var drag_pack: Node2D = null               # 正在拖动的卡包（按住拖=移动，轻点=拆一张）
-var pack_drag_offset: Vector2 = Vector2.ZERO  # board space
+var pack_drag_offset: Vector2 = Vector2.ZERO  # display space
 var hover_card = null
 var cursor_default: Texture2D
 var cursor_card_hover: Texture2D
@@ -84,7 +85,7 @@ var lbl_val: Label
 var lbl_business: Label
 var hover_panel: Panel
 var hover_label: Label
-var month_progress: ColorRect
+var month_progress: Panel
 var month_progress_full_width: float = 320.0
 var bank_button: Button
 var pixel_font: Font
@@ -133,6 +134,8 @@ func _ready() -> void:
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
 	_build_hud()
 	_spawn_start_cards()
+	if GameState.dev_mode:
+		_spawn_cash_cards(GameState.cash, Vector2(BASE_W * 0.42, 430), "office")
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -200,6 +203,9 @@ func is_person(c) -> bool:
 
 func is_fixed(c) -> bool:
 	return c.ctype == "resource_node" or c.ctype == "facility"
+
+func is_resource_like(c) -> bool:
+	return c.ctype == "resource" or c.ctype == "customer" or c.ctype == "product"
 
 func region_of(p: Vector2) -> String:
 	if p.y < DRAW_Y1:
@@ -423,7 +429,7 @@ func _spend_cash_cards(amount: int) -> bool:
 	_sync_cash_state()
 	return true
 
-func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office") -> void:
+func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null) -> void:
 	if amount <= 0:
 		return
 	# 一批现金叠成一摞：朝旁边飞出一小段后落在同一摞里，快速依次弹出
@@ -437,7 +443,7 @@ func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office") ->
 		c.zone = zone
 		_merge(c.stack_id, sid)   # 并入同一摞
 	relayout(sid)
-	var origin_display := _project(around + Vector2(CW, CH) * 0.5)
+	var origin_display: Vector2 = (from_display as Vector2) if from_display != null else _project(around + Vector2(CW, CH) * 0.5)
 	var arr: Array = stacks[sid]
 	for i in arr.size():
 		_play_card_pop(arr[i], 0.05 * i, origin_display)
@@ -510,15 +516,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			panning_canvas = false
 			if not drag_cards.is_empty():
 				_end_drag(wp)            # 携带中再次点击 = 放下
-			elif _bank_rect().has_point(wp):
-				_withdraw_cash_from_bank()
-				return
 			else:
 				var pack: Node2D = _topmost_pack_at(wp)
 				if pack != null:
 					# 按住卡包：先记为待拖动；松开时没移动=拆一张，移动了=只是挪位置
 					drag_pack = pack
-					pack_drag_offset = _unproject(wp) - pack.board_pos
+					pack_drag_offset = wp - pack.position
 					press_pos = wp
 					press_moved = false
 					pack.z_index = 2300
@@ -567,8 +570,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and drag_pack != null:
 		var wp := _to_world(event)
 		if is_instance_valid(drag_pack):
-			drag_pack.board_pos = _unproject(wp) - pack_drag_offset
-			drag_pack.position = _project(drag_pack.board_pos)
+			drag_pack.position = wp - pack_drag_offset
+			drag_pack.board_pos = _unproject(drag_pack.position)
 			if wp.distance_to(press_pos) > DRAG_TAP_PX:
 				press_moved = true
 	elif event is InputEventMouseMotion and not drag_cards.is_empty():
@@ -635,9 +638,10 @@ func _end_drag(_wp: Vector2) -> void:
 	var center: Vector2 = stack_base[sid] + Vector2(CW * 0.5, CH * 0.5)   # board space
 
 	if _bank_rect().has_point(_project(center)):
-		_sell_stack(sid)
-		_clear_drag()
-		return
+		var sale_display := _bank_rect().position + _bank_rect().size * 0.5
+		if _sell_stack(sid, _unproject(sale_display), sale_display):
+			_clear_drag()
+			return
 
 	# drop a pure-employee stack (>=3) into the org strip -> fold into a department
 	if region_of(center) == "org" and _can_fold(sid):
@@ -747,8 +751,9 @@ func _card_hint(c) -> String:
 		"resource_node":
 			var us := ("剩余 %d 次" % c.uses_left) if c.uses_left >= 0 else "可无限使用"
 			return "「%s · 资源节点　%s — 派员工叠上去产出」" % [nm, us]
-		"resource":
-			return "「%s · 资源　售价 $%d — 拖到右上『银行』变现」" % [nm, int(d.get("sell", 0))]
+		"resource", "customer", "product":
+			return "「%s · %s　价值 $%d — 拖到右上『在市场上出售』变现」" % [
+				nm, String(CODEX_TYPE.get(c.ctype, "资源")), int(d.get("value", 0))]
 		"facility":
 			if c.card_id == "business_school":
 				return "「%s · 设施　员工在其上工作会累积洞察值，满值随机解锁当前阶段 idea」" % nm
@@ -759,8 +764,103 @@ func _card_hint(c) -> String:
 			return "「%s · 风险　拖员工上去处理，否则持续造成损失」" % nm
 		"idea":
 			return "「%s · 想法 / 配方」" % nm
+		"business_model":
+			return "「%s · 商业模式　%s」" % [nm, DataLoader.recipe_formula_text(String(d.get("recipeId", "")))]
 		_:
 			return "「%s」" % nm
+
+# ---------------------------------------------------------------- hover info
+# 底部信息条的悬停内容（鼠标移到卡上即出，移开恢复选中/默认 hint）。
+# 段落 = { t: 文本, b: 加粗, i: 斜体 }。返回空数组表示无悬停。
+func _hover_info_parts() -> Array:
+	if not is_instance_valid(hover_card):
+		return []
+	var sid: int = hover_card.stack_id
+	if stacks.has(sid) and stacks[sid].size() > 1:
+		return _stack_info_parts(sid)
+	return _card_info_parts(hover_card)
+
+# 单卡：名字加粗：功能加粗。「flavor」斜体不加粗
+func _card_info_parts(c) -> Array:
+	var d: Dictionary = c.cdef
+	var nm := String(d.get("name", c.card_id))
+	var func_txt := _card_func_text(c)
+	var out: Array = []
+	out.append({"t": (nm + "：" + func_txt) if func_txt != "" else nm, "b": true, "i": false})
+	var flavor := String(d.get("flavor", "")).strip_edges()
+	if flavor != "":
+		out.append({"t": "　「" + flavor + "」", "b": false, "i": true})
+	return out
+
+# 卡牌功能段（加粗部分）：按类型给出关键数值，「、」分隔；产能为 当前/上限（类 HP）
+func _card_func_text(c) -> String:
+	var d: Dictionary = c.cdef
+	var parts: Array = []
+	match c.ctype:
+		"employee", "department":
+			parts.append("产能 %d/%d" % [c.cap_cur, int(d.get("capacity", 0))])
+			parts.append("工资 $%d" % int(d.get("salary", 0)))
+		"rival":
+			var hp := int(d.get("hp", 0))
+			parts.append("产能 %d/%d" % [hp, hp])
+			if d.has("attack"):
+				parts.append("攻击 %d" % int(d["attack"]))
+		"resource", "customer", "product":
+			parts.append("价值 $%d" % int(d.get("value", 0)))
+			if int(d.get("cost", 0)) > 0:
+				parts.append("成本 $%d" % int(d.get("cost", 0)))
+		"resource_node":
+			if c.uses_left >= 0:
+				if d.has("maxUses"):
+					parts.append("次数 %d/%d" % [c.uses_left, int(d["maxUses"])])
+				else:
+					parts.append("剩余 %d 次" % c.uses_left)
+			else:
+				parts.append("无限次")
+		_:
+			pass
+	return "、".join(parts)
+
+# 堆叠（栈内不止一张）：堆叠卡牌：xxx*1、yyy*2
+func _stack_info_parts(sid: int) -> Array:
+	var counts: Array = []     # [[name, count], ...] 保持首次出现顺序
+	var seen: Dictionary = {}
+	for c in stacks[sid]:
+		var nm := String(c.cdef.get("name", c.card_id))
+		if seen.has(nm):
+			counts[seen[nm]][1] += 1
+		else:
+			seen[nm] = counts.size()
+			counts.append([nm, 1])
+	var list: Array = []
+	for pair in counts:
+		list.append("%s*%d" % [pair[0], pair[1]])
+	return [
+		{"t": "堆叠卡牌：", "b": true, "i": false},
+		{"t": "、".join(list), "b": false, "i": false},
+	]
+
+# 混排绘制一行信息（整体水平居中）：加粗=偏移重描，斜体=切变
+func _draw_info_line(f: Font, baseline_y: float, parts: Array, col: Color, size: int) -> void:
+	var total := 0.0
+	for p in parts:
+		var w: float = f.get_string_size(p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		if p["b"]:
+			w += 1.0
+		p["_w"] = w
+		total += w
+	var x := maxf(24.0, (BASE_W - total) * 0.5)
+	for p in parts:
+		if p["i"]:
+			var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), Vector2(x, baseline_y))
+			draw_set_transform_matrix(t)
+			draw_string(f, Vector2.ZERO, p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+			draw_set_transform_matrix(Transform2D.IDENTITY)
+		else:
+			draw_string(f, Vector2(x, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+			if p["b"]:
+				draw_string(f, Vector2(x + 1, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+		x += p["_w"]
 
 func _clear_drag() -> void:
 	_set_drag_cards_carried(false)
@@ -924,21 +1024,23 @@ func _dodge_apply(p: Vector2, sid: int) -> void:
 		stack_base[sid] = p
 		relayout(sid)
 
-func _sell_stack(sid: int) -> void:
+func _sell_stack(sid: int, sale_origin: Vector2, sale_display: Vector2) -> bool:
 	var arr: Array = stacks[sid].duplicate()
-	var total := 0
-	var origin: Vector2 = stack_base.get(sid, Vector2(300, 360))
 	for c in arr:
-		total += int(c.cdef.get("sell", 0))
-		destroy_card(c)
-	if total > 0:
-		_spawn_cash_cards(total, origin, "office")
-		_float_text_screen("+$" + str(total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
-	else:
+		if c.ctype in ["facility", "employee", "resource_node"]:
+			_show_toast("设施、员工、资源点不能出售")
+			return false
+	var total := 0
+	for c in arr:
+		total += int(c.cdef.get("value", 0))
+	if total <= 0:
 		_show_toast("这张卡卖不出钱")
-
-func _withdraw_cash_from_bank() -> void:
-	_show_toast("资金现在只计算场上的现金卡；银行不再存放隐藏现金")
+		return false
+	for c in arr:
+		destroy_card(c)
+	_spawn_cash_cards(total, sale_origin, "office", sale_display)
+	_float_text_screen("+$" + str(total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
+	return true
 
 # ---------------------------------------------------------------- recipes
 func evaluate_stack(sid: int) -> void:
@@ -951,6 +1053,8 @@ func evaluate_stack(sid: int) -> void:
 	var basic_recipe := _basic_resource_recipe(counts, arr)
 	if not basic_recipe.is_empty():
 		var target = _work_target(arr, basic_recipe)
+		if not _can_afford_product_cost(sid, basic_recipe):
+			return
 		productions[sid] = { "recipe": basic_recipe, "target": target }
 		if target != null:
 			_set_stack_workbar(sid, clampf(target.work_elapsed / float(basic_recipe.get("duration", 3.0)), 0, 1))
@@ -961,6 +1065,8 @@ func evaluate_stack(sid: int) -> void:
 			continue
 		if _recipe_matches(recipe, counts, arr):
 			var target = _work_target(arr, recipe)
+			if not _can_afford_product_cost(sid, recipe):
+				return
 			productions[sid] = { "recipe": recipe, "target": target }
 			if target != null:    # 接续被工作对象上已有的进度（员工换人也不丢）
 				_set_stack_workbar(sid, clampf(target.work_elapsed / float(recipe.get("duration", 4.0)), 0, 1))
@@ -1021,6 +1127,38 @@ func _set_stack_workbar(sid: int, ratio: float) -> void:
 	for i in arr.size():
 		arr[i].set_work(ratio if i == 0 else 0.0)
 
+func _can_afford_product_cost(sid: int, recipe: Dictionary) -> bool:
+	var cost := _product_output_cost(sid, recipe)
+	_sync_cash_state()
+	if cost > GameState.cash:
+		_show_toast("资金不足，无法生产产品")
+		return false
+	return true
+
+func _charge_product_cost_on_complete(sid: int, recipe: Dictionary) -> bool:
+	var cost := _product_output_cost(sid, recipe)
+	if cost <= 0:
+		return true
+	if not _spend_cash_cards(cost):
+		_show_toast("资金不足，产品未完成")
+		return false
+	var base: Vector2 = stack_base.get(sid, Vector2(300, 360))
+	_float_cost(cost, base + Vector2(CW * 0.5, -34.0))
+	return true
+
+func _product_output_cost(sid: int, recipe: Dictionary) -> int:
+	var mult := _output_mult(_stack_capacity(sid))
+	var total := 0
+	for outp in recipe.get("outputs", []):
+		if not outp.has("id"):
+			continue
+		var id := String(outp["id"])
+		if DataLoader.card_type(id) != "product":
+			continue
+		var cdef := DataLoader.card_def(id)
+		total += int(cdef.get("cost", 0)) * int(outp.get("count", 1)) * mult
+	return total
+
 func _recipe_matches(recipe: Dictionary, counts: Dictionary, arr: Array) -> bool:
 	for inp in recipe.get("inputs", []):
 		var need := int(inp.get("count", 1))
@@ -1070,6 +1208,12 @@ func _complete_production(sid: int) -> void:
 	var arr: Array = stacks[sid]
 	var base: Vector2 = stack_base[sid]
 	var mult := _output_mult(_stack_capacity(sid))   # 产能 -> 产出倍率
+	if not _charge_product_cost_on_complete(sid, rec):
+		if is_instance_valid(target):
+			target.work_elapsed = 0.0
+			target.set_work(0.0)
+		_set_stack_workbar(sid, 0.0)
+		return
 	for inp in rec.get("inputs", []):
 		if not inp.get("consume", false):
 			continue
@@ -1084,7 +1228,7 @@ func _complete_production(sid: int) -> void:
 	var made_card := false
 	for outp in rec.get("outputs", []):
 		if outp.has("cash"):
-			var amt := int(outp["cash"]) * mult
+			var amt := _cash_output_amount(rec, int(outp["cash"]) * mult)
 			_spawn_cash_cards(amt, base, "office")
 			GameState.add_revenue(amt)
 			_ka_ching(base, amt)
@@ -1092,9 +1236,9 @@ func _complete_production(sid: int) -> void:
 			var n := int(outp.get("count", 1)) * mult
 			var oid := String(outp["id"])
 			if oid == "cash":
-				# 现金作为产物：数量严格 = 配方设定（二者价值相加），不受产能倍率影响
+				# 产品 + 客户成交时，现金按 value 公式动态计算；其它现金产物按配方数量。
 				# 依次快速跳出现金卡（_spawn_cash_cards 内已带 0.04s 逐张弹出 + 同步资金）
-				var cash_n := int(outp.get("count", 1))
+				var cash_n := _cash_output_amount(rec, int(outp.get("count", 1)))
 				_spawn_cash_cards(cash_n, base, "office")
 				GameState.add_revenue(cash_n)
 				_ka_ching(base, cash_n)
@@ -1121,6 +1265,22 @@ func _complete_production(sid: int) -> void:
 	if stacks.has(sid):
 		relayout(sid)
 		evaluate_stack(sid)
+
+func _cash_output_amount(recipe: Dictionary, fallback: int) -> int:
+	var product_value := 0
+	var customer_value := 0
+	for inp in recipe.get("inputs", []):
+		var id := String(inp.get("id", ""))
+		var count := int(inp.get("count", 1))
+		var cdef := DataLoader.card_def(id)
+		match DataLoader.card_type(id):
+			"product":
+				product_value += int(cdef.get("cost", cdef.get("value", 0))) * count
+			"customer":
+				customer_value += int(cdef.get("value", 0)) * count
+	if product_value > 0 and customer_value > 0:
+		return int(ceil(float(product_value + customer_value) * 1.5))
+	return fallback
 
 # Decrement remaining uses on non-consumed node inputs; destroy when depleted.
 # Lab equipment / research bench have many or unlimited uses.
@@ -1372,8 +1532,8 @@ func _update_departments(delta: float) -> void:
 			d["timer"] = 0.0
 			_department_output(d)
 
-# Loose sellable resource cards in the MARKET (right) zone auto-sell after 1s idle:
-# they fly to the sell slot and convert to cash.
+# Loose valuable resource cards in the MARKET (right) zone auto-convert after 1s idle:
+# they fly to the bank slot and convert to cash.
 const AUTOSELL_DELAY := 1.0
 func _update_auto_sell(delta: float) -> void:
 	for c in all_cards.duplicate():
@@ -1389,7 +1549,7 @@ func _update_auto_sell(delta: float) -> void:
 			_fly_sell(c)
 
 func _fly_sell(c) -> void:
-	var value := int(c.cdef.get("sell", 0))
+	var value := int(c.cdef.get("value", 0))
 	# detach from logic
 	var sid: int = c.stack_id
 	stacks.erase(sid)
@@ -1552,7 +1712,10 @@ func buy_pack(pack_id: String) -> void:
 	var got := mini(n, slots.size())
 	var contents: Array = []
 	for i in got:
-		contents.append(_weighted_pick(slots[i]))
+		contents.append(_pick_pack_card(pack_id, slots[i], contents))
+	var bm := _pick_business_model_card(int(pack.get("stage", 0)), contents)
+	if bm != "":
+		contents.append(bm)
 	contents = _sanitize_pack_contents(pack_id, contents)
 	_spawn_loose_pack(pack_id, pack, contents)
 	_show_toast("%s 已弹出，点击画布上的卡包拆开" % String(pack.get("name", "卡包")))
@@ -1625,7 +1788,7 @@ func _relayout_loose_packs() -> void:
 func _topmost_pack_at(display_pt: Vector2):
 	var best = null
 	for p in loose_packs:
-		if not is_instance_valid(p) or p.opened:
+		if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 			continue
 		if p.contains_point(display_pt):
 			if best == null or p.z_index > best.z_index:
@@ -1640,7 +1803,7 @@ func _open_loose_pack(p) -> void:
 		_dissolve_pack(p)
 		return
 	var id := String(p.contents.pop_front())
-	while id == "founder" and _founder_on_board() != null:
+	while _skip_pack_card(id):
 		if p.contents.is_empty():
 			p.opened = true
 			_dissolve_pack(p)
@@ -1671,6 +1834,14 @@ func _dissolve_pack(p) -> void:
 			p.queue_free()
 	)
 
+func _skip_pack_card(id: String) -> bool:
+	if id == "founder" and _founder_on_board() != null:
+		return true
+	if _is_business_model_card(id):
+		var rid := DataLoader.business_model_recipe_id(id)
+		return rid != "" and GameState.business_model_done(rid)
+	return false
+
 # 从 origin_board 朝四周随机撒一张牌的落点，尽量不与已有牌堆重叠（多次试探取最空的）
 func _scatter_landing(origin_board: Vector2, zone: String) -> Vector2:
 	var clear := Vector2(CW * 0.92, CH * 0.7)   # 认为"不重叠"所需的最小间距
@@ -1695,6 +1866,9 @@ func _scatter_landing(origin_board: Vector2, zone: String) -> Vector2:
 func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) -> void:
 	if id == "founder" and _founder_on_board() != null:
 		return
+	if _is_business_model_card(id):
+		GameState.unlock_business_model(DataLoader.business_model_recipe_id(id))
+		_refresh_recipe_book()
 	var origin_board := _unproject(origin_display) - Vector2(CW, CH) * 0.5
 	var landing := _scatter_landing(origin_board, zone)
 	var c := spawn_card(id, landing)
@@ -1718,6 +1892,62 @@ func _weighted_pick(options: Array) -> String:
 		if r <= 0:
 			return String(o.get("id", "lead"))
 	return String(options[0].get("id", "lead"))
+
+func _pick_pack_card(_pack_id: String, options: Array, picked: Array) -> String:
+	var filtered := []
+	for o in options:
+		var id := String(o.get("id", ""))
+		if _is_facility_card(id) and _facility_already_present(id, picked):
+			continue
+		if _is_business_model_card(id) and _business_model_already_present(id, picked):
+			continue
+		filtered.append(o)
+	return _weighted_pick(filtered if not filtered.is_empty() else options)
+
+func _pick_business_model_card(stage: int, picked: Array) -> String:
+	var candidates := []
+	for recipe in DataLoader.recipes:
+		if _business_model_stage(recipe) != stage:
+			continue
+		var cid := DataLoader.business_model_card_id(String(recipe.get("id", "")))
+		if not _business_model_already_present(cid, picked):
+			candidates.append(cid)
+	if candidates.is_empty():
+		return ""
+	return String(candidates[GameState.rng.randi_range(0, candidates.size() - 1)])
+
+func _facility_already_present(id: String, picked: Array) -> bool:
+	for c in all_cards:
+		if is_instance_valid(c) and String(c.card_id) == id:
+			return true
+	for idv in picked:
+		if String(idv) == id:
+			return true
+	for p in loose_packs:
+		if is_instance_valid(p) and p.contents.has(id):
+			return true
+	return false
+
+func _is_facility_card(id: String) -> bool:
+	return String(DataLoader.cards.get(id, {}).get("type", "")) == "facility"
+
+func _is_business_model_card(id: String) -> bool:
+	return String(DataLoader.cards.get(id, {}).get("type", "")) == "business_model"
+
+func _business_model_already_present(id: String, picked: Array) -> bool:
+	var rid := DataLoader.business_model_recipe_id(id)
+	if rid != "" and GameState.business_model_done(rid):
+		return true
+	for c in all_cards:
+		if is_instance_valid(c) and String(c.card_id) == id:
+			return true
+	for idv in picked:
+		if String(idv) == id:
+			return true
+	for p in loose_packs:
+		if is_instance_valid(p) and p.contents.has(id):
+			return true
+	return false
 
 # ---------------------------------------------------------------- valuation / stage
 func _recompute_valuation() -> void:
@@ -1801,6 +2031,26 @@ func _float_text_screen(txt: String, pos: Vector2, col: Color) -> void:
 	tw.tween_property(l, "modulate:a", 0.0, 0.9)
 	tw.chain().tween_callback(l.queue_free)
 
+func _float_cost(amount: int, board_pos: Vector2) -> void:
+	const CARD_BADGE_SIZE := 36.0
+	const CARD_BADGE_FONT_SIZE := 17
+	var tl := _project(board_pos)
+	var tr := _project(board_pos + Vector2(CW, 0))
+	var bl := _project(board_pos + Vector2(0, CH))
+	var x_axis := (tr - tl) / CW
+	var y_axis := (bl - tl) / CH
+	var group = FloatingCostScript.new()
+	group.setup(amount, _ui_icon("cost_float"), _ui_font(), CARD_BADGE_SIZE * 1.3, int(round(CARD_BADGE_FONT_SIZE * 1.3)))
+	group.transform = Transform2D(x_axis * CARD_SCALE, y_axis * CARD_SCALE, tl)
+	group.z_index = 2002
+	add_child(group)
+
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(group, "position", group.position + Vector2(0, -34.0 * view_zoom), 0.95)
+	tw.tween_property(group, "modulate:a", 0.0, 0.95)
+	tw.chain().tween_callback(group.queue_free)
+
 func _on_discovery(recipe_id: String) -> void:
 	# 首次发现配方不再奖励现金（现金只由「产品+客户」成交产生）
 	_show_toast("🎉 新发现：" + _recipe_name(recipe_id))
@@ -1817,6 +2067,7 @@ func _ui_font() -> Font:
 	if pixel_font != null:
 		return pixel_font
 	var candidates := [
+		"res://fonts/SmileySans-Oblique.ttf",
 		"res://fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/Users/frankfan/Library/Fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/System/Library/Fonts/STHeiti Medium.ttc",
@@ -2136,34 +2387,61 @@ func _build_hud() -> void:
 	_clear_legacy_top_nodes()
 
 	lbl_status = _top_stat_label("StageGroup", "streamline/icon_stage", 24, 320)
-	lbl_top_rp = _top_stat_label("RPGroup", "streamline/icon_rp", 372, 120)
+	lbl_top_rp = _top_stat_label("RPGroup", "streamline/icon_rp", 1150, 130)
 
 	var progress_group := top_bar.get_node_or_null("ProgressGroup") as Control
 	if progress_group == null:
 		progress_group = Control.new()
 		progress_group.name = "ProgressGroup"
-		progress_group.position = Vector2(520, 0)
-		progress_group.size = Vector2(180, HUD_H)
+		progress_group.position = Vector2(356, 0)
+		progress_group.size = Vector2(270, HUD_H)
 		progress_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top_bar.add_child(progress_group)
-	month_progress = progress_group.get_node_or_null("MonthProgressFill") as ColorRect
+	else:
+		progress_group.position = Vector2(356, 0)
+		progress_group.size = Vector2(270, HUD_H)
+
+	var month_progress_slot := progress_group.get_node_or_null("MonthProgressSlot") as Panel
+	if month_progress_slot != null:
+		month_progress_slot.position = Vector2(0, (HUD_H - 24.0) * 0.5)
+		month_progress_slot.size = Vector2(270, 24)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color("8d8d8d")
+		sb.corner_radius_top_left = 5
+		sb.corner_radius_top_right = 5
+		sb.corner_radius_bottom_left = 5
+		sb.corner_radius_bottom_right = 5
+		month_progress_slot.add_theme_stylebox_override("panel", sb)
+
+	month_progress = progress_group.get_node_or_null("MonthProgressFill") as Panel
 	if month_progress == null:
-		month_progress = ColorRect.new()
+		month_progress = Panel.new()
 		month_progress.name = "MonthProgressFill"
-		month_progress.color = Color("141414")
-		month_progress.position = Vector2(0, (HUD_H - 16.0) * 0.5)
-		month_progress.size = Vector2(180, 16)
+		month_progress.position = Vector2(0, (HUD_H - 24.0) * 0.5)
+		month_progress.size = Vector2(270, 24)
 		progress_group.add_child(month_progress)
-	month_progress_full_width = month_progress.size.x
+	else:
+		month_progress.position = Vector2(0, (HUD_H - 24.0) * 0.5)
+		month_progress.size = Vector2(270, 24)
+
+	var sb_fill := StyleBoxFlat.new()
+	sb_fill.bg_color = Color("141414")
+	sb_fill.corner_radius_top_left = 5
+	sb_fill.corner_radius_top_right = 5
+	sb_fill.corner_radius_bottom_left = 5
+	sb_fill.corner_radius_bottom_right = 5
+	month_progress.add_theme_stylebox_override("panel", sb_fill)
+
+	month_progress_full_width = 270.0
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	lbl_business = _top_stat_label("BusinessGroup", "streamline/icon_business", 735, 190)
-	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 965, 170)
-	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 1170, 235)
+	lbl_business = _top_stat_label("BusinessGroup", "streamline/icon_business", 1280, 170)
+	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 1450, 170)
+	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 960, 190)
 	lbl_expense.mouse_filter = Control.MOUSE_FILTER_STOP
 	lbl_expense.mouse_entered.connect(_on_expense_hover)
 	lbl_expense.mouse_exited.connect(_hide_hover)
-	lbl_val = _top_stat_label("ValuationGroup", "streamline/icon_valuation", 1450, 260)
+	lbl_val = _top_stat_label("ValuationGroup", "streamline/icon_valuation", 1620, 200)
 
 	var gear_btn := top_bar.get_node_or_null("GearButton") as Button
 	if gear_btn == null:
@@ -2195,10 +2473,10 @@ func _build_hud() -> void:
 	if book_btn == null:
 		book_btn = Button.new()
 		book_btn.name = "RecipeBookButton"
-		book_btn.text = "配方书"
 		book_btn.position = Vector2(30, INFO_Y - 88)
 		book_btn.size = Vector2(130, 64)
 		hud.add_child(book_btn)
+	book_btn.text = "商业模式"
 	_apply_pixel_font(book_btn, 20)
 	_style_button(book_btn, Color("c2b6d6"))
 	book_btn.pressed.connect(_toggle_recipe_book)
@@ -2210,11 +2488,11 @@ func _build_hud() -> void:
 		bank_button.position = Vector2(1610, _toolbar_y())
 		bank_button.size = Vector2(260, TOOLBAR_BUTTON_H)
 		hud.add_child(bank_button)
-	bank_button.text = "银行"
-	_apply_bold_pixel_font(bank_button, 24)
+	bank_button.text = "在市场上出售"
+	_apply_bold_pixel_font(bank_button, 20)
 	_style_button(bank_button, Color("c8a55a"))
-	_set_button_icon(bank_button, "icon_bank")
-	bank_button.pressed.connect(_withdraw_cash_from_bank)
+	bank_button.icon = null
+	bank_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var pack_container := hud.get_node_or_null("PackButtons")
 	var pack_count := DataLoader.packs.size()
@@ -2385,8 +2663,8 @@ func _show_toast(txt: String) -> void:
 # ---------------------------------------------------------------- recipe book
 func _build_recipe_book_panel() -> void:
 	recipe_panel = PanelContainer.new()
-	recipe_panel.position = Vector2(180, 238)
-	recipe_panel.size = Vector2(620, 720)
+	recipe_panel.position = Vector2(30, 210)
+	recipe_panel.size = Vector2(310, 700)
 	recipe_panel.visible = false
 	var psb := StyleBoxFlat.new()
 	psb.bg_color = Color(0.98, 0.95, 0.89, 0.97)
@@ -2408,15 +2686,15 @@ func _build_recipe_book_panel() -> void:
 	var head := HBoxContainer.new()
 	box.add_child(head)
 	var title := Label.new()
-	title.text = "配方书"
-	_apply_pixel_font(title, 28)
+	title.text = "商业模式"
+	_apply_pixel_font(title, 30)
 	title.add_theme_color_override("font_color", INK)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	var close := Button.new()
 	close.text = "关闭"
 	close.size = Vector2(90, 42)
-	_apply_pixel_font(close, 16)
+	_apply_pixel_font(close, 18)
 	_style_button(close, Color("e0c39a"))
 	close.pressed.connect(_toggle_recipe_book)
 	head.add_child(close)
@@ -2425,12 +2703,15 @@ func _build_recipe_book_panel() -> void:
 	recipe_list.bbcode_enabled = true
 	recipe_list.fit_content = false
 	recipe_list.scroll_active = true
+	recipe_list.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	recipe_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	recipe_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	recipe_list.add_theme_font_override("normal_font", _ui_font())
 	recipe_list.add_theme_font_override("bold_font", _ui_font())
 	recipe_list.add_theme_font_override("italics_font", _ui_font())
-	recipe_list.add_theme_font_size_override("normal_font_size", 18)
+	recipe_list.add_theme_font_size_override("normal_font_size", 20)
+	recipe_list.add_theme_font_size_override("bold_font_size", 20)
+	recipe_list.add_theme_font_size_override("italics_font_size", 20)
 	recipe_list.add_theme_color_override("default_color", INK)
 	box.add_child(recipe_list)
 	_refresh_recipe_book()
@@ -2493,7 +2774,7 @@ func _build_gear_menu() -> void:
 		{"t": "继续", "c": Color("aecbe0"), "f": Callable(self, "_gear_continue")},
 		{"t": "重新开始", "c": Color("dcc9a6"), "f": Callable(self, "_gear_restart")},
 		{"t": "图鉴", "c": Color("b9d6c2"), "f": Callable(self, "_gear_codex")},
-		{"t": "组合", "c": Color("c2b6d6"), "f": Callable(self, "_gear_recipes")},
+		{"t": "商业模式", "c": Color("c2b6d6"), "f": Callable(self, "_gear_recipes")},
 		{"t": "设置", "c": Color("e0c39a"), "f": Callable(self, "_gear_settings")},
 		{"t": "回到主菜单", "c": Color("d8b3b0"), "f": Callable(self, "_gear_main_menu")},
 	]
@@ -2544,6 +2825,7 @@ func _gear_main_menu() -> void:
 # ---------------------------------------------------------------- codex (全卡图鉴)
 const CODEX_TYPE := {
 	"employee": "员工", "resource_node": "资源点", "facility": "设施", "resource": "资源",
+	"customer": "客户", "product": "产品", "business_model": "商业模式",
 }
 # 列：名称 / 类型 / 数值 / 卡包 / 解锁 / 配方
 const CODEX_COLS := ["名称", "类型", "数值", "卡包", "解锁前置", "产出配方"]
@@ -2636,7 +2918,7 @@ func _refresh_codex() -> void:
 		h.add_theme_color_override("font_color", INK)
 		codex_grid.add_child(h)
 	# 行（按类型分组排序）
-	var order := ["employee", "resource_node", "facility", "resource"]
+	var order := ["employee", "resource_node", "facility", "customer", "product", "resource", "business_model"]
 	var ids := DataLoader.cards.keys()
 	ids.sort_custom(func(a, b):
 		var ta := order.find(String(DataLoader.cards[a].get("type", "")))
@@ -2675,8 +2957,10 @@ func _codex_values(d: Dictionary) -> String:
 		parts.append("薪$%d" % int(d["salary"]))
 	if int(d.get("capacity", 0)) > 0:
 		parts.append("产能%d" % int(d["capacity"]))
-	if int(d.get("sell", 0)) > 0:
-		parts.append("售$%d" % int(d["sell"]))
+	if int(d.get("value", 0)) > 0:
+		parts.append("值$%d" % int(d["value"]))
+	if int(d.get("cost", 0)) > 0:
+		parts.append("成本$%d" % int(d["cost"]))
 	if int(d.get("maxUses", -1)) > 0:
 		parts.append("可用%d次" % int(d["maxUses"]))
 	var tags = d.get("workTags", [])
@@ -2796,6 +3080,14 @@ func _build_settings_panel() -> void:
 	fs.toggled.connect(_on_fullscreen_toggled)
 	box.add_child(fs)
 
+	var dev := CheckButton.new()
+	dev.text = "开发模式"
+	dev.button_pressed = GameState.dev_mode
+	_apply_pixel_font(dev, 22)
+	dev.add_theme_color_override("font_color", INK)
+	dev.toggled.connect(_on_dev_mode_toggled)
+	box.add_child(dev)
+
 	var todo := Label.new()
 	todo.text = "更多选项（音量等）开发中…"
 	_apply_pixel_font(todo, 16)
@@ -2810,44 +3102,113 @@ func _on_fullscreen_toggled(on: bool) -> void:
 	DisplayServer.window_set_mode(
 		DisplayServer.WINDOW_MODE_FULLSCREEN if on else DisplayServer.WINDOW_MODE_WINDOWED)
 
+func _on_dev_mode_toggled(on: bool) -> void:
+	GameState.dev_mode = on
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
 func _refresh_recipe_book() -> void:
 	if recipe_list == null:
 		return
 	var lines: Array = []
-	lines.append("[color=#5b5145]只显示已解锁配方；已完成的配方会划掉。[/color]\n")
-	for recipe in DataLoader.recipes:
-		if not _recipe_unlocked(recipe):
-			continue
-		var done := GameState.discovered.has(String(recipe.get("id", "")))
-		var txt := "%s  %s" % [String(recipe.get("name", "")), _recipe_formula(recipe)]
-		if done:
-			txt = "[s][color=#777067]✓ " + txt + "[/color][/s]"
-		else:
-			txt = "[color=#2f2a25]• " + txt + "[/color]"
-		lines.append(txt)
-	if lines.size() == 1:
-		lines.append("[color=#777067]暂无已解锁配方。[/color]")
+	var by_stage := _business_models_by_stage()
+	var stages := by_stage.keys()
+	stages.sort()
+	for si in stages.size():
+		var stage := int(stages[si])
+		var recipes: Array = by_stage[stage]
+		var known := _known_business_models(recipes)
+		lines.append("[b]阶段「%s」[/b]" % GameState.STAGE_NAMES[clampi(stage, 0, GameState.STAGE_NAMES.size() - 1)])
+		lines.append("[color=#5b5145]已解锁 商业模式：%d/%d[/color]" % [known.size(), recipes.size()])
+		for recipe in known:
+			lines.append("[color=#2f2a25]• %s：%s[/color]" % [
+				String(recipe.get("name", "")), DataLoader.recipe_formula_text(String(recipe.get("id", "")))])
+		for i in range(maxi(0, recipes.size() - known.size())):
+			lines.append("[color=#777067]• ？？[/color]")
+		if si < stages.size() - 1:
+			lines.append("[color=#b9ad9c]────────────────────────[/color]")
 	recipe_list.text = _join_text(lines, "\n")
+
+func _business_models_by_stage() -> Dictionary:
+	var out := {}
+	for recipe in DataLoader.recipes:
+		var stage := _business_model_stage(recipe)
+		if not out.has(stage):
+			out[stage] = []
+		out[stage].append(recipe)
+	return out
+
+func _known_business_models(recipes: Array) -> Array:
+	var known := []
+	var remaining := recipes.duplicate()
+	for rid in GameState.business_model_order:
+		for recipe in remaining.duplicate():
+			if String(recipe.get("id", "")) == String(rid):
+				known.append(recipe)
+				remaining.erase(recipe)
+				break
+	for recipe in remaining.duplicate():
+		if _has_business_model_card(String(recipe.get("id", ""))):
+			known.append(recipe)
+			remaining.erase(recipe)
+	return known
+
+func _business_model_stage(recipe: Dictionary) -> int:
+	var gate := String(recipe.get("requiredIdeaId", ""))
+	if gate != "":
+		var node: Dictionary = DataLoader.research.get(gate, {})
+		if not node.is_empty():
+			return int(node.get("stage", 0))
+	var min_stage := 99
+	for id in _recipe_card_ids(recipe):
+		for pack in _codex_packs_of(id):
+			min_stage = mini(min_stage, int(pack.get("stage", 0)))
+	return min_stage if min_stage < 99 else 0
+
+func _recipe_card_ids(recipe: Dictionary) -> Array:
+	var ids := []
+	for inp in recipe.get("inputs", []):
+		var id := String(inp.get("id", ""))
+		if id != "" and not ids.has(id):
+			ids.append(id)
+	for outp in recipe.get("outputs", []):
+		var id := String(outp.get("id", ""))
+		if id != "" and not ids.has(id):
+			ids.append(id)
+	return ids
+
+func _has_business_model_card(recipe_id: String) -> bool:
+	for c in all_cards:
+		if is_instance_valid(c) and _card_unlocks_business_model(String(c.card_id), recipe_id):
+			return true
+	for p in loose_packs:
+		if not is_instance_valid(p):
+			continue
+		for id in p.contents:
+			if _card_unlocks_business_model(String(id), recipe_id):
+				return true
+	return false
+
+func _card_unlocks_business_model(card_id: String, recipe_id: String) -> bool:
+	if card_id == recipe_id:
+		return true
+	var d := DataLoader.card_def(card_id)
+	return String(d.get("recipeId", "")) == recipe_id \
+		or String(d.get("businessModelId", "")) == recipe_id \
+		or String(d.get("unlocksRecipeId", "")) == recipe_id
 
 func _recipe_unlocked(recipe: Dictionary) -> bool:
 	var gate := String(recipe.get("requiredIdeaId", ""))
 	return gate == "" or GameState.idea_done(gate)
 
 func _recipe_formula(recipe: Dictionary) -> String:
-	var parts: Array = []
-	var workers := _worker_label(recipe.get("worker_tags", []))
-	if workers != "":
-		parts.append(workers)
-	for inp in recipe.get("inputs", []):
-		parts.append(_input_label(inp))
-	return "：%s → %s" % [_join_text(parts, " + "), _outputs_label(recipe.get("outputs", []))]
+	return "：" + DataLoader.recipe_formula_text(String(recipe.get("id", "")))
 
 func _input_label(inp: Dictionary) -> String:
 	var id := String(inp.get("id", ""))
 	var count := int(inp.get("count", 1))
 	var s := DataLoader.card_name(id)
-	if count > 1:
-		s += " x%d" % count
+	s += "*%d" % count
 	if not inp.get("consume", false):
 		s += "(工作站)"
 	return s
@@ -2856,14 +3217,13 @@ func _outputs_label(outputs: Array) -> String:
 	var parts: Array = []
 	for outp in outputs:
 		if outp.has("cash"):
-			parts.append("现金 $%d" % int(outp["cash"]))
+			parts.append("现金*%d" % int(outp["cash"]))
 		elif outp.has("id"):
 			var s := DataLoader.card_name(String(outp["id"]))
 			var count := int(outp.get("count", 1))
-			if count > 1:
-				s += " x%d" % count
+			s += "*%d" % count
 			parts.append(s)
-	return _join_text(parts, " + ")
+	return _join_text(parts, "+")
 
 func _worker_label(tags: Array) -> String:
 	if tags.is_empty():
@@ -2980,16 +3340,20 @@ func _draw() -> void:
 	if bank_button == null or not is_instance_valid(bank_button):
 		draw_rect(BANK_RECT, Color("f3ead7"), true)
 		draw_rect(BANK_RECT, Color("d9a552"), false, 3.0)
-		draw_string(f, BANK_RECT.position + Vector2(116, 54), "银行", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("3a352f"))
+		draw_string(f, BANK_RECT.position + Vector2(86, 54), "在市场上出售", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("3a352f"))
 
 	# 底部信息栏：所有解说/hint，斜体「」呈现
 	draw_rect(Rect2(0, INFO_Y, BASE_W, BASE_H - INFO_Y), ORG_BG, true)
 	draw_line(Vector2(0, INFO_Y), Vector2(BASE_W, INFO_Y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
 	var info_y := INFO_Y
-	draw_string(f, Vector2(40, info_y + 26), "信息", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.55, 0.5, 0.44, 0.7))
-	var fresh := toast_t > 0.0
-	var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
-	_draw_italic(f, Vector2(120, info_y + 30), hint_text, 22, hint_col)
+	# 悬停优先：鼠标移到卡上即出该卡（或堆叠）信息；移开则恢复选中/默认 hint
+	var info_parts := _hover_info_parts()
+	if not info_parts.is_empty():
+		_draw_info_line(f, info_y + 30, info_parts, Color(0.30, 0.27, 0.23, 0.95), 22)
+	else:
+		var fresh := toast_t > 0.0
+		var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
+		_draw_italic(f, Vector2(0, info_y + 30), hint_text, 22, hint_col)
 
 # 伪斜体：对画布做切变后绘制（fallback 字体无真斜体）
 func _round_corners(q: Array, r: float) -> PackedVector2Array:
@@ -3040,5 +3404,5 @@ func _inset_quad(q: Array, d: float) -> Array:
 func _draw_italic(f: Font, pos: Vector2, text: String, size: int, col: Color) -> void:
 	var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), pos)
 	draw_set_transform_matrix(t)
-	draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, BASE_W - 160, size, col)
+	draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, BASE_W, size, col)
 	draw_set_transform_matrix(Transform2D.IDENTITY)

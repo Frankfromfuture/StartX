@@ -52,8 +52,8 @@ vertical_alignment = 1
 
 [node name="RPGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 372.0
-offset_right = 492.0
+offset_left = 1150.0
+offset_right = 1280.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/RPGroup"]
@@ -69,34 +69,32 @@ stretch_mode = 5
 mouse_filter = 2
 offset_left = 36.0
 offset_top = 19.0
-offset_right = 120.0
+offset_right = 130.0
 offset_bottom = 59.0
 vertical_alignment = 1
 
 [node name="ProgressGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 520.0
-offset_right = 700.0
+offset_left = 356.0
+offset_right = 626.0
 offset_bottom = 78.0
 
-[node name="MonthProgressSlot" type="ColorRect" parent="TopBar/ProgressGroup"]
+[node name="MonthProgressSlot" type="Panel" parent="TopBar/ProgressGroup"]
 mouse_filter = 2
-color = Color(0.552941, 0.552941, 0.552941, 1)
-offset_top = 31.0
-offset_right = 180.0
-offset_bottom = 47.0
+offset_top = 27.0
+offset_right = 270.0
+offset_bottom = 51.0
 
-[node name="MonthProgressFill" type="ColorRect" parent="TopBar/ProgressGroup"]
+[node name="MonthProgressFill" type="Panel" parent="TopBar/ProgressGroup"]
 mouse_filter = 2
-color = Color(0.0784314, 0.0784314, 0.0784314, 1)
-offset_top = 31.0
-offset_right = 180.0
-offset_bottom = 47.0
+offset_top = 27.0
+offset_right = 270.0
+offset_bottom = 51.0
 
 [node name="BusinessGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 735.0
-offset_right = 925.0
+offset_left = 1280.0
+offset_right = 1450.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/BusinessGroup"]
@@ -112,14 +110,14 @@ stretch_mode = 5
 mouse_filter = 2
 offset_left = 36.0
 offset_top = 19.0
-offset_right = 190.0
+offset_right = 170.0
 offset_bottom = 59.0
 vertical_alignment = 1
 
 [node name="FinanceGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 965.0
-offset_right = 1135.0
+offset_left = 1450.0
+offset_right = 1620.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/FinanceGroup"]
@@ -141,8 +139,8 @@ vertical_alignment = 1
 
 [node name="ExpenseGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 1170.0
-offset_right = 1405.0
+offset_left = 960.0
+offset_right = 1150.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/ExpenseGroup"]
@@ -157,14 +155,14 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="TopBar/ExpenseGroup"]
 offset_left = 36.0
 offset_top = 19.0
-offset_right = 235.0
+offset_right = 190.0
 offset_bottom = 59.0
 vertical_alignment = 1
 
 [node name="ValuationGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 1450.0
-offset_right = 1710.0
+offset_left = 1620.0
+offset_right = 1820.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/ValuationGroup"]
@@ -180,7 +178,7 @@ stretch_mode = 5
 mouse_filter = 2
 offset_left = 36.0
 offset_top = 19.0
-offset_right = 260.0
+offset_right = 200.0
 offset_bottom = 59.0
 vertical_alignment = 1
 

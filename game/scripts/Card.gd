@@ -18,7 +18,8 @@ var stack_id: int = -1
 var stack_pos: int = 0
 var zone: String = ""
 var uses_left: int = -1       # -1 = unlimited; >=0 = remaining uses (nodes)
-var idle_t: float = 0.0       # idle time (for market auto-sell)
+var cap_cur: int = 0          # 当前产能（类 HP；battle 拼产能会消耗后缓慢恢复，现在 == capacity）
+var idle_t: float = 0.0       # idle time (for market auto-convert)
 
 var work_ratio: float = 0.0       # 工作进度比例(0..1)，>0 即在本卡上方显示工作条
 var work_elapsed: float = 0.0     # 已工作秒数，持久化在【被工作对象】卡上（员工离开也保留）
@@ -34,6 +35,8 @@ var shimmer_t: float = 0.0           # hover 扫光相位
 var ui_font: Font
 var capacity_icon_tex: Texture2D
 var cost_icon_tex: Texture2D
+var star_icon_tex: Texture2D
+var idea_icon_tex: Texture2D
 
 # 每张卡的像素美术：优先 res://assets/cards/<卡牌名>.svg，其次兼容旧 <id>.svg / png。
 static var _art_cache: Dictionary = {}
@@ -53,10 +56,13 @@ func _header_color() -> Color:
 		return Color("2b2926")          # 第一包场景牌：创始人式黑灰系
 	if _is_blue_series_card():
 		return Color("8eb8d8")          # 产品牌：蓝色系
+	if ctype == "business_model":
+		return Color("4c3478")
 	match ctype:
 		"employee":      return Color("efe7d6")   # 人物：米白
 		"resource_node": return Color("aebfcf")   # 资源（节点）：灰蓝
-		"resource":      return Color("aeccb0")   # 资源：绿色
+		"resource", "customer", "product":
+			return Color("aeccb0")                 # 资源 / 客户 / 产品：绿色
 		"facility":      return Color("e6b8c2")   # 建筑：粉红
 		"risk":          return Color("d99a90")   # 怪物 / 风险：红
 		"idea":          return Color("2a2622")   # 想法 / 卡包：黑
@@ -78,13 +84,14 @@ func setup(id: String) -> void:
 		uses_left = GameState.rng.randi_range(int(cdef["maxUsesMin"]), int(cdef["maxUsesMax"]))
 	else:
 		uses_left = int(cdef.get("maxUses", -1))
+	cap_cur = int(cdef.get("capacity", 0))
 	is_cash = (id == "cash")
 	set_process(false)                  # 仅现金卡 hover 时才逐帧动
 	queue_redraw()
 
 func _draw() -> void:
 	var head := _header_color()
-	var dark_head := (ctype == "idea") or _is_black_series_card()   # 深色底卡用反白文字
+	var dark_head := (ctype == "idea") or ctype == "business_model" or _is_black_series_card()   # 深色底卡用反白文字
 	var title_fg := Color("f7f2e8") if dark_head else INK   # 深色标题栏用浅字
 	var bg := head.lightened(0.28)                          # 卡身 = header 浅一号，但整体更沉
 	var ring := head.lightened(0.48)                        # 中间圆圈 = 更浅一号
@@ -97,6 +104,9 @@ func _draw() -> void:
 	if _is_blue_series_card():
 		bg = Color("d4e5f1")
 		ring = Color("e8f2f8")
+	if ctype == "business_model":
+		bg = Color("6b4ca0")
+		ring = Color("8f75bd")
 
 	var lift_level := 0
 	if hovered:
@@ -118,12 +128,16 @@ func _draw() -> void:
 	draw_rect(Rect2(bw, bw + HEADER, W - bw * 2.0, 5), INK, true)
 
 	# 主体图像：浅圆底纹 + 居中黑色线稿剪影
-	_draw_emblem(ring)
+	if ctype == "business_model":
+		_draw_business_model_body()
+	else:
+		_draw_emblem(ring)
 
 	# 标题：左对齐、纵向居中于标题栏
 	var title_font := _ui_font()
 	var title_y := bw + (HEADER - title_font.get_height(TITLE_FONT_SIZE)) * 0.5 + title_font.get_ascent(TITLE_FONT_SIZE)
-	_draw_bold_string(title_font, Vector2(12, title_y), _card_name(), HORIZONTAL_ALIGNMENT_LEFT, W - 24, TITLE_FONT_SIZE, title_fg)
+	var title_text := "商业模式" if ctype == "business_model" else _card_name()
+	_draw_bold_string(title_font, Vector2(12, title_y), title_text, HORIZONTAL_ALIGNMENT_LEFT, W - 24, TITLE_FONT_SIZE, title_fg)
 	# 剩余试用次数：表头右上、与标题同字号加粗、右对齐、纵向居中
 	if uses_left >= 0:
 		_draw_bold_string(title_font, Vector2(bw, title_y), str(uses_left), HORIZONTAL_ALIGNMENT_RIGHT, W - bw * 2.0 - 6.0, TITLE_FONT_SIZE, title_fg)
@@ -223,6 +237,10 @@ func _draw_dither_gloss(picked: bool) -> void:
 	var salary := int(cdef.get("salary", 0))
 	if salary > 0:
 		_draw_salary_badge(Vector2(28, H - 29), str(salary))
+	elif ctype == "customer" or ctype == "product":
+		var value := int(cdef.get("value", 0))
+		if value > 0:
+			_draw_value_badge(Vector2(28, H - 29), str(value))
 	var cap := int(cdef.get("capacity", 0))
 	if cap > 0:
 		_draw_capacity_badge(Vector2(W - 30, H - 29), str(cap))
@@ -299,7 +317,7 @@ func _draw_emblem(ring: Color) -> void:
 			draw_rect(Rect2(cx - 2.7 * u, cy + 0.9 * u, 5.4 * u, 1.4 * u), col)
 			draw_rect(Rect2(cx - 1.9 * u, cy - 0.6 * u, 3.8 * u, 1.4 * u), col)
 			draw_rect(Rect2(cx - 1.1 * u, cy - 2.1 * u, 2.2 * u, 1.4 * u), col)
-		"resource":
+		"resource", "customer", "product":
 			draw_rect(Rect2(cx - 2.4 * u, cy - 2.4 * u, 4.8 * u, 4.8 * u), col)
 			draw_rect(Rect2(cx - 2.4 * u, cy - 0.35 * u, 4.8 * u, 0.7 * u), ring)
 			draw_rect(Rect2(cx - 0.35 * u, cy - 2.4 * u, 0.7 * u, 4.8 * u), ring)
@@ -325,6 +343,17 @@ func _draw_emblem(ring: Color) -> void:
 		_:
 			draw_circle(Vector2(cx, cy), 2.0 * u, col)
 
+func _draw_business_model_body() -> void:
+	var icon := _idea_icon()
+	var cx := W * 0.5
+	var cy := HEADER + (H - HEADER) * 0.44
+	draw_circle(Vector2(cx, cy), W * 0.252, Color("8f75bd"))
+	if icon != null:
+		var s := W * 0.46
+		draw_texture_rect(icon, Rect2(cx - s * 0.5, cy - s * 0.5, s, s), false, Color.WHITE)
+	else:
+		draw_circle(Vector2(cx, cy), 2.0 * W / 12.0 * 0.9, Color.WHITE)
+
 # ---- value badges: black icon silhouettes, white pixel number --------------
 func _draw_salary_badge(center: Vector2, txt: String) -> void:
 	const BADGE_RADIUS := 16.0
@@ -332,6 +361,16 @@ func _draw_salary_badge(center: Vector2, txt: String) -> void:
 	if tex != null:
 		var size := Vector2(BADGE_RADIUS * 2.25, BADGE_RADIUS * 2.25)
 		draw_texture_rect(tex, Rect2(center - size * 0.5, size), false, INK)
+	else:
+		draw_circle(center, BADGE_RADIUS, INK)
+	_draw_badge_number(center, txt, BADGE_RADIUS)
+
+func _draw_value_badge(center: Vector2, txt: String) -> void:
+	const BADGE_RADIUS := 16.0
+	var tex := _star_icon()
+	if tex != null:
+		var size := Vector2(BADGE_RADIUS * 2.25, BADGE_RADIUS * 2.25)
+		draw_texture_rect(tex, Rect2(center - size * 0.5, size), false)
 	else:
 		draw_circle(center, BADGE_RADIUS, INK)
 	_draw_badge_number(center, txt, BADGE_RADIUS)
@@ -402,12 +441,43 @@ func _cost_icon() -> Texture2D:
 	cost_icon_tex = ResourceLoader.load("res://assets/cost.svg") as Texture2D
 	return cost_icon_tex
 
+func _star_icon() -> Texture2D:
+	if star_icon_tex != null:
+		return star_icon_tex
+	star_icon_tex = ResourceLoader.load("res://assets/star.svg") as Texture2D
+	return star_icon_tex
+
+func _idea_icon() -> Texture2D:
+	if idea_icon_tex != null:
+		return idea_icon_tex
+	var path := "res://assets/idea.svg"
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 1.0) == OK:
+			idea_icon_tex = ImageTexture.create_from_image(img)
+	return idea_icon_tex
+
 func _draw_badge_number(center: Vector2, txt: String, radius: float) -> void:
 	const BADGE_FONT_SIZE := 17
 	var f := _ui_font()
 	var w := radius * 2.0
 	var y := center.y - f.get_height(BADGE_FONT_SIZE) * 0.5 + f.get_ascent(BADGE_FONT_SIZE)
 	_draw_bold_string(f, Vector2(center.x - w * 0.5, y), txt, HORIZONTAL_ALIGNMENT_CENTER, w, BADGE_FONT_SIZE, Color.WHITE)
+
+func _wrap_text(text: String, f: Font, size: int, width: float) -> Array:
+	var out := []
+	var line := ""
+	for token in text.split(" ", false):
+		var candidate := token if line == "" else line + " " + token
+		if f.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x <= width:
+			line = candidate
+		else:
+			if line != "":
+				out.append(line)
+			line = token
+	if line != "":
+		out.append(line)
+	return out
 
 func _card_name() -> String:
 	return String(cdef.get("name", card_id))
@@ -416,6 +486,7 @@ func _ui_font() -> Font:
 	if ui_font != null:
 		return ui_font
 	var candidates := [
+		"res://fonts/SmileySans-Oblique.ttf",
 		"res://fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/Users/frankfan/Library/Fonts/HarmonyOS_Sans_SC_Regular.ttf",
 		"/System/Library/Fonts/PingFang.ttc"

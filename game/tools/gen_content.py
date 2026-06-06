@@ -16,8 +16,8 @@ recipes = []
 packs = {}
 
 
-def C(cid, name, ctype, cap=0, sal=0, sell=0, tags=None, maxUses=None, hp=None, atk=None):
-    d = {"name": name, "type": ctype, "salary": sal, "capacity": cap, "sell": sell}
+def C(cid, name, ctype, cap=0, sal=0, value=0, tags=None, maxUses=None, hp=None, atk=None):
+    d = {"name": name, "type": ctype, "salary": sal, "capacity": cap, "value": value}
     if tags:
         d["workTags"] = tags
     if maxUses is not None:
@@ -84,30 +84,30 @@ C("resilience_course", "抗压课", "skill")
 C("network", "人脉", "skill")
 
 # ======================================================== 基础资源
-C("cash", "现金", "resource", sell=0)
-C("lead", "线索", "resource", sell=1)
-C("customer_list", "客户名单", "resource", sell=2)
-C("order", "订单", "resource", sell=3)
-C("bigdeal", "大单", "resource", sell=8)
-C("revenue", "营收", "resource", sell=12)
-C("doc", "资料", "resource", sell=1)
-C("code", "代码", "resource", sell=2)
-C("module", "模块", "resource", sell=4)
-C("prd", "技术方案", "resource", sell=2)
-C("product", "产品", "resource", sell=8)
-C("data", "数据", "resource", sell=1)
-C("insight", "洞察", "resource", sell=3)
-C("traffic", "流量", "resource", sell=1)
-C("user", "用户", "resource", sell=2)
-C("report", "报告", "resource", sell=4)
-C("contract", "合同", "resource", sell=5)
-C("proposal", "方案", "resource", sell=0)
-C("patent", "专利", "resource", sell=0)
-C("brand", "品牌", "resource", sell=0)
-C("license", "牌照", "resource", sell=0)
-C("training", "培训", "resource", sell=1)
-C("market_report", "行业报告", "resource", sell=3)
-C("equity", "股权", "resource", sell=0)
+C("cash", "现金", "resource", value=0)
+C("lead", "线索", "resource", value=1)
+C("customer_list", "客户名单", "resource", value=2)
+C("order", "订单", "resource", value=3)
+C("bigdeal", "大单", "resource", value=8)
+C("revenue", "营收", "resource", value=12)
+C("doc", "资料", "resource", value=1)
+C("code", "代码", "resource", value=2)
+C("module", "模块", "resource", value=4)
+C("prd", "技术方案", "resource", value=2)
+C("product", "产品", "resource", value=8)
+C("data", "数据", "resource", value=1)
+C("insight", "洞察", "resource", value=3)
+C("traffic", "流量", "resource", value=1)
+C("user", "用户", "resource", value=2)
+C("report", "报告", "resource", value=4)
+C("contract", "合同", "resource", value=5)
+C("proposal", "方案", "resource", value=0)
+C("patent", "专利", "resource", value=0)
+C("brand", "品牌", "resource", value=0)
+C("license", "牌照", "resource", value=0)
+C("training", "培训", "resource", value=1)
+C("market_report", "行业报告", "resource", value=3)
+C("equity", "股权", "resource", value=0)
 
 # ======================================================== 资源节点（深耕对象）
 C("customer_pool", "客户资源", "resource_node", maxUses=4)

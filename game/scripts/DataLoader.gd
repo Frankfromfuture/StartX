@@ -27,6 +27,7 @@ func _load_workbook() -> void:
 		return
 	cards = _parse_cards(_rows_as_dicts(sheets.get("cards", [])))
 	recipes = _parse_recipes(_rows_as_dicts(sheets.get("recipes", [])))
+	_add_business_model_cards()
 	packs = _parse_packs(_rows_as_dicts(sheets.get("packs", [])))
 	print("DataLoader: 从 Excel 载入 %d 卡 / %d 配方 / %d 卡包" % [cards.size(), recipes.size(), packs.size()])
 
@@ -70,7 +71,8 @@ func _parse_cards(rows: Array) -> Dictionary:
 			"workTags": _split_list(String(d.get("workTags", ""))),
 			"salary": String(d.get("salary", "0")).to_int(),
 			"capacity": String(d.get("capacity", "0")).to_int(),
-			"sell": String(d.get("sell", "0")).to_int(),
+			"value": String(d.get("value", "0")).to_int(),
+			"cost": String(d.get("cost", "0")).to_int(),
 		}
 		var mu := String(d.get("maxUses", "")).strip_edges()
 		if mu != "":
@@ -91,6 +93,13 @@ func _parse_cards(rows: Array) -> Dictionary:
 		var wr := String(d.get("workRequired", "")).strip_edges()
 		if wr != "":
 			c["workRequired"] = wr.to_int()
+		var fl := String(d.get("flavor", "")).strip_edges()
+		if fl != "":
+			c["flavor"] = fl
+		for key in ["recipeId", "businessModelId", "unlocksRecipeId"]:
+			var ref := String(d.get(key, "")).strip_edges()
+			if ref != "":
+				c[key] = ref
 		out[id] = c
 	return out
 
@@ -178,6 +187,22 @@ func _parse_packs(rows: Array) -> Dictionary:
 		}
 	return out
 
+func _add_business_model_cards() -> void:
+	for recipe in recipes:
+		var rid := String(recipe.get("id", ""))
+		if rid == "":
+			continue
+		var cid := business_model_card_id(rid)
+		cards[cid] = {
+			"name": String(recipe.get("name", rid)),
+			"type": "business_model",
+			"recipeId": rid,
+			"salary": 0,
+			"capacity": 0,
+			"value": 0,
+			"cost": 0,
+		}
+
 func _parse_pack_slots(d: Dictionary) -> Array:
 	if String(d.get("slot1Card1", "")).strip_edges() == "":
 		return _parse_slots(String(d.get("slots", "")))
@@ -235,3 +260,50 @@ func card_name(id: String) -> String:
 
 func card_type(id: String) -> String:
 	return String(card_def(id).get("type", "resource"))
+
+func business_model_card_id(recipe_id: String) -> String:
+	return "bm_" + recipe_id
+
+func business_model_recipe_id(card_id: String) -> String:
+	var d := card_def(card_id)
+	return String(d.get("recipeId", ""))
+
+func recipe_by_id(recipe_id: String) -> Dictionary:
+	for recipe in recipes:
+		if String(recipe.get("id", "")) == recipe_id:
+			return recipe
+	return {}
+
+func recipe_formula_text(recipe_id: String) -> String:
+	var recipe := recipe_by_id(recipe_id)
+	if recipe.is_empty():
+		return ""
+	var parts: Array = []
+	for inp in recipe.get("inputs", []):
+		parts.append(_io_label(inp))
+	var outs: Array = []
+	for outp in recipe.get("outputs", []):
+		if String(outp.get("id", "")) == "cash" or outp.has("cash"):
+			var count := int(outp.get("cash", outp.get("count", 1)))
+			outs.append("现金*%d" % count)
+		elif outp.has("id"):
+			outs.append(_io_label(outp))
+	var formula := _join_text(parts, "+")
+	if not outs.is_empty():
+		formula += " → " + _join_text(outs, "+")
+	return formula
+
+func _io_label(entry: Dictionary) -> String:
+	var id := String(entry.get("id", ""))
+	var s := card_name(id)
+	var count := int(entry.get("count", 1))
+	s += "*%d" % count
+	return s
+
+func _join_text(parts: Array, sep: String) -> String:
+	var out := ""
+	for i in parts.size():
+		if i > 0:
+			out += sep
+		out += String(parts[i])
+	return out

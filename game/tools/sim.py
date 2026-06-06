@@ -105,8 +105,8 @@ for cid in sorted(reach):
     t = c.get("type")
     if t in ("employee", "rival"):
         continue
-    sellable = int(c.get("sell", 0)) > 0
-    if cid not in used_as_input and not sellable:
+    valuable = int(c.get("value", 0)) > 0
+    if cid not in used_as_input and not valuable:
         deadend.append(cid)
 
 rivals = [cid for cid, c in cards.items() if c.get("type") == "rival"]
@@ -141,7 +141,7 @@ for r in founder_blocked_if_no_any:
 
 print("\n■ 死胡同·拿得到但无法交互的卡（%d）" % len(deadend))
 for cid in deadend:
-    print("   - %s (%s)  type=%s sell=%s" % (nm(cid), cid, cards[cid].get("type"), cards[cid].get("sell")))
+    print("   - %s (%s)  type=%s value=%s" % (nm(cid), cid, cards[cid].get("type"), cards[cid].get("value")))
 
 print("\n■ 对手公司（商战未实现，暂无交互，%d）" % len(rivals))
 print("   " + ", ".join(nm(c) for c in rivals))

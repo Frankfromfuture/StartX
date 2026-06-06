@@ -24,17 +24,18 @@ def load(name):
 # ---- build sheet rows (list of rows; each cell is str or number) ----
 def cards_rows():
     d = load("cards.json")
-    head = ["id", "name", "type", "workTags", "salary", "capacity", "sell", "maxUses", "hp", "attack", "workRequired"]
+    head = ["id", "name", "type", "workTags", "salary", "capacity", "value", "maxUses", "hp", "attack", "workRequired", "cost"]
     rows = [head]
     for cid, c in d.items():
         rows.append([
             cid, c.get("name", ""), c.get("type", ""),
             ",".join(c.get("workTags", [])),
-            c.get("salary", 0), c.get("capacity", 0), c.get("sell", 0),
+            c.get("salary", 0), c.get("capacity", 0), c.get("value", 0),
             c.get("maxUses", "") if "maxUses" in c else "",
             c.get("hp", "") if "hp" in c else "",
             c.get("attack", "") if "attack" in c else "",
             c.get("workRequired", "") if "workRequired" in c else "",
+            c.get("cost", "") if "cost" in c else "",
         ])
     return rows
 

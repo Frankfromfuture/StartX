@@ -14,19 +14,24 @@ const STAGE_THRESHOLDS := [0, 40, 100, 220, 450, 900, 1800]   # valuation needed
 var cash: int = 0
 var month: int = 1
 var discovered: Dictionary = {}      # recipe_id -> true
+var business_models: Dictionary = {} # recipe_id -> true
+var business_model_order: Array = [] # recipe ids in first-seen order
 var rp: float = 0.0                  # research points
 var unlocked_ideas: Dictionary = {}  # idea_id -> true
 var total_revenue: int = 0           # cumulative recognised revenue
 var valuation: int = 0
 var stage: int = 0
 var monthly_expense: int = 0
+var dev_mode: bool = false
 var rng := RandomNumberGenerator.new()
 
 func reset() -> void:
 	rng.randomize()
-	cash = int(DataLoader.balance.get("start_cash", 5))
+	cash = 100 if dev_mode else int(DataLoader.balance.get("start_cash", 5))
 	month = 1
 	discovered.clear()
+	business_models.clear()
+	business_model_order.clear()
 	rp = 0.0
 	unlocked_ideas.clear()
 	total_revenue = 0
@@ -101,8 +106,19 @@ func advance_month() -> void:
 
 func discover(recipe_id: String) -> bool:
 	## Returns true if this is the FIRST time the recipe is completed.
-	if discovered.has(recipe_id):
-		return false
+	var first := not discovered.has(recipe_id)
 	discovered[recipe_id] = true
-	recipe_discovered.emit(recipe_id)
+	unlock_business_model(recipe_id)
+	if first:
+		recipe_discovered.emit(recipe_id)
+	return first
+
+func unlock_business_model(recipe_id: String) -> bool:
+	if recipe_id == "" or business_models.has(recipe_id):
+		return false
+	business_models[recipe_id] = true
+	business_model_order.append(recipe_id)
 	return true
+
+func business_model_done(recipe_id: String) -> bool:
+	return business_models.has(recipe_id)

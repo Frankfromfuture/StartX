@@ -14,20 +14,20 @@ import openpyxl
 XLSX = "data/startx_data.xlsx"
 
 # ---------------------------------------------------------------- new cards
-# id, name, type, workTags, salary, capacity, sell, maxUses, workRequired
+# id, name, type, workTags, salary, capacity, value, maxUses, workRequired, cost
 NEW_CARDS = [
-    ("p1_neighborhood", "居住小区", "resource_node", "", "", "", "", "3-5", ""),
+    ("p1_neighborhood", "居住小区", "resource_node", "", "", "", "", "3-5", "", ""),
     # 小区青年是「客户/被招募对象」而非员工——不能去给节点打工（否则会自己刷自己、还能去批发市场刷产品）
-    ("p1_youth",        "小区青年", "resource",      "", "", "", 1, "", 10),
-    ("p1_survey",       "市场调研", "resource_node", "", "", "", "", "3-5", ""),
-    ("p1_customer",     "靠谱客户", "resource",      "", "", "", 2, "", 15),
-    ("p1_university",   "大学",     "resource_node", "", "", "", "", "3-5", ""),
-    ("p1_intern",       "实习生",   "employee",      "any", 1, 1, "", "", ""),
-    ("p1_wholesale",    "批发市场", "resource_node", "", "", "", "", "3-5", ""),
-    ("p1_rawprod",      "裸奔粗糙产品", "resource",  "", "", "", 1, "", 15),
-    ("p1_marketing",    "营销策划", "resource_node", "", "", "", "", "3-5", ""),
-    ("p1_package",      "带包装粗糙产品", "resource", "", "", "", 2, "", 30),
-    ("p1_office",       "办公室",   "facility",      "", 2, "", "", "", ""),
+    ("p1_youth",        "小区青年", "customer",      "", "", "", 1, "", 10, ""),
+    ("p1_survey",       "市场调研", "resource_node", "", "", "", "", "3-5", "", ""),
+    ("p1_customer",     "靠谱客户", "customer",      "", "", "", 2, "", 15, ""),
+    ("p1_university",   "大学",     "facility",      "", "", "", "", "", "", ""),
+    ("p1_intern",       "实习生",   "employee",      "any", 1, 1, "", "", "", ""),
+    ("p1_wholesale",    "批发市场", "resource_node", "", "", "", "", "3-5", "", ""),
+    ("p1_rawprod",      "裸奔粗糙产品", "product",   "", "", "", 1, "", 15, 1),
+    ("p1_marketing",    "营销策划", "resource_node", "", "", "", "", "3-5", "", ""),
+    ("p1_package",      "带包装粗糙产品", "product",  "", "", "", 2, "", 30, 2),
+    ("p1_office",       "办公室",   "facility",      "", 2, "", "", "", "", ""),
 ]
 
 # --------------------------------------------------------------- new recipes
@@ -43,16 +43,16 @@ NEW_RECIPES = [
      [("p1_wholesale", 1, False)], [("p1_rawprod", 1)]),
     ("p1_package_prod", "包装产品", "", 30,
      [("p1_rawprod", 1, True), ("p1_marketing", 1, False)], [("p1_package", 1)]),
-    # 任意产品 + 任意客户 = 现金（数量 = 两者价值之和），现金依次快速跳出
+    # 任意产品 + 任意客户 = 现金（数量 = ceil((产品cost + 客户value) * 1.5)），现金依次快速跳出
     # 产品: 裸奔粗糙产品(1) / 带包装粗糙产品(2)；客户: 小区青年(1) / 靠谱客户(2)
     ("p1_cash_pkg_cust", "成交：精品×靠谱客户", "", 3,
-     [("p1_package", 1, True), ("p1_customer", 1, True)], [("cash", 4)]),   # 2+2
+     [("p1_package", 1, True), ("p1_customer", 1, True)], [("cash", 6)]),   # ceil((2+2)*1.5)
     ("p1_cash_pkg_youth", "成交：精品×小区青年", "", 3,
-     [("p1_package", 1, True), ("p1_youth", 1, True)], [("cash", 3)]),      # 2+1
+     [("p1_package", 1, True), ("p1_youth", 1, True)], [("cash", 5)]),      # ceil((2+1)*1.5)
     ("p1_cash_raw_cust", "成交：粗品×靠谱客户", "", 3,
-     [("p1_rawprod", 1, True), ("p1_customer", 1, True)], [("cash", 3)]),   # 1+2
+     [("p1_rawprod", 1, True), ("p1_customer", 1, True)], [("cash", 5)]),   # ceil((1+2)*1.5)
     ("p1_cash_raw_youth", "成交：粗品×小区青年", "", 3,
-     [("p1_rawprod", 1, True), ("p1_youth", 1, True)], [("cash", 2)]),      # 1+1
+     [("p1_rawprod", 1, True), ("p1_youth", 1, True)], [("cash", 3)]),      # ceil((1+1)*1.5)
 ]
 
 # ----------------------------------------------- garage_pack slot definition
@@ -67,6 +67,9 @@ GARAGE_SLOTS = [
 
 def col(ws, name):
     H = [c.value for c in ws[1]]
+    if name not in H:
+        ws.cell(row=1, column=ws.max_column + 1).value = name
+        H = [c.value for c in ws[1]]
     return H.index(name) + 1
 
 
@@ -91,7 +94,7 @@ def main():
     set_row(cw, fr, "capacity", 5)
     set_row(cw, fr, "salary", 0)
     # add / overwrite new cards
-    for (cid, name, typ, tags, sal, cap, sell, uses, wreq) in NEW_CARDS:
+    for (cid, name, typ, tags, sal, cap, value, uses, wreq, cost) in NEW_CARDS:
         r = find_row(cw, cid) or (cw.max_row + 1)
         set_row(cw, r, "id", cid)
         set_row(cw, r, "name", name)
@@ -99,9 +102,10 @@ def main():
         set_row(cw, r, "workTags", tags or None)
         set_row(cw, r, "salary", sal if sal != "" else None)
         set_row(cw, r, "capacity", cap if cap != "" else None)
-        set_row(cw, r, "sell", sell if sell != "" else None)
+        set_row(cw, r, "value", value if value != "" else None)
         set_row(cw, r, "maxUses", uses if uses != "" else None)
         set_row(cw, r, "workRequired", wreq if wreq != "" else None)
+        set_row(cw, r, "cost", cost if cost != "" else None)
 
     # ---- recipes ----
     rw = wb["recipes"]

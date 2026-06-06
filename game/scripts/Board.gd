@@ -85,6 +85,7 @@ var lbl_val: Label
 var lbl_business: Label
 var hover_panel: Panel
 var hover_label: Label
+var founder_bubble: Control = null
 var month_progress: Panel
 var month_progress_full_width: float = 320.0
 var bank_button: Button
@@ -140,6 +141,7 @@ func _ready() -> void:
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
+	GameState.business_model_unlocked.connect(_on_business_model_unlocked)
 
 # ---------------------------------------------------------------- perspective
 func _row_scale(y: float) -> float:
@@ -1647,6 +1649,12 @@ func _department_output(d: Dictionary) -> void:
 
 # ---------------------------------------------------------------- process
 func _process(delta: float) -> void:
+	if is_instance_valid(founder_bubble):
+		var founder = _founder_on_board()
+		if is_instance_valid(founder):
+			_reposition_founder_bubble(founder_bubble, founder)
+		else:
+			founder_bubble.queue_free()
 	if game_over:
 		return
 	if selected_card != null and not is_instance_valid(selected_card):
@@ -2049,7 +2057,6 @@ func _refresh_packs() -> void:
 		_style_pack_button(btn, String(pack.get("name", "")), int(pack.get("price", 0)), locked)
 
 func _on_stage_changed(_stage: int) -> void:
-	_show_toast("📈 公司进入「%s」阶段！解锁新卡包/研发" % GameState.stage_name())
 	_refresh_packs()
 	_refresh_research()
 
@@ -3518,3 +3525,98 @@ func _draw_italic(f: Font, pos: Vector2, text: String, size: int, col: Color) ->
 	draw_set_transform_matrix(t)
 	draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, BASE_W, size, col)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
+
+func _on_business_model_unlocked(recipe_id: String) -> void:
+	var bm_name := DataLoader.card_name(DataLoader.business_model_card_id(recipe_id))
+	_show_founder_bubble("发现了 %s！" % bm_name)
+
+func _show_founder_bubble(text: String) -> void:
+	var founder = _founder_on_board()
+	if not is_instance_valid(founder):
+		return
+		
+	if is_instance_valid(founder_bubble):
+		founder_bubble.queue_free()
+		
+	var bubble := PanelContainer.new()
+	bubble.name = "FounderSpeechBubble"
+	hud.add_child(bubble)
+	bubble.z_index = 4090
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0.75)
+	sb.set_corner_radius_all(12)
+	sb.content_margin_left = 18
+	sb.content_margin_right = 18
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	bubble.add_theme_stylebox_override("panel", sb)
+	
+	var label := Label.new()
+	label.name = "BubbleLabel"
+	label.text = text
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_font_override("font", _ui_font())
+	label.add_theme_font_size_override("font_size", 20)
+	bubble.add_child(label)
+	
+	# Connect draw signal to draw the comic speech balloon pointing tail
+	bubble.draw.connect(func():
+		var f := _founder_on_board()
+		if not is_instance_valid(f):
+			return
+		var f_pos := _project(f.position + Vector2(CW * 0.5, 0.0))
+		var local_pivot := f_pos - bubble.position
+		var w := bubble.size.x
+		var h := bubble.size.y
+		
+		# Base of triangle on bubble's bottom edge, clamped within bubble width bounds
+		var bx := clampf(local_pivot.x - 12.0, 12.0, w - 12.0)
+		var cx := clampf(local_pivot.x + 12.0, 12.0, w - 12.0)
+		
+		var pt_a := local_pivot
+		var pt_b := Vector2(bx, h)
+		var pt_c := Vector2(cx, h)
+		
+		bubble.draw_polygon(
+			PackedVector2Array([pt_b, pt_a, pt_c]),
+			PackedColorArray([Color(0, 0, 0, 0.75), Color(0, 0, 0, 0.75), Color(0, 0, 0, 0.75)])
+		)
+	)
+	
+	founder_bubble = bubble
+	_reposition_founder_bubble(bubble, founder)
+	
+	bubble.scale = Vector2.ZERO
+	var tw := create_tween()
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(2.0)
+	tw.tween_property(bubble, "scale", Vector2.ZERO, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_callback(bubble.queue_free)
+
+func _reposition_founder_bubble(bubble: Control, founder: Node2D) -> void:
+	var founder_screen_pos := _project(founder.position + Vector2(CW * 0.5, 0.0))
+	
+	if bubble.size == Vector2.ZERO:
+		bubble.reset_size()
+		
+	var w := bubble.size.x
+	var h := bubble.size.y
+	
+	var x := 0.0
+	if founder_screen_pos.x > BASE_W * 0.5:
+		x = founder_screen_pos.x - w
+	else:
+		x = founder_screen_pos.x
+		
+	x = clampf(x, 16.0, BASE_W - w - 16.0)
+	var y := founder_screen_pos.y - h - 12.0
+	y = clampf(y, HUD_H + 8.0, BASE_H - h - 8.0)
+	
+	bubble.position = Vector2(x, y)
+	
+	var local_pivot := founder_screen_pos - bubble.position
+	bubble.pivot_offset = Vector2(clampf(local_pivot.x, 0.0, w), clampf(local_pivot.y, 0.0, h))
+	bubble.queue_redraw()

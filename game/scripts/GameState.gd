@@ -6,6 +6,7 @@ signal month_changed(new_month: int)
 signal recipe_discovered(recipe_id: String)
 signal idea_unlocked(idea_id: String)
 signal stage_changed(new_stage: int)
+signal business_model_unlocked(recipe_id: String)
 
 # 7 档渐进阶段：每阶段绑定卡包解锁 / idea 跳出池 / 研发项（见 packs.json、research.json）
 const STAGE_NAMES := ["车库", "验证", "产品", "获客", "规模", "融资", "上市"]
@@ -122,6 +123,7 @@ func unlock_business_model(recipe_id: String) -> bool:
 		return false
 	business_models[recipe_id] = true
 	business_model_order.append(recipe_id)
+	business_model_unlocked.emit(recipe_id)
 	return true
 
 func business_model_done(recipe_id: String) -> bool:

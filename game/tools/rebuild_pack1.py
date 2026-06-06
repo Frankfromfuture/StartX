@@ -45,13 +45,13 @@ NEW_RECIPES = [
      [("p1_rawprod", 1, True), ("p1_marketing", 1, False)], [("p1_package", 1)]),
     # 任意产品 + 任意客户 = 现金（数量 = ceil((产品cost + 客户value) * 1.5)），现金依次快速跳出
     # 产品: 裸奔粗糙产品(1) / 带包装粗糙产品(2)；客户: 小区青年(1) / 靠谱客户(2)
-    ("p1_cash_pkg_cust", "成交：精品×靠谱客户", "", 3,
+    ("p1_cash_pkg_cust", "成交", "", 3,
      [("p1_package", 1, True), ("p1_customer", 1, True)], [("cash", 6)]),   # ceil((2+2)*1.5)
-    ("p1_cash_pkg_youth", "成交：精品×小区青年", "", 3,
+    ("p1_cash_pkg_youth", "成交", "", 3,
      [("p1_package", 1, True), ("p1_youth", 1, True)], [("cash", 5)]),      # ceil((2+1)*1.5)
-    ("p1_cash_raw_cust", "成交：粗品×靠谱客户", "", 3,
+    ("p1_cash_raw_cust", "成交", "", 3,
      [("p1_rawprod", 1, True), ("p1_customer", 1, True)], [("cash", 5)]),   # ceil((1+2)*1.5)
-    ("p1_cash_raw_youth", "成交：粗品×小区青年", "", 3,
+    ("p1_cash_raw_youth", "成交", "", 3,
      [("p1_rawprod", 1, True), ("p1_youth", 1, True)], [("cash", 3)]),      # ceil((1+1)*1.5)
 ]
 

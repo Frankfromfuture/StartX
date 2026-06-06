@@ -37,7 +37,8 @@ func _ready() -> void:
 	subtitle.add_theme_color_override("font_color", Color("777067"))
 	box.add_child(subtitle)
 
-	box.add_child(_make_button("开始游戏", Color("aecbe0"), _start_game))
+	box.add_child(_make_button("新开始游戏", Color("aecbe0"), _start_game))
+	box.add_child(_make_button("新开始游戏（DEV）", Color("b9d6c2"), _start_game_dev))
 	box.add_child(_make_button("退出", Color("d8b3b0"), _quit))
 
 func _make_button(text: String, fill: Color, cb: Callable) -> Button:
@@ -50,6 +51,11 @@ func _make_button(text: String, fill: Color, cb: Callable) -> Button:
 	return b
 
 func _start_game() -> void:
+	GameState.dev_mode = false
+	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
+func _start_game_dev() -> void:
+	GameState.dev_mode = true
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _quit() -> void:

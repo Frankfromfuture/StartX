@@ -199,7 +199,7 @@ func _add_business_model_cards() -> void:
 			"recipeId": rid,
 			"salary": 0,
 			"capacity": 0,
-			"value": 0,
+			"value": 1,
 			"cost": 0,
 		}
 

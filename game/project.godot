@@ -16,6 +16,8 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
+McpInteractionServer="*res://mcp_interaction_server.gd"
+
 DataLoader="*res://scripts/DataLoader.gd"
 GameState="*res://scripts/GameState.gd"
 

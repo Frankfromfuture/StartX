@@ -15,7 +15,7 @@ const DRAG_Z := 4000
 # ---- Layout (board space 1920x1080) ----
 const BASE_W := 1920.0
 const BASE_H := 1080.0
-const HUD_H := 78.0
+const HUD_H := 62.0
 const DRAW_Y0 := 52.0
 const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|出售同排）
 const MID_Y0 := 160.0           # 画布上边（锚定在 UI 区下方）
@@ -73,7 +73,7 @@ var dash_phase: float = 0.0
 
 var month_time: float = 0.0
 
-const DEFAULT_HINT := "「拖动『创始人』到资源节点上即可开始生产」"
+const DEFAULT_HINT := "「公司的地板光亮如新，有可能是创始人晚上擦的」"
 
 var hud: CanvasLayer
 var top_bar: Control
@@ -135,7 +135,8 @@ func _ready() -> void:
 	_build_hud()
 	_spawn_start_cards()
 	if GameState.dev_mode:
-		_spawn_cash_cards(GameState.cash, Vector2(BASE_W * 0.42, 430), "office")
+		# In DEV mode, the 100 cash is not displayed as cards on the board
+		pass
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -320,6 +321,8 @@ func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 func spawn_card(id: String, pos: Vector2) -> Node2D:
 	if id == "founder" and _founder_on_board() != null:
 		return null
+	if not GameState.drawn_cards.has(id):
+		GameState.drawn_cards[id] = true
 	var c = CardScript.new()
 	add_child(c)
 	c.setup(id)
@@ -412,7 +415,10 @@ func _cash_card_count() -> int:
 	return n
 
 func _sync_cash_state() -> void:
-	GameState.cash = _cash_card_count()
+	if GameState.dev_mode:
+		GameState.cash = GameState.dev_base_cash + _cash_card_count()
+	else:
+		GameState.cash = _cash_card_count()
 
 func _spend_cash_cards(amount: int) -> bool:
 	_sync_cash_state()
@@ -426,6 +432,9 @@ func _spend_cash_cards(amount: int) -> bool:
 			continue
 		destroy_card(c)
 		need -= 1
+	if need > 0 and GameState.dev_mode:
+		GameState.dev_base_cash -= need
+		need = 0
 	_sync_cash_state()
 	return true
 
@@ -817,6 +826,8 @@ func _card_func_text(c) -> String:
 					parts.append("剩余 %d 次" % c.uses_left)
 			else:
 				parts.append("无限次")
+		"business_model":
+			return DataLoader.recipe_formula_text(String(d.get("recipeId", "")))
 		_:
 			pass
 	return "、".join(parts)
@@ -866,6 +877,8 @@ func _clear_drag() -> void:
 	_set_drag_cards_carried(false)
 	drag_cards = []
 	drag_sid = -1
+	if bank_button != null and is_instance_valid(bank_button):
+		bank_button.queue_redraw()
 
 func _set_drag_cards_carried(v: bool) -> void:
 	for c in drag_cards:
@@ -1041,6 +1054,56 @@ func _sell_stack(sid: int, sale_origin: Vector2, sale_display: Vector2) -> bool:
 	_spawn_cash_cards(total, sale_origin, "office", sale_display)
 	_float_text_screen("+$" + str(total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
 	return true
+
+func _can_sell_stack(sid: int) -> bool:
+	if not stacks.has(sid):
+		return false
+	var arr: Array = stacks[sid]
+	if arr.is_empty():
+		return false
+	var total := 0
+	for c in arr:
+		if not is_instance_valid(c):
+			return false
+		if c.ctype in ["facility", "employee", "resource_node"]:
+			return false
+		total += int(c.cdef.get("value", 0))
+	return total > 0
+
+func _is_dragging_sellable() -> bool:
+	if drag_sid == -1:
+		return false
+	return _can_sell_stack(drag_sid)
+
+func _draw_bank_button_hint() -> void:
+	if bank_button == null or not is_instance_valid(bank_button):
+		return
+	if not _is_dragging_sellable():
+		return
+	var rect := Rect2(-3, -3, bank_button.size.x + 6, bank_button.size.y + 6)
+	var col := Color(0.18, 0.17, 0.16, 0.92)
+	var width := 5.0
+	var dash := 20.0
+	var gap := 10.0
+	_draw_dashed_side_on(bank_button, rect.position, rect.position + Vector2(rect.size.x, 0), dash, gap, dash_phase, col, width)
+	_draw_dashed_side_on(bank_button, rect.position + Vector2(rect.size.x, 0), rect.position + rect.size, dash, gap, dash_phase + 7.0, col, width)
+	_draw_dashed_side_on(bank_button, rect.position + rect.size, rect.position + Vector2(0, rect.size.y), dash, gap, dash_phase + 14.0, col, width)
+	_draw_dashed_side_on(bank_button, rect.position + Vector2(0, rect.size.y), rect.position, dash, gap, dash_phase + 21.0, col, width)
+
+func _draw_dashed_side_on(canvas: CanvasItem, a: Vector2, b: Vector2, dash: float, gap: float, phase: float, col: Color, width: float) -> void:
+	var v := b - a
+	var length := v.length()
+	if length <= 0.1:
+		return
+	var dir := v / length
+	var period := dash + gap
+	var pos := -fposmod(phase, period)
+	while pos < length:
+		var from := maxf(pos, 0.0)
+		var to := minf(pos + dash, length)
+		if to > 0.0:
+			canvas.draw_line(a + dir * from, a + dir * to, col, width)
+		pos += period
 
 # ---------------------------------------------------------------- recipes
 func evaluate_stack(sid: int) -> void:
@@ -1634,6 +1697,8 @@ func _process(delta: float) -> void:
 
 func _update_card_visual_states(delta: float) -> void:
 	dash_phase += delta * 35.0
+	if bank_button != null and is_instance_valid(bank_button) and _is_dragging_sellable():
+		bank_button.queue_redraw()
 	var mouse_pos := get_viewport().get_mouse_position()
 	var next_hover = null
 	if drag_cards.is_empty() and not panning_canvas:
@@ -1679,9 +1744,9 @@ func _settle_month() -> void:
 	var payroll := 0
 	for c in all_cards:
 		payroll += int(c.cdef.get("salary", 0))
-	var payroll_short := payroll > _cash_card_count()
+	var payroll_short := payroll > GameState.cash
 	if payroll > 0:
-		_spend_cash_cards(mini(payroll, _cash_card_count()))
+		_spend_cash_cards(mini(payroll, GameState.cash))
 	_float_text("发薪 -$" + str(payroll), Vector2(880, 300), Color("ff8c8c"))
 	GameState.advance_month()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
@@ -2216,9 +2281,18 @@ func _ensure_top_bar() -> Control:
 		top_bar = Control.new()
 		top_bar.name = "TopBar"
 		top_bar.position = Vector2.ZERO
-		top_bar.size = Vector2(BASE_W, HUD_H)
 		hud.add_child(top_bar)
+	top_bar.size = Vector2(BASE_W, HUD_H)
 	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var bg := top_bar.get_node_or_null("TopBarBg") as ColorRect
+	if bg != null:
+		bg.size = Vector2(BASE_W, HUD_H)
+	var line := top_bar.get_node_or_null("TopBarLine") as ColorRect
+	if line != null:
+		line.position = Vector2(0, HUD_H - 2.0)
+		line.size = Vector2(BASE_W, 2.0)
+
 	return top_bar
 
 func _clear_legacy_top_nodes() -> void:
@@ -2236,18 +2310,18 @@ func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) 
 		group = Control.new()
 		group.name = group_name
 		group.position = Vector2(x, 0)
-		group.size = Vector2(w, HUD_H)
 		group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top_bar.add_child(group)
+	group.size = Vector2(w, HUD_H)
 
 	var icon := group.get_node_or_null("Icon") as TextureRect
 	if icon == null:
 		icon = TextureRect.new()
 		icon.name = "Icon"
-		icon.position = Vector2(0, _top_icon_y())
 		icon.size = Vector2(TOP_ICON_SIZE, TOP_ICON_SIZE)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		group.add_child(icon)
+	icon.position = Vector2(0, _top_icon_y())
 	icon.texture = _ui_icon(icon_name)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -2256,10 +2330,10 @@ func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) 
 	if label == null:
 		label = Label.new()
 		label.name = "Label"
-		label.position = Vector2(TOP_ICON_SIZE + 12, _top_label_y())
 		label.size = Vector2(w - TOP_ICON_SIZE - 12, 40)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		group.add_child(label)
+	label.position = Vector2(TOP_ICON_SIZE + 12, _top_label_y())
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(label, TOP_LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", INK)
@@ -2333,9 +2407,12 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		icon.name = "PackIcon"
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(icon)
+	var content_h := 58.0
+	var offset_y := (size.y - content_h) * 0.5
+	var icon_w := 30.6
 	icon.texture = _ui_icon("cost")
-	icon.position = Vector2((size.x - 34.0) * 0.5, 8)
-	icon.size = Vector2(34, 34)
+	icon.position = Vector2((size.x - icon_w) * 0.5, offset_y)
+	icon.size = Vector2(icon_w, icon_w)
 	icon.modulate = Color(1, 1, 1, 0.55 if locked else 1.0)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -2353,8 +2430,8 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(cost)
 	cost.text = str(price)
-	cost.position = Vector2((size.x - 34.0) * 0.5, 16)
-	cost.size = Vector2(34, 18)
+	cost.position = Vector2((size.x - icon_w) * 0.5, offset_y + 6.3)
+	cost.size = Vector2(icon_w, 18)
 	cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(cost, 15)
@@ -2367,7 +2444,7 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(label)
 	label.text = pack_name
-	label.position = Vector2(7, 48)
+	label.position = Vector2(7, offset_y + 40.0)
 	label.size = Vector2(size.x - 14, 18)
 	label.clip_text = true
 	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -2448,9 +2525,9 @@ func _build_hud() -> void:
 		gear_btn = Button.new()
 		gear_btn.name = "GearButton"
 		gear_btn.text = ""
-		gear_btn.position = Vector2(1844, (HUD_H - 44.0) * 0.5)
-		gear_btn.size = Vector2(64, 44)
 		top_bar.add_child(gear_btn)
+	gear_btn.position = Vector2(1844, (HUD_H - 44.0) * 0.5)
+	gear_btn.size = Vector2(64, 44)
 	_apply_pixel_font(gear_btn, 26)
 	_style_button(gear_btn, Color("f3ead7"))
 	_set_button_icon(gear_btn, "streamline/icon_settings")
@@ -2460,13 +2537,15 @@ func _build_hud() -> void:
 	if rbtn == null:
 		rbtn = Button.new()
 		rbtn.name = "ResearchButton"
-		rbtn.position = Vector2(28, _toolbar_y())
-		rbtn.size = Vector2(128, TOOLBAR_BUTTON_H)
 		hud.add_child(rbtn)
+	rbtn.position = Vector2(28, _toolbar_y())
+	rbtn.size = Vector2(154, TOOLBAR_BUTTON_H)
 	rbtn.text = "研发"
 	_apply_bold_pixel_font(rbtn, 22)
 	_style_button(rbtn, Color("6f8793"))
-	_set_button_icon(rbtn, "icon_research")
+	var rbtn_icon := rbtn.get_node_or_null("ButtonIcon")
+	if rbtn_icon != null:
+		rbtn_icon.queue_free()
 	rbtn.pressed.connect(_toggle_research)
 
 	var book_btn := hud.get_node_or_null("Buttons/RecipeBookButton") as Button
@@ -2482,26 +2561,44 @@ func _build_hud() -> void:
 	book_btn.pressed.connect(_toggle_recipe_book)
 
 	bank_button = hud.get_node_or_null("BankButton") as Button
-	if bank_button == null:
-		bank_button = Button.new()
-		bank_button.name = "BankButton"
-		bank_button.position = Vector2(1610, _toolbar_y())
-		bank_button.size = Vector2(260, TOOLBAR_BUTTON_H)
-		hud.add_child(bank_button)
-	bank_button.text = "在市场上出售"
+	if bank_button != null and bank_button.get_parent() == hud:
+		hud.remove_child(bank_button)
+		bank_button.z_index = 10
+		bank_button.z_as_relative = false
+		add_child(bank_button)
+	elif bank_button == null:
+		bank_button = get_node_or_null("BankButton") as Button
+		if bank_button == null:
+			bank_button = Button.new()
+			bank_button.name = "BankButton"
+			bank_button.z_index = 10
+			bank_button.z_as_relative = false
+			add_child(bank_button)
+	bank_button.position = Vector2(1738, _toolbar_y())
+	bank_button.size = Vector2(154, TOOLBAR_BUTTON_H)
+	bank_button.text = "出售"
 	_apply_bold_pixel_font(bank_button, 20)
 	_style_button(bank_button, Color("c8a55a"))
 	bank_button.icon = null
 	bank_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not bank_button.draw.is_connected(_draw_bank_button_hint):
+		bank_button.draw.connect(_draw_bank_button_hint)
 
+	pack_buttons.clear()
 	var pack_container := hud.get_node_or_null("PackButtons")
 	var pack_count := DataLoader.packs.size()
 	var pack_w := 120.0
-	var pack_gap := 126.0
-	var pack_total_w := pack_w + maxf(0.0, pack_count - 1.0) * pack_gap
 	var pack_space_x0 := rbtn.position.x + rbtn.size.x + 26.0
 	var pack_space_x1 := bank_button.position.x - 26.0
-	var px := pack_space_x0 + maxf(0.0, (pack_space_x1 - pack_space_x0 - pack_total_w) * 0.5)
+	var pack_gap := 126.0
+	var px := pack_space_x0
+	if pack_count > 1:
+		var max_gap := (pack_space_x1 - pack_space_x0 - pack_w) / (pack_count - 1)
+		var gap_between_borders := max_gap - pack_w
+		var reduced_gap := gap_between_borders * 0.6
+		pack_gap = pack_w + reduced_gap
+		var pack_total_w := pack_w + (pack_count - 1) * pack_gap
+		px = pack_space_x0 + (pack_space_x1 - pack_space_x0 - pack_total_w) * 0.5
 	var pack_i := 0
 	for pid in DataLoader.packs.keys():
 		var pack: Dictionary = DataLoader.packs[pid]
@@ -2511,12 +2608,12 @@ func _build_hud() -> void:
 		if pb == null:
 			pb = Button.new()
 			pb.name = "PackButton%d" % (pack_i + 1)
-			pb.position = Vector2(px, _toolbar_y())
-			pb.size = Vector2(pack_w, TOOLBAR_BUTTON_H)
 			if pack_container != null:
 				pack_container.add_child(pb)
 			else:
 				hud.add_child(pb)
+		pb.position = Vector2(px, _toolbar_y())
+		pb.size = Vector2(pack_w, TOOLBAR_BUTTON_H)
 		pb.autowrap_mode = TextServer.AUTOWRAP_OFF
 		_style_pack_button(pb, String(pack.get("name", "")), int(pack.get("price", 0)), false)
 		pb.pressed.connect(buy_pack.bind(String(pid)))
@@ -2591,19 +2688,34 @@ func _on_pack_hover(pid: String) -> void:
 
 func _pack_hover_text(pid: String) -> String:
 	var pack: Dictionary = DataLoader.packs.get(pid, {})
-	var lines: Array = ["%s（$%d，%d-%d 张）可抽到：" % [
-		String(pack.get("name", pid)), int(pack.get("price", 0)),
-		int(pack.get("minCards", 3)), int(pack.get("maxCards", 5))]]
+	var pack_name := String(pack.get("name", pid))
+	var price := int(pack.get("price", 0))
+	
+	# Find all unique card IDs in this pack's slots
+	var pack_card_ids: Array = []
 	for slot in pack.get("slots", []):
-		var total := 0
-		for o in slot:
-			total += int(o.get("w", 1))
-		var parts: Array = []
-		for o in slot:
-			var nm := DataLoader.card_name(String(o.get("id", "")))
-			var pct := int(round(100.0 * float(o.get("w", 1)) / maxf(1.0, total)))
-			parts.append("%s %d%%" % [nm, pct])
-		lines.append("· " + _join_text(parts, " / "))
+		for opt in slot:
+			var cid = String(opt.get("id", ""))
+			if cid != "" and not pack_card_ids.has(cid):
+				pack_card_ids.append(cid)
+				
+	# Compute drawn vs undrawn cards
+	var undrawn_count := 0
+	var drawn_names := []
+	for cid in pack_card_ids:
+		if GameState.drawn_cards.has(cid):
+			var nm := DataLoader.card_name(cid)
+			if not drawn_names.has(nm):
+				drawn_names.append(nm)
+		else:
+			undrawn_count += 1
+			
+	var lines: Array = []
+	lines.append("%s（$%d）包含：" % [pack_name, price])
+	lines.append("剩余 %d 张卡片未抽到" % undrawn_count)
+	for nm in drawn_names:
+		lines.append("- %s" % nm)
+		
 	return _join_text(lines, "\n")
 
 func _current_expense() -> int:

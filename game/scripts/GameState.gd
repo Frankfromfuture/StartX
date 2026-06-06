@@ -16,6 +16,8 @@ var month: int = 1
 var discovered: Dictionary = {}      # recipe_id -> true
 var business_models: Dictionary = {} # recipe_id -> true
 var business_model_order: Array = [] # recipe ids in first-seen order
+var drawn_cards: Dictionary = {}     # card_id -> true
+var dev_base_cash: int = 0
 var rp: float = 0.0                  # research points
 var unlocked_ideas: Dictionary = {}  # idea_id -> true
 var total_revenue: int = 0           # cumulative recognised revenue
@@ -27,11 +29,13 @@ var rng := RandomNumberGenerator.new()
 
 func reset() -> void:
 	rng.randomize()
-	cash = 100 if dev_mode else int(DataLoader.balance.get("start_cash", 5))
+	dev_base_cash = 100 if dev_mode else 0
+	cash = dev_base_cash if dev_mode else int(DataLoader.balance.get("start_cash", 5))
 	month = 1
 	discovered.clear()
 	business_models.clear()
 	business_model_order.clear()
+	drawn_cards.clear()
 	rp = 0.0
 	unlocked_ideas.clear()
 	total_revenue = 0

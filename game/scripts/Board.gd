@@ -312,6 +312,8 @@ func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	return c
 
 func spawn_card(id: String, pos: Vector2) -> Node2D:
+	if id == "founder" and _founder_on_board() != null:
+		return null
 	var c = CardScript.new()
 	add_child(c)
 	c.setup(id)
@@ -326,6 +328,12 @@ func spawn_card(id: String, pos: Vector2) -> Node2D:
 	all_cards.append(c)
 	relayout(sid)
 	return c
+
+func _founder_on_board():
+	for c in all_cards:
+		if is_instance_valid(c) and c.card_id == "founder":
+			return c
+	return null
 
 func _play_card_pop(c, delay: float = 0.0, from_display = null) -> void:
 	if not is_instance_valid(c):
@@ -1545,8 +1553,21 @@ func buy_pack(pack_id: String) -> void:
 	var contents: Array = []
 	for i in got:
 		contents.append(_weighted_pick(slots[i]))
+	contents = _sanitize_pack_contents(pack_id, contents)
 	_spawn_loose_pack(pack_id, pack, contents)
 	_show_toast("%s 已弹出，点击画布上的卡包拆开" % String(pack.get("name", "卡包")))
+
+func _sanitize_pack_contents(pack_id: String, contents: Array) -> Array:
+	var out: Array = []
+	var founder_reserved := _founder_on_board() != null
+	for idv in contents:
+		var id := String(idv)
+		if id == "founder":
+			if pack_id != "garage_pack" or founder_reserved:
+				continue
+			founder_reserved = true
+		out.append(id)
+	return out
 
 func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> Node2D:
 	var p = PackCardScript.new()
@@ -1619,6 +1640,12 @@ func _open_loose_pack(p) -> void:
 		_dissolve_pack(p)
 		return
 	var id := String(p.contents.pop_front())
+	while id == "founder" and _founder_on_board() != null:
+		if p.contents.is_empty():
+			p.opened = true
+			_dissolve_pack(p)
+			return
+		id = String(p.contents.pop_front())
 	var origin: Vector2 = p.position + Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * p.scale.x
 	var zone := _zone_for_center(_unproject(origin))
 	_burst_card_from_pack(id, origin, zone)
@@ -1666,9 +1693,13 @@ func _scatter_landing(origin_board: Vector2, zone: String) -> Vector2:
 	return best                                       # 都挤，退而求其次取最空的
 
 func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) -> void:
+	if id == "founder" and _founder_on_board() != null:
+		return
 	var origin_board := _unproject(origin_display) - Vector2(CW, CH) * 0.5
 	var landing := _scatter_landing(origin_board, zone)
 	var c := spawn_card(id, landing)
+	if c == null:
+		return
 	c.zone = zone
 	_play_card_pop(c, 0.0, origin_display)
 	var sid: int = c.stack_id
@@ -2051,12 +2082,18 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		icon.name = "PackIcon"
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(icon)
-	icon.texture = _ui_icon("icon_pack")
+	icon.texture = _ui_icon("cost")
 	icon.position = Vector2((size.x - 34.0) * 0.5, 8)
 	icon.size = Vector2(34, 34)
 	icon.modulate = Color(1, 1, 1, 0.55 if locked else 1.0)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	var mat := ShaderMaterial.new()
+	var shader := Shader.new()
+	shader.code = "shader_type canvas_item; void fragment() { vec4 c = COLOR; COLOR = vec4(1.0 - c.rgb, c.a); }"
+	mat.shader = shader
+	icon.material = mat
 
 	var cost := pb.get_node_or_null("PackCost") as Label
 	if cost == null:

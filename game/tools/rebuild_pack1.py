@@ -58,7 +58,7 @@ NEW_RECIPES = [
 # ----------------------------------------------- garage_pack slot definition
 # four slots, each offers a thematic subset (weights are relative)
 GARAGE_SLOTS = [
-    [("p1_neighborhood", 40), ("p1_university", 35), ("p1_youth", 25)],
+    [("p1_neighborhood", 40), ("p1_university", 60), ("p1_youth", 25)],
     [("p1_survey", 40), ("p1_customer", 35), ("p1_intern", 25)],
     [("p1_wholesale", 40), ("p1_marketing", 35), ("p1_rawprod", 25)],
     [("p1_package", 34), ("p1_office", 33), ("founder", 33)],

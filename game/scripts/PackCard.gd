@@ -117,14 +117,25 @@ func _icon_tex() -> Texture2D:
 		_tex_cache[pack_id] = null
 		return null
 	var txt := FileAccess.get_file_as_string(path)
+	txt = _tint_svg(txt, "#f2f2f2")
 	var img := Image.new()
-	var err := img.load_svg_from_string(txt, 8.0)   # 16×8 = 128px 光栅
+	var err := img.load_svg_from_string(txt, 1.0)
 	if err != OK:
 		_tex_cache[pack_id] = null
 		return null
 	var tex := ImageTexture.create_from_image(img)
 	_tex_cache[pack_id] = tex
 	return tex
+
+func _tint_svg(txt: String, color_hex: String) -> String:
+	var out := txt
+	out = out.replace("#141414", color_hex)
+	out = out.replace("#000000", color_hex)
+	out = out.replace("#000", color_hex)
+	out = out.replace("fill=\"black\"", "fill=\"%s\"" % color_hex)
+	if out.find("<svg ") != -1 and out.find("<svg fill=") == -1:
+		out = out.replace("<svg ", "<svg fill=\"%s\" " % color_hex)
+	return out
 
 func _ui_font() -> Font:
 	if pixel_font != null:

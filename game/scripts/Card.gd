@@ -33,6 +33,7 @@ var is_cash: bool = false            # 现金卡：金色玻璃质感 + hover �
 var shimmer_t: float = 0.0           # hover 扫光相位
 var ui_font: Font
 var capacity_icon_tex: Texture2D
+var cost_icon_tex: Texture2D
 
 # 每张卡的像素美术：优先 res://assets/cards/<卡牌名>.svg，其次兼容旧 <id>.svg / png。
 static var _art_cache: Dictionary = {}
@@ -43,11 +44,15 @@ const BODY := Color("faf5ec")    # 奶白卡身
 # 游戏分类 -> 莫兰迪淡彩标题栏色
 func _header_color() -> Color:
 	if card_id == "founder":
-		return Color("b4b4b4")          # 创始人：灰 header（卡身白、圆圈浅灰，见 _draw 覆写）
+		return Color("e6b8c2")          # 创始人：换成办公室/设施红粉色
 	if card_id == "cash":
 		return Color("e8b21f")          # 现金：饱满金
 	if card_id == "revenue":
 		return Color("ecd590")          # 金币 / 回款：黄
+	if _is_black_series_card():
+		return Color("2b2926")          # 第一包场景牌：创始人式黑灰系
+	if _is_blue_series_card():
+		return Color("8eb8d8")          # 产品牌：蓝色系
 	match ctype:
 		"employee":      return Color("efe7d6")   # 人物：米白
 		"resource_node": return Color("aebfcf")   # 资源（节点）：灰蓝
@@ -57,6 +62,12 @@ func _header_color() -> Color:
 		"idea":          return Color("2a2622")   # 想法 / 卡包：黑
 		"department":    return Color("c2b6d6")   # 部门：雾紫
 		_:               return Color("d8d2c4")
+
+func _is_black_series_card() -> bool:
+	return card_id in ["office", "p1_office", "university", "p1_university", "p1_wholesale"]
+
+func _is_blue_series_card() -> bool:
+	return card_id in ["product", "p1_rawprod", "p1_package"]
 
 func setup(id: String) -> void:
 	card_id = id
@@ -73,13 +84,19 @@ func setup(id: String) -> void:
 
 func _draw() -> void:
 	var head := _header_color()
-	var dark_head := (ctype == "idea")   # 深色底卡用反白文字
+	var dark_head := (ctype == "idea") or _is_black_series_card()   # 深色底卡用反白文字
 	var title_fg := Color("f7f2e8") if dark_head else INK   # 深色标题栏用浅字
 	var bg := head.lightened(0.28)                          # 卡身 = header 浅一号，但整体更沉
 	var ring := head.lightened(0.48)                        # 中间圆圈 = 更浅一号
-	if card_id == "founder":                # 创始人：白卡身 + 灰 header + 浅灰圆圈
-		bg = Color("f6f4ef")
-		ring = Color("dadada")
+	if card_id == "founder":
+		bg = Color("f4d7dd")
+		ring = Color("f8e6ea")
+	if _is_black_series_card():
+		bg = Color("d5d1c9")
+		ring = Color("ece9e3")
+	if _is_blue_series_card():
+		bg = Color("d4e5f1")
+		ring = Color("e8f2f8")
 
 	var lift_level := 0
 	if hovered:
@@ -311,7 +328,12 @@ func _draw_emblem(ring: Color) -> void:
 # ---- value badges: black icon silhouettes, white pixel number --------------
 func _draw_salary_badge(center: Vector2, txt: String) -> void:
 	const BADGE_RADIUS := 16.0
-	draw_circle(center, BADGE_RADIUS, INK)
+	var tex := _cost_icon()
+	if tex != null:
+		var size := Vector2(BADGE_RADIUS * 2.25, BADGE_RADIUS * 2.25)
+		draw_texture_rect(tex, Rect2(center - size * 0.5, size), false, INK)
+	else:
+		draw_circle(center, BADGE_RADIUS, INK)
 	_draw_badge_number(center, txt, BADGE_RADIUS)
 
 func _draw_capacity_badge(center: Vector2, txt: String) -> void:
@@ -371,8 +393,14 @@ func _card_art_paths() -> Array:
 func _capacity_icon() -> Texture2D:
 	if capacity_icon_tex != null:
 		return capacity_icon_tex
-	capacity_icon_tex = ResourceLoader.load("res://assets/w.svg") as Texture2D
+	capacity_icon_tex = ResourceLoader.load("res://assets/gear.svg") as Texture2D
 	return capacity_icon_tex
+
+func _cost_icon() -> Texture2D:
+	if cost_icon_tex != null:
+		return cost_icon_tex
+	cost_icon_tex = ResourceLoader.load("res://assets/cost.svg") as Texture2D
+	return cost_icon_tex
 
 func _draw_badge_number(center: Vector2, txt: String, radius: float) -> void:
 	const BADGE_FONT_SIZE := 17

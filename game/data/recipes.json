@@ -1,31 +1,2048 @@
 [
-  { "id": "gather_lead_pro", "name": "高效获客", "requiredIdeaId": "idea_auto", "worker_tags": ["sales","any"], "inputs": [{ "id": "market_lead_pool", "count": 1, "consume": false }], "duration": 3.0, "outputs": [{ "id": "lead", "count": 2 }] },
-  { "id": "gather_lead", "name": "线索开发", "worker_tags": ["sales","any"], "inputs": [{ "id": "market_lead_pool", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "lead", "count": 1 }] },
-  { "id": "deep_research", "name": "深耕市场调研", "worker_tags": ["sales","dev","any"], "inputs": [{ "id": "market_research", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "lead", "count": 1 }], "output_zone": "market" },
-
-  { "id": "nurture_opp", "name": "孵化商机", "worker_tags": ["sales","any"], "inputs": [{ "id": "lead", "count": 1, "consume": true }, { "id": "crm", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "opportunity", "count": 1 }] },
-  { "id": "close_deal", "name": "拿下大单", "worker_tags": ["sales"], "inputs": [{ "id": "opportunity", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "contract", "count": 2 }] },
-  { "id": "sign_contract", "name": "成交回款", "worker_tags": ["sales"], "inputs": [{ "id": "lead", "count": 1, "consume": true }], "duration": 5.0, "outputs": [{ "id": "revenue", "count": 1 }] },
-
-  { "id": "gather_req", "name": "需求发现", "requiredIdeaId": "idea_mvp", "worker_tags": ["dev"], "inputs": [{ "id": "client_demand", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "requirement", "count": 1 }] },
-  { "id": "write_prd", "name": "撰写PRD", "requiredIdeaId": "idea_mvp", "worker_tags": ["dev"], "inputs": [{ "id": "requirement", "count": 2, "consume": true }], "duration": 5.0, "outputs": [{ "id": "prd", "count": 1 }] },
-  { "id": "build_proto", "name": "做原型", "worker_tags": ["dev","any"], "inputs": [{ "id": "prd", "count": 1, "consume": true }, { "id": "research_bench", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "prototype", "count": 1 }] },
-  { "id": "ship_product", "name": "打磨产品", "worker_tags": ["dev","any"], "inputs": [{ "id": "prototype", "count": 2, "consume": true }], "duration": 6.0, "outputs": [{ "id": "product", "count": 1 }] },
-
-  { "id": "collect_data", "name": "采集数据", "worker_tags": ["dev","any"], "inputs": [{ "id": "data_source", "count": 1, "consume": false }], "duration": 3.0, "outputs": [{ "id": "data", "count": 1 }] },
-  { "id": "analyze", "name": "数据分析", "worker_tags": ["dev","any"], "inputs": [{ "id": "data", "count": 2, "consume": true }], "duration": 4.0, "outputs": [{ "id": "insight", "count": 1 }] },
-  { "id": "growth_user", "name": "增长获客", "worker_tags": ["sales","dev","any"], "inputs": [{ "id": "insight", "count": 1, "consume": true }, { "id": "product", "count": 1, "consume": false }], "duration": 4.0, "outputs": [{ "id": "user", "count": 2 }] },
-
-  { "id": "deliver_premium", "name": "交付(含PRD)", "requiredIdeaId": "idea_growth", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }, { "id": "prd", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 2 }] },
-  { "id": "deliver_product", "name": "产品交付", "requiredIdeaId": "idea_growth", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }, { "id": "product", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 4 }] },
-  { "id": "deliver_revenue", "name": "交付回款", "worker_tags": ["any"], "inputs": [{ "id": "contract", "count": 1, "consume": true }], "duration": 4.0, "outputs": [{ "id": "revenue", "count": 1 }] },
-
-  { "id": "make_training", "name": "组织培训", "worker_tags": ["admin","any"], "inputs": [{ "id": "office", "count": 1, "consume": false }], "duration": 5.0, "outputs": [{ "id": "training", "count": 1 }] },
-
-  { "id": "promote_sales_mgr", "name": "晋升·销售经理", "worker_tags": ["sales"], "inputs": [{ "id": "sales_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "sales_mgr", "count": 1 }] },
-  { "id": "promote_sales_dir", "name": "晋升·销售总监", "worker_tags": ["sales"], "inputs": [{ "id": "sales_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "sales_dir", "count": 1 }] },
-  { "id": "promote_dev_mgr", "name": "晋升·研发经理", "worker_tags": ["dev"], "inputs": [{ "id": "dev_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "dev_mgr", "count": 1 }] },
-  { "id": "promote_dev_dir", "name": "晋升·研发总监", "worker_tags": ["dev"], "inputs": [{ "id": "dev_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "dev_dir", "count": 1 }] },
-  { "id": "promote_admin_mgr", "name": "晋升·行政经理", "worker_tags": ["admin"], "inputs": [{ "id": "admin_rep", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 6.0, "outputs": [{ "id": "admin_mgr", "count": 1 }] },
-  { "id": "promote_admin_dir", "name": "晋升·行政总监", "worker_tags": ["admin"], "inputs": [{ "id": "admin_mgr", "count": 2, "consume": true }, { "id": "training", "count": 1, "consume": true }], "duration": 7.0, "outputs": [{ "id": "admin_dir", "count": 1 }] }
+  {
+    "id": "recruit_intern",
+    "name": "校招·招实习生",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "university",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "intern",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_university",
+    "name": "拉母校关系",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "intern",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "university",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "train_grad",
+    "name": "带教·转正",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "intern",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "meeting_room",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "grad",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "hire_grad",
+    "name": "人才市场·挖毕业生",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "talent_pool",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "grad",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_sales_mgr",
+    "name": "上岗·销售经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "sales_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "sales_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_market_mgr",
+    "name": "上岗·市场经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "market_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "market_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_dev_mgr",
+    "name": "上岗·研发经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "dev_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "dev_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_admin_mgr",
+    "name": "上岗·行政经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "admin_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "admin_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_data_mgr",
+    "name": "上岗·数据经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "data_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_finance_mgr",
+    "name": "上岗·财务经理",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "finance_kit",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "finance_mgr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "promote_sales_dir",
+    "name": "晋升·销售总监",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "sales_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "training",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "sales_dir",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "promote_market_dir",
+    "name": "晋升·市场总监",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "market_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "training",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "market_dir",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "promote_dev_dir",
+    "name": "晋升·研发总监",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "dev_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "training",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "dev_dir",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "promote_admin_dir",
+    "name": "晋升·行政总监",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "admin_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "training",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "admin_dir",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "promote_data_dir",
+    "name": "晋升·数据总监",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "data_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "training",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data_dir",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_cto",
+    "name": "聘任·CTO",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "dev_dir",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "exec_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "cto",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_cmo",
+    "name": "聘任·CMO",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "market_dir",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "exec_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "cmo",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_coo",
+    "name": "聘任·COO",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "admin_dir",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "exec_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "coo",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_cfo",
+    "name": "聘任·CFO",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "finance_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "exec_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "cfo",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_growth",
+    "name": "培养·增长黑客",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 7.0,
+    "inputs": [
+      {
+        "id": "market_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "growth_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "growth_hacker",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_architect",
+    "name": "培养·架构师",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "dev_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "architect_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "architect",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_legal",
+    "name": "招聘·法务",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "grad",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "resilience_course",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "legal",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_pr",
+    "name": "招聘·公关",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "market_mgr",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "network",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "pr",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_sales_kit",
+    "name": "做销售技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "sales_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_market_kit",
+    "name": "做市场技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "market_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_dev_kit",
+    "name": "做研发技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "code",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "dev_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_admin_kit",
+    "name": "做行政技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "admin_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_data_kit",
+    "name": "做数据技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_finance_kit",
+    "name": "做财务技能包",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "report",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "finance_kit",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_exec_course",
+    "name": "商学院·高管课程",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "business_school",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "report",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "exec_course",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_growth_course",
+    "name": "商学院·增长课程",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 7.0,
+    "inputs": [
+      {
+        "id": "business_school",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "data",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "growth_course",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_arch_course",
+    "name": "商学院·架构课程",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 7.0,
+    "inputs": [
+      {
+        "id": "business_school",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "code",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "architect_course",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_training",
+    "name": "组织内训",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "training_center",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "training",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_resilience",
+    "name": "商学院·抗压课",
+    "worker_tags": [
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "business_school",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "resilience_course",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_network",
+    "name": "攒人脉",
+    "worker_tags": [
+      "sales",
+      "market",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "expo_booth",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "network",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_lead",
+    "name": "深耕·客户资源",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "customer_pool",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "lead",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_expo",
+    "name": "跑展会",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "expo_booth",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "lead",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_customer",
+    "name": "应用商店·拉新",
+    "worker_tags": [
+      "market",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "app_store",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "customer_list",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_traffic",
+    "name": "蹭热点·搞流量",
+    "worker_tags": [
+      "market",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "hot_topic",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "traffic",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_code",
+    "name": "开源社区·写代码",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "oss_repo",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "code",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_data",
+    "name": "数据源·采集",
+    "worker_tags": [
+      "data",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "data_source",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_doc",
+    "name": "文档库·整理资料",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "archive",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "doc",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_overseas",
+    "name": "出海·拿订单",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "overseas",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "order",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "gather_capital",
+    "name": "资本市场·融资",
+    "worker_tags": [
+      "finance",
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "capital_market",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "cash",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "id": "gather_report",
+    "name": "买行业报告",
+    "worker_tags": [
+      "data",
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "market_report",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_order",
+    "name": "跟进成单",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "lead",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "order",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "contract_deal",
+    "name": "签合同",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "order",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "customer_list",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "contract",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_bigdeal",
+    "name": "凑大单",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "order",
+        "count": 3,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "bigdeal",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "close_deal",
+    "name": "成交·现金",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "order",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "biz_hall",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "cash",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "close_big",
+    "name": "大单·回款",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "bigdeal",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "biz_hall",
+        "count": 1,
+        "consume": false
+      }
+    ],
+    "outputs": [
+      {
+        "id": "revenue",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "deliver",
+    "name": "交付·回款",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "contract",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "product",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "revenue",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_prd",
+    "name": "出技术方案",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "code",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "prd",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_module",
+    "name": "封装模块",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "code",
+        "count": 3,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "module",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_product",
+    "name": "做产品",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "module",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "product",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_insight",
+    "name": "数据→洞察",
+    "worker_tags": [
+      "data",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "data",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "insight",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_user",
+    "name": "拉新增长",
+    "worker_tags": [
+      "market",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "traffic",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "product",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "user",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_report",
+    "name": "出报告",
+    "worker_tags": [
+      "data",
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "report",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_proposal",
+    "name": "写方案",
+    "worker_tags": [
+      "sales",
+      "dev",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "prd",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "insight",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "proposal",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "win_bid",
+    "name": "投标·赢大单",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "proposal",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "order",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "contract",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "make_patent",
+    "name": "申请专利",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "product",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "insight",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "patent",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_brand",
+    "name": "打品牌",
+    "worker_tags": [
+      "market",
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "product",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "user",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "brand",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_license",
+    "name": "办牌照",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "report",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "license",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "make_equity",
+    "name": "释放股权",
+    "worker_tags": [
+      "finance",
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "brand",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "revenue",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "license",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "equity",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_desk",
+    "name": "添工位",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "desk",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_office",
+    "name": "扩租办公室",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "desk",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "office",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_warehouse",
+    "name": "建仓库",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "warehouse",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_meeting",
+    "name": "建会议室",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "desk",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "meeting_room",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_pantry",
+    "name": "建茶水间",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 3.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "pantry",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_training",
+    "name": "建培训中心",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 6.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "doc",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "training_center",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_bizhall",
+    "name": "建商务大厅",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "contract",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "biz_hall",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_crm",
+    "name": "上CRM系统",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "code",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "data",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "crm",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_server",
+    "name": "买服务器",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "code",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "server",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_datacenter",
+    "name": "建数据中心",
+    "worker_tags": [
+      "dev",
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "server",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data_center",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_school",
+    "name": "建商学院",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 10.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "report",
+        "count": 2,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "business_school",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "build_hq",
+    "name": "盖总部大楼",
+    "worker_tags": [
+      "admin",
+      "any"
+    ],
+    "duration": 12.0,
+    "inputs": [
+      {
+        "id": "office",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "brand",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "hq",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "open_customer",
+    "name": "开拓客户资源",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 4.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      },
+      {
+        "id": "lead",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "customer_pool",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "open_appstore",
+    "name": "上架应用商店",
+    "worker_tags": [
+      "market",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "product",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "app_store",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "open_overseas",
+    "name": "拓展海外市场",
+    "worker_tags": [
+      "sales",
+      "any"
+    ],
+    "duration": 8.0,
+    "inputs": [
+      {
+        "id": "cash",
+        "count": 2,
+        "consume": true
+      },
+      {
+        "id": "brand",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "overseas",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "open_datasource",
+    "name": "接入数据源",
+    "worker_tags": [
+      "data",
+      "any"
+    ],
+    "duration": 5.0,
+    "inputs": [
+      {
+        "id": "crm",
+        "count": 1,
+        "consume": false
+      },
+      {
+        "id": "cash",
+        "count": 1,
+        "consume": true
+      }
+    ],
+    "outputs": [
+      {
+        "id": "data_source",
+        "count": 1
+      }
+    ]
+  }
 ]

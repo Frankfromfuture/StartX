@@ -8,25 +8,29 @@ const PackCardScript = preload("res://scripts/PackCard.gd")
 const CARD_SCALE := 1.0               # 卡按 120×180 设计，节点不再额外缩放
 const CW := 180.0                     # square card, keeping the old long side
 const CH := 180.0
-const CARD_OFFSET := 44.0             # 叠放露出标题栏
+const CARD_OFFSET := 34.0             # 叠放时每张上面的牌再往下一点
 const DRAG_Z := 4000
 
 # ---- Layout (board space 1920x1080) ----
 const BASE_W := 1920.0
 const BASE_H := 1080.0
-const HUD_H := 52.0
+const HUD_H := 78.0
 const DRAW_Y0 := 52.0
 const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|银行同排）
 const MID_Y0 := 160.0           # 画布上边（锚定在 UI 区下方）
-const MID_Y1 := 1356.0          # 画布下边（画布区扩大一倍）
-const ORG_Y0 := 1356.0          # 组织/部门折叠区位于画布底部
+const MID_Y1 := 2552.0          # 画布下边（画布区再翻倍：高 1196→2392）
+const ORG_Y0 := 2552.0          # 组织/部门折叠区位于画布底部
 const INFO_Y := 1016.0          # fixed bottom information strip
 const DIVIDER_X := 960.0
-const CANVAS_X0 := -300.0       # 画布左边（以中线 960 为中心对称扩大）
-const CANVAS_X1 := 2220.0       # 画布右边
+const CANVAS_X0 := -1560.0      # 画布左边（以中线 960 为中心对称扩大：宽 2520→5040）
+const CANVAS_X1 := 3480.0       # 画布右边
 const GAP := 16.0
 const BANK_RECT := Rect2(1590, 60, 300, 84)     # fixed HUD bank, outside canvas zoom
 const VIEW_PAD := 420.0
+const BUSINESS_CAPACITY_PER_OFFICE := 18
+const TOOLBAR_BUTTON_H := 72.0
+const TOP_LABEL_FONT_SIZE := 26
+const TOP_ICON_SIZE := 24.0
 
 # ---- Perspective ----  (1.0 = OFF/flat)；0.9 = 轻微一点透视（顶窄底宽）
 const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
@@ -38,7 +42,7 @@ const DRAG_ZETA := 0.62            # 阻尼比 <1 → 欠阻尼，产生回摆/�
 
 # 莫兰迪淡色 + 奶白底
 const BG := Color("efe7d8")          # 画布纸面（画布内底色）
-const BG_OUT := Color("736b5e")      # 画布外·压暗，衬托白色外框
+const BG_OUT := Color("aebfcb")      # 画布外·莫兰迪淡蓝
 const DRAW_BG := Color("e6ddcb")     # 抽卡区·暖米
 const OFFICE_BG := Color(0.80, 0.85, 0.88, 0.20)   # 办公室·20% 透明淡蓝
 const MARKET_BG := Color(0.90, 0.84, 0.78, 0.20)   # 市场·20% 透明暖砂粉
@@ -57,19 +61,32 @@ var drag_offset: Vector2 = Vector2.ZERO   # board space
 var press_pos: Vector2 = Vector2.ZERO     # 按下点（判定 tap vs 拖动）
 var press_moved: bool = false             # 本次按下后是否真的移动过
 const DRAG_TAP_PX := 6.0                   # 位移超过此值才算"拖动"，否则视为点击
+var drag_pack: Node2D = null               # 正在拖动的卡包（按住拖=移动，轻点=拆一张）
+var pack_drag_offset: Vector2 = Vector2.ZERO  # board space
+var hover_card = null
+var cursor_default: Texture2D
+var cursor_card_hover: Texture2D
+var cursor_card_drag: Texture2D
+var cursor_state: String = ""
+var dash_phase: float = 0.0
 
 var month_time: float = 0.0
 
-const DEFAULT_HINT := "「拖动『创始人』到资源节点上即可开始生产；员工可跨区搬运，资源不能跨区」"
+const DEFAULT_HINT := "「拖动『创始人』到资源节点上即可开始生产」"
 
 var hud: CanvasLayer
+var top_bar: Control
 var lbl_status: Label
+var lbl_top_rp: Label
 var lbl_finance: Label
 var lbl_expense: Label
 var lbl_val: Label
+var lbl_business: Label
 var hover_panel: Panel
 var hover_label: Label
 var month_progress: ColorRect
+var month_progress_full_width: float = 320.0
+var bank_button: Button
 var pixel_font: Font
 var hint_text: String = DEFAULT_HINT
 var selected_card = null
@@ -78,11 +95,11 @@ var emergency: bool = false
 var emergency_t: float = 0.0
 var game_over: bool = false
 var dbg_last := Vector2.ZERO
-var view_zoom: float = 1.0
+var view_zoom: float = 0.6             # 初始拉远：视野更大、卡片更小
 var view_offset: Vector2 = Vector2.ZERO
 var panning_canvas: bool = false
 var pan_last: Vector2 = Vector2.ZERO
-const VIEW_ZOOM_MIN := 0.55
+const VIEW_ZOOM_MIN := 0.45
 const VIEW_ZOOM_MAX := 1.9
 const VIEW_ZOOM_STEP := 1.12
 
@@ -94,14 +111,26 @@ var pack_buttons: Array = []         # [{btn, id, pack}]
 var loose_packs: Array = []
 var recipe_panel: PanelContainer
 var recipe_list: RichTextLabel
+var codex_panel: PanelContainer
+var codex_grid: GridContainer
+var codex_preview: Node2D
+var codex_preview_bg: Panel
+var settings_panel: PanelContainer
+var gear_menu: Control
 var school_empty_toast_t: float = 0.0
 var val_timer: float = 0.0
 
 const SCHOOL_INSIGHT_NEED := 25.0
 
+var canvas_bg_tex: Texture2D = null
+var ui_icon_cache: Dictionary = {}
+
 func _ready() -> void:
 	GameState.reset()
+	canvas_bg_tex = _load_canvas_bg()
+	_load_cursors()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
+	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
 	_build_hud()
 	_spawn_start_cards()
 	GameState.recipe_discovered.connect(_on_discovery)
@@ -110,7 +139,8 @@ func _ready() -> void:
 
 # ---------------------------------------------------------------- perspective
 func _row_scale(y: float) -> float:
-	return lerpf(TOP_SCALE, 1.0, clampf(y / BASE_H, 0.0, 1.0))
+	var t := clampf((y - MID_Y0) / maxf(1.0, MID_Y1 - MID_Y0), 0.0, 1.0)
+	return lerpf(TOP_SCALE, 1.0, t)
 
 func _project(p: Vector2) -> Vector2:
 	var s := _row_scale(p.y)
@@ -134,6 +164,13 @@ func _zoom_view_at(screen_pos: Vector2, factor: float) -> void:
 	_relayout_loose_packs()
 	queue_redraw()
 
+func _reset_view_default() -> void:
+	# 水平居中：让画布中线（=屏幕中线 BASE_W*0.5）投影后仍落在屏幕中线
+	view_offset.x = BASE_W * 0.5 * (1.0 - view_zoom)
+	# 顶边锚定：画布上边 MID_Y0 紧贴 UI 区下方（即 _clamp 的 max_y）
+	view_offset.y = MID_Y0 * (1.0 - view_zoom)
+	_clamp_view_offset()
+
 func _clamp_view_offset() -> void:
 	var min_x := BASE_W - (CANVAS_X1 + VIEW_PAD) * view_zoom
 	var max_x := -(CANVAS_X0 - VIEW_PAD) * view_zoom
@@ -146,6 +183,16 @@ func _band(x0: float, x1: float, y0: float, y1: float) -> PackedVector2Array:
 	return PackedVector2Array([
 		_project(Vector2(x0, y0)), _project(Vector2(x1, y0)),
 		_project(Vector2(x1, y1)), _project(Vector2(x0, y1))])
+
+func _apply_card_projection(c: Node2D, bp: Vector2, keep_position: bool = false) -> void:
+	var lift := Vector2(0, -_card_lift(c) * view_zoom)
+	var tl := _project(bp) + lift
+	var tr := _project(bp + Vector2(CW, 0)) + lift
+	var bl := _project(bp + Vector2(0, CH)) + lift
+	var x_axis := (tr - tl) / CW
+	var y_axis := (bl - tl) / CH
+	var pos := c.position if keep_position else tl
+	c.transform = Transform2D(x_axis * CARD_SCALE, y_axis * CARD_SCALE, pos)
 
 # ---------------------------------------------------------------- zone helpers
 func is_person(c) -> bool:
@@ -161,29 +208,103 @@ func region_of(p: Vector2) -> String:
 		return "org"
 	return "office" if p.x < DIVIDER_X else "market"
 
-func clamp_to_zone(pos: Vector2, zone: String) -> Vector2:
+func clamp_to_zone(pos: Vector2, _zone: String = "") -> Vector2:
+	# 单一画布：不再分区，所有卡夹在整块画布内（zone 参数保留但不再限制横向）
 	var y := clampf(pos.y, MID_Y0 + 2, MID_Y1 - CH)
-	var x: float
-	if zone == "market":
-		x = clampf(pos.x, DIVIDER_X + GAP, CANVAS_X1 - GAP - CW)
-	else:
-		x = clampf(pos.x, CANVAS_X0 + GAP, DIVIDER_X - GAP - CW)
+	var x := clampf(pos.x, CANVAS_X0 + GAP, CANVAS_X1 - GAP - CW)
 	return Vector2(x, y)
 
-func _zone_for_center(center: Vector2) -> String:
-	return "office" if center.x < DIVIDER_X else "market"
+func _zone_for_center(_center: Vector2) -> String:
+	return "all"
+
+func _bank_rect() -> Rect2:
+	if bank_button != null and is_instance_valid(bank_button):
+		return Rect2(bank_button.position, bank_button.size)
+	return BANK_RECT
+
+# 运行时加载画布背景图（res:// 无需导入也能读）
+func _load_canvas_bg() -> Texture2D:
+	for path in ["res://assets/bg_office.png", "res://assets/bg_canvas.png"]:
+		if FileAccess.file_exists(path):
+			var img := Image.new()
+			if img.load(path) == OK:
+				return ImageTexture.create_from_image(img)
+	return null
+
+# 角点双线性插值：a=左上 b=右上 c=右下 d=左下
+func _bilerp(a: Vector2, b: Vector2, c: Vector2, d: Vector2, u: float, v: float) -> Vector2:
+	return a.lerp(b, u).lerp(d.lerp(c, u), v)
+
+# 背景图：在画布 4 个投影角之间双线性铺满 → 直边梯形，和画布边框完全一致（无桶形）
+func _draw_canvas_image() -> void:
+	var p_tl := _project(Vector2(CANVAS_X0, MID_Y0))
+	var p_tr := _project(Vector2(CANVAS_X1, MID_Y0))
+	var p_br := _project(Vector2(CANVAS_X1, MID_Y1))
+	var p_bl := _project(Vector2(CANVAS_X0, MID_Y1))
+	var cols := 24
+	var rows := 12
+	for r in range(rows):
+		var v0 := float(r) / rows
+		var v1 := float(r + 1) / rows
+		for c in range(cols):
+			var u0 := float(c) / cols
+			var u1 := float(c + 1) / cols
+			var quad := PackedVector2Array([
+				_bilerp(p_tl, p_tr, p_br, p_bl, u0, v0), _bilerp(p_tl, p_tr, p_br, p_bl, u1, v0),
+				_bilerp(p_tl, p_tr, p_br, p_bl, u1, v1), _bilerp(p_tl, p_tr, p_br, p_bl, u0, v1)])
+			var uvs := PackedVector2Array([
+				Vector2(u0, v0), Vector2(u1, v0), Vector2(u1, v1), Vector2(u0, v1)])
+			draw_colored_polygon(quad, Color.WHITE, uvs, canvas_bg_tex)
+
+func _load_cursors() -> void:
+	cursor_default = _load_cursor_texture("res://assets/cursors/default.svg")
+	cursor_card_hover = _load_cursor_texture("res://assets/cursors/card_hover.svg")
+	cursor_card_drag = _load_cursor_texture("res://assets/cursors/card_drag.svg")
+	_apply_cursor(cursor_default, Input.CURSOR_ARROW)
+
+func _load_cursor_texture(path: String) -> Texture2D:
+	var tex := ResourceLoader.load(path) as Texture2D
+	if tex != null:
+		return tex
+	var img := Image.load_from_file(path)
+	if img == null:
+		return null
+	if img.get_width() <= 0 or img.get_height() <= 0:
+		return null
+	return ImageTexture.create_from_image(img)
+
+func _apply_cursor(tex: Texture2D, fallback_shape: Input.CursorShape) -> void:
+	if tex != null:
+		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+		Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2.ZERO)
+	else:
+		Input.set_default_cursor_shape(fallback_shape)
+
+func _set_cursor_state(state: String) -> void:
+	if cursor_state == state:
+		return
+	cursor_state = state
+	match state:
+		"drag":
+			_apply_cursor(cursor_card_drag, Input.CURSOR_ARROW)
+		"hover":
+			_apply_cursor(cursor_card_hover, Input.CURSOR_ARROW)
+		_:
+			_apply_cursor(cursor_default, Input.CURSOR_ARROW)
 
 # ---------------------------------------------------------------- spawning
+const START_JITTER := 130.0     # 初始卡随机散布幅度（加大随机性）
+
+func _jit(amount: float) -> Vector2:
+	return Vector2(GameState.rng.randf_range(-amount, amount), GameState.rng.randf_range(-amount, amount))
+
 func _spawn_start_cards() -> void:
-	_spawn_card_pop("founder", Vector2(160, 420), 0.00)
-	_spawn_card_pop("dev_rep", Vector2(340, 420), 0.05)
-	_spawn_card_pop("admin_rep", Vector2(560, 420), 0.07)
-	_spawn_card_pop("office", Vector2(160, 660), 0.10)
-	_spawn_card_pop("research_bench", Vector2(360, 660), 0.15)
-	_spawn_card_pop("market_research", Vector2(560, 660), 0.20)
-	_spawn_card_pop("sales_rep", Vector2(1120, 420), 0.25)
-	_spawn_card_pop("market_lead_pool", Vector2(1320, 420), 0.30)
-	_spawn_card_pop("client_demand", Vector2(1520, 420), 0.35)
+	# 开局只有一个车库包（5 张牌，含创始人）；点一下跳一张，点完消失
+	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
+	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
+	var p = _spawn_loose_pack("garage_pack", pack, contents)
+	if is_instance_valid(p):
+		p.board_pos = Vector2(BASE_W * 0.5, 560.0)   # 居中靠上
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	var c := spawn_card(id, pos)
@@ -237,18 +358,11 @@ func relayout(sid: int) -> void:
 	var arr: Array = stacks[sid]
 	var base: Vector2 = stack_base[sid]
 	var zbase := DRAG_Z if sid == drag_sid else 0
-	var ds_dy := (1.0 - TOP_SCALE) / BASE_H              # perspective convergence rate
 	for i in arr.size():
 		var c = arr[i]
 		c.stack_pos = i
 		var bp := base + Vector2(0, i * CARD_OFFSET)        # board space
-		var s := _row_scale(bp.y + CH * 0.5)
-		c.scale = Vector2(s, s) * CARD_SCALE * view_zoom
-		# tilt the card's vertical edges toward the vanishing point (same angle as walls)
-		var cx := bp.x + CW * 0.5
-		c.skew = -atan((cx - BASE_W * 0.5) * ds_dy)   # 与画布透视同向（卡铺在画布上）
-		if sid != drag_sid:
-			c.position = _project(bp)                        # display space
+		_apply_card_projection(c, bp, sid == drag_sid)
 		# 拖拽中：位置由 _update_drag_spring 弹簧驱动（滞后 + 摆动）
 		c.z_index = zbase + i
 		# 工作条现绑定在【被工作对象】卡上、按 work_ratio 自管，relayout 不再干预
@@ -263,6 +377,63 @@ func _board_topleft(c) -> Vector2:
 
 func _board_center(c) -> Vector2:
 	return _board_topleft(c) + Vector2(CW, CH) * 0.5
+
+func _card_lift(c) -> float:
+	if c == null or not is_instance_valid(c):
+		return 0.0
+	if c.carried:
+		return 22.0
+	if c.hovered:
+		# 叠放中（栈里不止一张）不再有 hover 抬升
+		if stacks.has(c.stack_id) and stacks[c.stack_id].size() > 1:
+			return 0.0
+		return 10.0
+	return 0.0
+
+func _cash_card_count() -> int:
+	var n := 0
+	for c in all_cards:
+		if c.card_id == "cash":
+			n += 1
+	return n
+
+func _sync_cash_state() -> void:
+	GameState.cash = _cash_card_count()
+
+func _spend_cash_cards(amount: int) -> bool:
+	_sync_cash_state()
+	if GameState.cash < amount:
+		return false
+	var need := amount
+	for c in all_cards.duplicate():
+		if need <= 0:
+			break
+		if c.card_id != "cash":
+			continue
+		destroy_card(c)
+		need -= 1
+	_sync_cash_state()
+	return true
+
+func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office") -> void:
+	if amount <= 0:
+		return
+	# 一批现金叠成一摞：朝旁边飞出一小段后落在同一摞里，快速依次弹出
+	var ang := GameState.rng.randf() * TAU
+	var land := clamp_to_zone(around + Vector2(cos(ang), sin(ang)) * 130.0, zone)
+	var first := spawn_card("cash", land)
+	first.zone = zone
+	var sid: int = first.stack_id
+	for i in range(1, amount):
+		var c := spawn_card("cash", land)
+		c.zone = zone
+		_merge(c.stack_id, sid)   # 并入同一摞
+	relayout(sid)
+	var origin_display := _project(around + Vector2(CW, CH) * 0.5)
+	var arr: Array = stacks[sid]
+	for i in arr.size():
+		_play_card_pop(arr[i], 0.05 * i, origin_display)
+	_sync_cash_state()
 
 func destroy_card(c) -> void:
 	var sid: int = c.stack_id
@@ -331,13 +502,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			panning_canvas = false
 			if not drag_cards.is_empty():
 				_end_drag(wp)            # 携带中再次点击 = 放下
-			elif BANK_RECT.has_point(wp):
+			elif _bank_rect().has_point(wp):
 				_withdraw_cash_from_bank()
 				return
 			else:
 				var pack: Node2D = _topmost_pack_at(wp)
 				if pack != null:
-					_open_loose_pack(pack)
+					# 按住卡包：先记为待拖动；松开时没移动=拆一张，移动了=只是挪位置
+					drag_pack = pack
+					pack_drag_offset = _unproject(wp) - pack.board_pos
+					press_pos = wp
+					press_moved = false
+					pack.z_index = 2300
 					return
 				var picked := _topmost_at(wp)
 				if picked != null:
@@ -351,6 +527,15 @@ func _unhandled_input(event: InputEvent) -> void:
 					Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
 		else:
 			panning_canvas = false
+			# 卡包：松开时若没移动=拆一张；移动过=留在新位置
+			if drag_pack != null:
+				var p := drag_pack
+				drag_pack = null
+				if is_instance_valid(p):
+					p.z_index = 2100
+					if not press_moved:
+						_open_loose_pack(p)
+				return
 			# 松开：真正拖动过才落下；只是轻点则保持携带、继续跟随光标
 			if not drag_cards.is_empty() and press_moved:
 				_end_drag(wp)
@@ -371,6 +556,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_relayout_all()
 		_relayout_loose_packs()
 		queue_redraw()
+	elif event is InputEventMouseMotion and drag_pack != null:
+		var wp := _to_world(event)
+		if is_instance_valid(drag_pack):
+			drag_pack.board_pos = _unproject(wp) - pack_drag_offset
+			drag_pack.position = _project(drag_pack.board_pos)
+			if wp.distance_to(press_pos) > DRAG_TAP_PX:
+				press_moved = true
 	elif event is InputEventMouseMotion and not drag_cards.is_empty():
 		var wp := _to_world(event)
 		stack_base[drag_sid] = _unproject(wp) - drag_offset
@@ -394,9 +586,13 @@ func _begin_drag(wp: Vector2, picked: Node2D = null) -> void:
 		if picked == null:
 			return
 	_select_card(picked)        # 单击即选中并出 hint，同时下面照常拖拽
+	if is_instance_valid(hover_card):
+		hover_card.set_hovered(false)
+	hover_card = null
 	var src: int = picked.stack_id
 	var arr: Array = stacks[src]
 	var k: int = picked.stack_pos
+	var original_base: Vector2 = stack_base.get(src, Vector2.ZERO)
 	var moving: Array = arr.slice(k)
 	var remaining: Array = arr.slice(0, k)
 	productions.erase(src)
@@ -414,10 +610,10 @@ func _begin_drag(wp: Vector2, picked: Node2D = null) -> void:
 	stacks[sid] = moving
 	drag_cards = moving.duplicate()
 	drag_sid = sid
-	# 拿起：卡心对齐光标。目标设为“光标=被点卡中心”，卡仍留在原位，
-	# 由弹簧迅速弹向光标——即点击后先自动动一下，再进入跟随拖拽。
-	drag_offset = Vector2(CW * 0.5, CH * 0.5)
-	stack_base[sid] = _unproject(wp) - drag_offset
+	_set_drag_cards_carried(true)
+	var moving_base: Vector2 = original_base + Vector2(0, k * CARD_OFFSET)
+	drag_offset = _unproject(wp) - moving_base
+	stack_base[sid] = moving_base
 	for c in moving:
 		c.drag_vel = Vector2.ZERO    # 从原位开始平滑弹向光标
 	relayout(sid)
@@ -430,7 +626,7 @@ func _end_drag(_wp: Vector2) -> void:
 	var lead_person := is_person(bottom)
 	var center: Vector2 = stack_base[sid] + Vector2(CW * 0.5, CH * 0.5)   # board space
 
-	if BANK_RECT.has_point(_project(center)):
+	if _bank_rect().has_point(_project(center)):
 		_sell_stack(sid)
 		_clear_drag()
 		return
@@ -476,7 +672,8 @@ func _update_drag_spring(delta: float) -> void:
 	for i in arr.size():
 		var c = arr[i]
 		var bp := base + Vector2(0, i * CARD_OFFSET)
-		var target := _project(bp)
+		var target := _project(bp) + Vector2(0, -_card_lift(c) * view_zoom)
+		_apply_card_projection(c, bp, true)
 		var omega: float = DRAG_OMEGA_TOP * pow(DRAG_OMEGA_FALLOFF, i)
 		var accel: Vector2 = (target - c.position) * (omega * omega) - c.drag_vel * (2.0 * DRAG_ZETA * omega)
 		c.drag_vel += accel * dt
@@ -537,17 +734,17 @@ func _card_hint(c) -> String:
 	var nm := String(d.get("name", c.card_id))
 	match c.ctype:
 		"employee":
-			return "「%s · 员工　月薪 $%d　产能 %d — 可跨区搬运资源；叠到资源或节点上即可开始生产」" % [
+			return "「%s · 员工　月薪 $%d　产能 %d — 叠到资源或节点上即可开始生产」" % [
 				nm, int(d.get("salary", 0)), int(d.get("capacity", 0))]
 		"resource_node":
 			var us := ("剩余 %d 次" % c.uses_left) if c.uses_left >= 0 else "可无限使用"
-			return "「%s · 资源节点　%s — 固定在本区，派员工叠上去产出」" % [nm, us]
+			return "「%s · 资源节点　%s — 派员工叠上去产出」" % [nm, us]
 		"resource":
-			return "「%s · 资源　售价 $%d — 不能跨区，需员工搬运；拖到右上『银行』变现」" % [nm, int(d.get("sell", 0))]
+			return "「%s · 资源　售价 $%d — 拖到右上『银行』变现」" % [nm, int(d.get("sell", 0))]
 		"facility":
 			if c.card_id == "business_school":
 				return "「%s · 设施　员工在其上工作会累积洞察值，满值随机解锁当前阶段 idea」" % nm
-			return "「%s · 设施　固定在本区，提供加成」" % nm
+			return "「%s · 设施　提供加成」" % nm
 		"department":
 			return "「%s · 部门　%d 人　月薪 $%d — 自动持续产出」" % [nm, int(d.get("capacity", 0)), int(d.get("salary", 0))]
 		"risk":
@@ -558,8 +755,14 @@ func _card_hint(c) -> String:
 			return "「%s」" % nm
 
 func _clear_drag() -> void:
+	_set_drag_cards_carried(false)
 	drag_cards = []
 	drag_sid = -1
+
+func _set_drag_cards_carried(v: bool) -> void:
+	for c in drag_cards:
+		if is_instance_valid(c):
+			c.set_carried(v)
 
 func _merge(from_sid: int, to_sid: int) -> void:
 	var moving: Array = stacks[from_sid]
@@ -580,11 +783,17 @@ func _resolve_overlap(sid: int) -> int:
 		return sid
 	var nb: Vector2 = stack_base[sid] + Vector2(CW * 0.5, CH * 0.5)
 	var target: Node2D = null
+	var best_d := INF
+	# 放宽判定：把目标卡命中框向四周外扩约半张卡，落点中心靠近就算叠上；多个命中取最近的
+	var margin := Vector2(CW * 0.5, CH * 0.5)
 	for c in all_cards:
 		if c.stack_id == sid:
 			continue
-		if Rect2(_board_topleft(c), Vector2(CW, CH)).has_point(nb):
-			if target == null or c.z_index > target.z_index:
+		var hit := Rect2(_board_topleft(c) - margin, Vector2(CW, CH) + margin * 2.0)
+		if hit.has_point(nb):
+			var d: float = (_board_center(c)).distance_to(nb)
+			if d < best_d:
+				best_d = d
 				target = c
 	if target != null and _would_interact(sid, target.stack_id):
 		_merge(sid, target.stack_id)
@@ -599,27 +808,75 @@ func _would_interact(a: int, b: int) -> bool:
 	if not stacks.has(a) or not stacks.has(b):
 		return false
 	var counts: Dictionary = {}
-	var worker_tags: Dictionary = {}
 	var has_worker := false
 	var all_emp := true
+	var arr: Array = []
 	for src in [a, b]:
 		for c in stacks[src]:
+			arr.append(c)
 			counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
 			if c.ctype == "employee":
 				has_worker = true
-				for t in c.cdef.get("workTags", []):
-					worker_tags[t] = true
 			else:
 				all_emp = false
 	if all_emp:
 		return true                       # 员工叠员工 = 组队/组建部门
 	if has_worker and counts.has("business_school"):
 		return true                       # 员工叠商学院 = 累积洞察值
+	if _can_stack_as_cards(arr, counts):
+		return true
+	if not _basic_resource_recipe(counts, arr).is_empty():
+		return true
 	for recipe in DataLoader.recipes:
 		var gate := String(recipe.get("requiredIdeaId", ""))
 		if gate != "" and not GameState.idea_done(gate):
 			continue
-		if _recipe_matches(recipe, counts, worker_tags, has_worker):
+		if _recipe_matches(recipe, counts, arr):
+			return true
+	return false
+
+func _is_stackable_card(c) -> bool:
+	if c == null or not is_instance_valid(c):
+		return false
+	if c.ctype == "employee" or c.ctype == "department" or c.ctype == "risk" or c.ctype == "idea":
+		return false
+	return true
+
+func _can_stack_as_cards(arr: Array, counts: Dictionary) -> bool:
+	if arr.is_empty():
+		return false
+	var first_id := String(arr[0].card_id)
+	var same_id := true
+	var has_worker := false
+	for c in arr:
+		if c.ctype == "employee":
+			has_worker = true
+			continue
+		if not _is_stackable_card(c):
+			return false
+		if c.card_id != first_id:
+			same_id = false
+	if not has_worker and same_id:
+		return true
+	if has_worker:
+		return false
+	return _is_partial_recipe_stack(counts)
+
+func _is_partial_recipe_stack(counts: Dictionary) -> bool:
+	for recipe in DataLoader.recipes:
+		var matched_any := false
+		var input_needs: Dictionary = {}
+		for inp in recipe.get("inputs", []):
+			input_needs[String(inp.get("id", ""))] = int(input_needs.get(String(inp.get("id", "")), 0)) + int(inp.get("count", 1))
+		for id in counts.keys():
+			if not input_needs.has(String(id)):
+				matched_any = false
+				break
+			if int(counts[id]) > int(input_needs[String(id)]):
+				matched_any = false
+				break
+			matched_any = true
+		if matched_any:
 			return true
 	return false
 
@@ -662,25 +919,18 @@ func _dodge_apply(p: Vector2, sid: int) -> void:
 func _sell_stack(sid: int) -> void:
 	var arr: Array = stacks[sid].duplicate()
 	var total := 0
+	var origin: Vector2 = stack_base.get(sid, Vector2(300, 360))
 	for c in arr:
 		total += int(c.cdef.get("sell", 0))
 		destroy_card(c)
 	if total > 0:
-		GameState.add_cash(total)
-		_float_text_screen("+$" + str(total), BANK_RECT.position + Vector2(60, 0), Color("ffe66d"))
+		_spawn_cash_cards(total, origin, "office")
+		_float_text_screen("+$" + str(total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
 	else:
 		_show_toast("这张卡卖不出钱")
 
 func _withdraw_cash_from_bank() -> void:
-	if not GameState.spend_cash(1):
-		_show_toast("银行库存现金不足")
-		return
-	var origin := BANK_RECT.position + BANK_RECT.size * 0.5
-	var landing := clamp_to_zone(Vector2(260, 310) + Vector2(GameState.rng.randf_range(-40.0, 90.0), GameState.rng.randf_range(-20.0, 90.0)), "office")
-	var c := spawn_card("cash", landing)
-	c.zone = "office"
-	_play_card_pop(c, 0.0, origin)
-	_float_text_screen("-$1", BANK_RECT.position + Vector2(60, 0), Color("bdbab1"))
+	_show_toast("资金现在只计算场上的现金卡；银行不再存放隐藏现金")
 
 # ---------------------------------------------------------------- recipes
 func evaluate_stack(sid: int) -> void:
@@ -688,24 +938,58 @@ func evaluate_stack(sid: int) -> void:
 		return
 	var arr: Array = stacks[sid]
 	var counts: Dictionary = {}
-	var worker_tags: Dictionary = {}
-	var has_worker := false
 	for c in arr:
 		counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
-		if c.ctype == "employee":
-			has_worker = true
-			for t in c.cdef.get("workTags", []):
-				worker_tags[t] = true
+	var basic_recipe := _basic_resource_recipe(counts, arr)
+	if not basic_recipe.is_empty():
+		var target = _work_target(arr, basic_recipe)
+		productions[sid] = { "recipe": basic_recipe, "target": target }
+		if target != null:
+			_set_stack_workbar(sid, clampf(target.work_elapsed / float(basic_recipe.get("duration", 3.0)), 0, 1))
+		return
 	for recipe in DataLoader.recipes:
 		var gate := String(recipe.get("requiredIdeaId", ""))
 		if gate != "" and not GameState.idea_done(gate):
 			continue
-		if _recipe_matches(recipe, counts, worker_tags, has_worker):
+		if _recipe_matches(recipe, counts, arr):
 			var target = _work_target(arr, recipe)
 			productions[sid] = { "recipe": recipe, "target": target }
 			if target != null:    # 接续被工作对象上已有的进度（员工换人也不丢）
-				target.set_work(clampf(target.work_elapsed / float(recipe.get("duration", 4.0)), 0, 1))
+				_set_stack_workbar(sid, clampf(target.work_elapsed / float(recipe.get("duration", 4.0)), 0, 1))
 			return
+
+func _basic_resource_recipe(counts: Dictionary, arr: Array) -> Dictionary:
+	var has_worker := false
+	var worker_tags: Dictionary = {}
+	for c in arr:
+		if c.ctype != "employee":
+			continue
+		has_worker = true
+		for t in c.cdef.get("workTags", []):
+			worker_tags[t] = true
+	if not has_worker:
+		return {}
+	if int(counts.get("lead", 0)) >= 1 and (worker_tags.has("sales") or worker_tags.has("any")):
+		return {
+			"id": "follow_single_lead",
+			"name": "跟进线索",
+			"worker_tags": ["sales", "any"],
+			"duration": 3.0,
+			"inputs": [{"id": "lead", "count": 1, "consume": true}],
+			"outputs": [{"id": "order", "count": 1}],
+			"output_zone": "market",
+		}
+	if int(counts.get("code", 0)) >= 1 and (worker_tags.has("dev") or worker_tags.has("any")):
+		return {
+			"id": "shape_single_code",
+			"name": "封装代码",
+			"worker_tags": ["dev", "any"],
+			"duration": 3.0,
+			"inputs": [{"id": "code", "count": 1, "consume": true}],
+			"outputs": [{"id": "module", "count": 1}],
+			"output_zone": "office",
+		}
+	return {}
 
 # 被工作对象 = 配方第一个 input 对应的卡（资源/节点）；退化取首个非员工卡
 func _work_target(arr: Array, recipe: Dictionary):
@@ -720,21 +1004,46 @@ func _work_target(arr: Array, recipe: Dictionary):
 			return c
 	return arr[0] if arr.size() > 0 else null
 
-func _recipe_matches(recipe: Dictionary, counts: Dictionary, worker_tags: Dictionary, has_worker: bool) -> bool:
-	var rtags: Array = recipe.get("worker_tags", [])
-	var worker_ok := false
-	for t in rtags:
-		if t == "any" and has_worker:
-			worker_ok = true
-		elif worker_tags.has(t):
-			worker_ok = true
-	if not worker_ok:
-		return false
+# 进度条显示在牌堆【最底下那张】（=arr[0]，叠放时被上面的牌覆盖、只露 header、位于画面最上方）
+# 的 header 上方；进度仍累加在被工作对象(target.work_elapsed)上
+func _set_stack_workbar(sid: int, ratio: float) -> void:
+	if not stacks.has(sid):
+		return
+	var arr: Array = stacks[sid]
+	for i in arr.size():
+		arr[i].set_work(ratio if i == 0 else 0.0)
+
+func _recipe_matches(recipe: Dictionary, counts: Dictionary, arr: Array) -> bool:
 	for inp in recipe.get("inputs", []):
 		var need := int(inp.get("count", 1))
 		if int(counts.get(inp.get("id", ""), 0)) < need:
 			return false
-	return true
+	var reserved_workers: Dictionary = {}
+	for inp in recipe.get("inputs", []):
+		if not inp.get("consume", false):
+			continue
+		var id := String(inp.get("id", ""))
+		if DataLoader.card_type(id) == "employee":
+			reserved_workers[id] = int(reserved_workers.get(id, 0)) + int(inp.get("count", 1))
+	var rtags: Array = recipe.get("worker_tags", [])
+	var worker_tags: Dictionary = {}
+	var has_worker := false
+	for c in arr:
+		if c.ctype != "employee":
+			continue
+		var reserved := int(reserved_workers.get(c.card_id, 0))
+		if reserved > 0:
+			reserved_workers[c.card_id] = reserved - 1
+			continue
+		has_worker = true
+		for t in c.cdef.get("workTags", []):
+			worker_tags[t] = true
+	for t in rtags:
+		if t == "any" and has_worker:
+			return true
+		if worker_tags.has(t):
+			return true
+	return rtags.is_empty()
 
 func _stack_capacity(sid: int) -> int:
 	var cap := 0
@@ -764,28 +1073,43 @@ func _complete_production(sid: int) -> void:
 			if c.card_id == rid:
 				destroy_card(c)
 				need -= 1
+	var made_card := false
 	for outp in rec.get("outputs", []):
 		if outp.has("cash"):
 			var amt := int(outp["cash"]) * mult
-			GameState.add_cash(amt)
+			_spawn_cash_cards(amt, base, "office")
 			GameState.add_revenue(amt)
 			_ka_ching(base, amt)
 		elif outp.has("id"):
 			var n := int(outp.get("count", 1)) * mult
-			var forced := String(rec.get("output_zone", ""))
-			var zone := forced if forced != "" else _zone_for_center(base + Vector2(CW * 0.5, CH * 0.5))
-			var origin := base
-			if forced == "market":
-				origin = Vector2(1080, 360)
-			elif forced == "office":
-				origin = Vector2(240, 360)
-			for i in n:
-				_drop_output(String(outp["id"]), origin, zone)
+			var oid := String(outp["id"])
+			if oid == "cash":
+				# 现金作为产物：数量严格 = 配方设定（二者价值相加），不受产能倍率影响
+				# 依次快速跳出现金卡（_spawn_cash_cards 内已带 0.04s 逐张弹出 + 同步资金）
+				var cash_n := int(outp.get("count", 1))
+				_spawn_cash_cards(cash_n, base, "office")
+				GameState.add_revenue(cash_n)
+				_ka_ching(base, cash_n)
+				made_card = true
+			else:
+				var forced := String(rec.get("output_zone", ""))
+				var zone := forced if forced != "" else _zone_for_center(base + Vector2(CW * 0.5, CH * 0.5))
+				var origin := base
+				if forced == "market":
+					origin = Vector2(1080, 360)
+				elif forced == "office":
+					origin = Vector2(240, 360)
+				for i in n:
+					_drop_output(oid, origin, zone)
+				made_card = true
+	if made_card:
+		_wiggle_top_card(sid)            # 产出时生产堆顶卡轻微扭动
 	_consume_node_uses(sid, rec)
 	GameState.discover(String(rec.get("id", "")))
 	if is_instance_valid(target):       # 完成后重置被工作对象的进度（若未被消耗销毁）
 		target.work_elapsed = 0.0
 		target.set_work(0.0)
+	_set_stack_workbar(sid, 0.0)        # 清掉最下一张上的进度条
 	if stacks.has(sid):
 		relayout(sid)
 		evaluate_stack(sid)
@@ -813,9 +1137,9 @@ func _output_mult(cap: int) -> int:
 	return 1 + int(floor(maxf(0, cap - 3) / 4.0))
 
 func _drop_output(id: String, from_pos: Vector2, zone: String) -> void:
-	const DROP_MIN := 90.0
-	const DROP_MAX := 180.0
-	const GROUP_RANGE := 190.0
+	const DROP_MIN := 160.0
+	const DROP_MAX := 340.0
+	const GROUP_RANGE := 200.0
 	var ang := GameState.rng.randf() * TAU
 	var dist := GameState.rng.randf_range(DROP_MIN, DROP_MAX)
 	var landing := clamp_to_zone(from_pos + Vector2(cos(ang), sin(ang)) * dist, zone)
@@ -831,7 +1155,42 @@ func _drop_output(id: String, from_pos: Vector2, zone: String) -> void:
 	nc.zone = zone
 	if best != null:
 		_merge(nc.stack_id, best.stack_id)
-	_play_card_pop(nc)
+	_fly_out_card(nc, _project(from_pos + Vector2(CW * 0.5, CH * 0.5)))
+
+# 产出卡顺滑飞出：从生产堆中心放大着滑到落点（无回弹，cubic 缓出）
+func _fly_out_card(c, from_display: Vector2) -> void:
+	if not is_instance_valid(c):
+		return
+	var final_pos: Vector2 = c.position
+	var final_scale: Vector2 = c.scale
+	c.position = from_display - Vector2(CW, CH) * 0.32 * maxf(view_zoom, 0.1)
+	c.scale = final_scale * 0.32
+	c.rotation = GameState.rng.randf_range(-0.05, 0.05)
+	var old_z: int = c.z_index
+	c.z_index = max(old_z, 2300)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(c, "position", final_pos, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "scale", final_scale, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "rotation", 0.0, 0.40).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_callback(func():
+		if is_instance_valid(c):
+			c.z_index = old_z
+			relayout(c.stack_id)
+	)
+
+# 生产堆顶卡轻微扭动一下（产出反馈）
+func _wiggle_top_card(sid: int) -> void:
+	if not stacks.has(sid) or stacks[sid].is_empty():
+		return
+	var top = stacks[sid].back()
+	if not is_instance_valid(top):
+		return
+	var r0: float = top.rotation
+	var tw := create_tween()
+	tw.tween_property(top, "rotation", r0 + 0.06, 0.07).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(top, "rotation", r0 - 0.045, 0.09).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(top, "rotation", r0, 0.11).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _attach_to_stack(c, sid: int) -> void:
 	var own: int = c.stack_id
@@ -1011,8 +1370,8 @@ const AUTOSELL_DELAY := 1.0
 func _update_auto_sell(delta: float) -> void:
 	for c in all_cards.duplicate():
 		var sid: int = c.stack_id
-		# only 回款(revenue) auto-sells; lead/contract stay until processed
-		if c.card_id != "revenue" or c.zone != "market":
+		# only 回款(revenue) auto-sells; lead/contract stay until processed（单画布，不再限分区）
+		if c.card_id != "revenue":
 			continue
 		if sid == drag_sid or not stacks.has(sid) or stacks[sid].size() != 1 or productions.has(sid):
 			c.idle_t = 0.0
@@ -1030,14 +1389,14 @@ func _fly_sell(c) -> void:
 	productions.erase(sid)
 	all_cards.erase(c)
 	c.z_index = 2600
-	var dest := BANK_RECT.position + BANK_RECT.size * 0.5 - Vector2(CW, CH) * 0.25
+	var dest := _bank_rect().position + _bank_rect().size * 0.5 - Vector2(CW, CH) * 0.25
 	var tw := create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(c, "position", dest, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(c, "scale", c.scale * 0.4, 0.45)
 	tw.chain().tween_callback(func():
-		GameState.add_cash(value)
-		_float_text_screen("+$" + str(value), BANK_RECT.position + Vector2(60, -10), Color("ffe66d"))
+		_spawn_cash_cards(value, _unproject(_bank_rect().position), "office")
+		_float_text_screen("+$" + str(value), _bank_rect().position + Vector2(60, -10), Color("ffe66d"))
 		c.queue_free())
 
 func _department_output(d: Dictionary) -> void:
@@ -1074,7 +1433,7 @@ func _process(delta: float) -> void:
 		var speed: float = maxf(0.4, _stack_capacity(sid) / 3.0)
 		var dur := float(p["recipe"].get("duration", 4.0))
 		target.work_elapsed += delta * speed                 # 进度累加在被工作对象卡上
-		target.set_work(clampf(target.work_elapsed / dur, 0, 1))
+		_set_stack_workbar(sid, clampf(target.work_elapsed / dur, 0, 1))   # 进度条显示在最下一张
 		if target.work_elapsed >= dur:
 			_complete_production(sid)
 	_update_research(delta)
@@ -1088,7 +1447,8 @@ func _process(delta: float) -> void:
 		_recompute_valuation()
 	if emergency:
 		emergency_t -= delta
-		if GameState.cash >= 0:
+		_sync_cash_state()
+		if GameState.cash > 0:
 			emergency = false
 			_show_toast("渡过危机！")
 		elif emergency_t <= 0:
@@ -1099,44 +1459,69 @@ func _process(delta: float) -> void:
 			_settle_month()
 	if toast_t > 0:
 		toast_t -= delta
+	_update_card_visual_states(delta)
 	_update_cursor()
 	_update_hud()
 	queue_redraw()
 
+func _update_card_visual_states(delta: float) -> void:
+	dash_phase += delta * 35.0
+	var mouse_pos := get_viewport().get_mouse_position()
+	var next_hover = null
+	if drag_cards.is_empty() and not panning_canvas:
+		next_hover = _topmost_at(mouse_pos)
+	if next_hover != hover_card:
+		if is_instance_valid(hover_card):
+			hover_card.set_hovered(false)
+			relayout(hover_card.stack_id)
+		hover_card = next_hover
+		if is_instance_valid(hover_card):
+			hover_card.set_hovered(true)
+			relayout(hover_card.stack_id)
+
+	var hint_sids: Dictionary = {}
+	if drag_sid != -1 and stacks.has(drag_sid):
+		for sid in stacks.keys():
+			var osid := int(sid)
+			if osid == drag_sid:
+				continue
+			if _would_interact(drag_sid, osid):
+				hint_sids[osid] = true
+
+	for c in all_cards:
+		if not is_instance_valid(c):
+			continue
+		var hint := hint_sids.has(c.stack_id)
+		c.set_stack_hint(hint)
+		if hint:
+			c.set_dash_phase(dash_phase)
+
 func _update_cursor() -> void:
-	if panning_canvas:
-		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
-		return
 	if not drag_cards.is_empty():
-		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+		_set_cursor_state("drag")
 		return
 	var p := get_viewport().get_mouse_position()
-	if BANK_RECT.has_point(p):
-		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	if _topmost_at(p) != null:
+		_set_cursor_state("hover")
 		return
-	var board := _unproject(p)
-	if region_of(board) in ["office", "market"] and _topmost_at(p) == null and _topmost_pack_at(p) == null:
-		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
-	else:
-		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	_set_cursor_state("default")
 
 # ---------------------------------------------------------------- month
 func _settle_month() -> void:
 	var payroll := 0
-	var office_n := 0
 	for c in all_cards:
 		payroll += int(c.cdef.get("salary", 0))
-		if c.card_id == "office":
-			office_n += 1
-	payroll = maxi(0, payroll - office_n * 2)    # 办公室：行政效率，每间每月省 $2 发薪
-	GameState.add_cash(-payroll)
+	var payroll_short := payroll > _cash_card_count()
+	if payroll > 0:
+		_spend_cash_cards(mini(payroll, _cash_card_count()))
 	_float_text("发薪 -$" + str(payroll), Vector2(880, 300), Color("ff8c8c"))
 	GameState.advance_month()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
-	if GameState.cash < 0:
+	_sync_cash_state()
+	if payroll_short:
 		emergency = true
 		emergency_t = float(DataLoader.balance.get("emergency_seconds", 30.0))
-		_show_toast("现金为负！30秒内卖卡补足，否则破产")
+		_show_toast("现金不足以发薪！30秒内卖卡补足，否则破产")
 
 func _trigger_game_over() -> void:
 	game_over = true
@@ -1151,8 +1536,8 @@ func buy_pack(pack_id: String) -> void:
 		_show_toast("该卡包需「%s」阶段解锁" % GameState.STAGE_NAMES[int(pack.get("stage", 0))])
 		return
 	var price := int(pack.get("price", 6))
-	if not GameState.spend_cash(price):
-		_show_toast("现金不足，买不起卡包")
+	if not _spend_cash_cards(price):
+		_show_toast("场上现金不足，买不起卡包")
 		return
 	var slots: Array = pack.get("slots", [])
 	var n := GameState.rng.randi_range(int(pack.get("minCards", 3)), int(pack.get("maxCards", 5)))
@@ -1163,22 +1548,38 @@ func buy_pack(pack_id: String) -> void:
 	_spawn_loose_pack(pack_id, pack, contents)
 	_show_toast("%s 已弹出，点击画布上的卡包拆开" % String(pack.get("name", "卡包")))
 
-func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> void:
+func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> Node2D:
 	var p = PackCardScript.new()
 	add_child(p)
 	p.setup(pack_id, String(pack.get("name", "卡包")), contents)
 	p.z_index = 2100
-	p.position = _pack_button_start(pack_id)
+	var start := _pack_button_start(pack_id)
+	p.position = start
 	p.scale = Vector2(0.35, 0.35) * view_zoom
 	loose_packs.append(p)
 	p.board_pos = _random_pack_landing()
 	var landing := _project(p.board_pos)
+
+	# 甩出方向：朝落点行进方向旋转
+	var dir := signf(landing.x - start.x)
+	if dir == 0.0:
+		dir = 1.0 if GameState.rng.randf() < 0.5 else -1.0
+	p.rotation = -dir * 0.28        # 反向蓄势微仰
+
 	var tw := create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(p, "position", landing, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(p, "scale", Vector2.ONE * view_zoom, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(p, "rotation", GameState.rng.randf_range(-0.08, 0.08), 0.42)
 	tw.chain().tween_callback(func(): p.ready_to_open = true)
+
+	# 旋转独立并行：先向行进方向甩转过冲，再弹性回摆稳定（纺锤造型甩动感）
+	var settle := GameState.rng.randf_range(-0.07, 0.07)
+	var rt := create_tween()
+	rt.tween_property(p, "rotation", dir * GameState.rng.randf_range(0.45, 0.62), 0.16) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rt.tween_property(p, "rotation", settle, 0.42) \
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	return p
 
 func _pack_button_start(pack_id: String) -> Vector2:
 	for row in pack_buttons:
@@ -1211,30 +1612,62 @@ func _topmost_pack_at(display_pt: Vector2):
 	return best
 
 func _open_loose_pack(p) -> void:
-	if p.opened or not p.ready_to_open:
+	# 点一下弹出一张；点完最后一张后卡包消失
+	if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 		return
-	p.opened = true
-	_show_toast("拆开 %s！" % p.pack_name)
+	if p.contents.is_empty():
+		_dissolve_pack(p)
+		return
+	var id := String(p.contents.pop_front())
 	var origin: Vector2 = p.position + Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * p.scale.x
 	var zone := _zone_for_center(_unproject(origin))
-	for i in p.contents.size():
-		var id := String(p.contents[i])
-		var delay := float(i) * 0.085
-		get_tree().create_timer(delay).timeout.connect(_burst_card_from_pack.bind(id, origin, zone))
+	_burst_card_from_pack(id, origin, zone)
+	p.queue_redraw()                       # 刷新剩余数量角标
+	if p.contents.is_empty():
+		p.opened = true                    # 锁住后续点击
+		_dissolve_pack(p)
+	else:
+		var tw := create_tween()           # 弹一下反馈
+		tw.tween_property(p, "scale", Vector2(1.14, 0.86) * view_zoom, 0.08).set_trans(Tween.TRANS_QUAD)
+		tw.tween_property(p, "scale", Vector2.ONE * view_zoom, 0.14).set_trans(Tween.TRANS_BACK)
+
+func _dissolve_pack(p) -> void:
+	if not is_instance_valid(p):
+		return
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(p, "scale", Vector2(1.12, 0.82), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(p, "modulate:a", 0.0, 0.36).set_delay(0.20)
+	tw.tween_property(p, "scale", Vector2(1.1, 0.55) * view_zoom, 0.14).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(p, "modulate:a", 0.0, 0.30).set_delay(0.06)
 	tw.chain().tween_callback(func():
 		loose_packs.erase(p)
-		p.queue_free()
+		if is_instance_valid(p):
+			p.queue_free()
 	)
+
+# 从 origin_board 朝四周随机撒一张牌的落点，尽量不与已有牌堆重叠（多次试探取最空的）
+func _scatter_landing(origin_board: Vector2, zone: String) -> Vector2:
+	var clear := Vector2(CW * 0.92, CH * 0.7)   # 认为"不重叠"所需的最小间距
+	var best := Vector2.ZERO
+	var best_gap := -INF
+	for attempt in range(14):
+		var ang := GameState.rng.randf_range(-0.25 * PI, 1.15 * PI)
+		var dist := GameState.rng.randf_range(170.0, 430.0)
+		var cand := clamp_to_zone(origin_board + Vector2(cos(ang), sin(ang)) * dist, zone)
+		var nearest := INF
+		for sb in stack_base.values():
+			var dx: float = absf(sb.x - cand.x) / clear.x
+			var dy: float = absf(sb.y - cand.y) / clear.y
+			nearest = minf(nearest, maxf(dx, dy))   # <1 表示重叠
+		if nearest >= 1.0:
+			return cand                              # 找到不重叠的点，直接用
+		if nearest > best_gap:
+			best_gap = nearest
+			best = cand
+	return best                                       # 都挤，退而求其次取最空的
 
 func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) -> void:
 	var origin_board := _unproject(origin_display) - Vector2(CW, CH) * 0.5
-	var ang := GameState.rng.randf_range(-0.25 * PI, 1.15 * PI)
-	var dist := GameState.rng.randf_range(96.0, 230.0)
-	var landing := clamp_to_zone(origin_board + Vector2(cos(ang), sin(ang)) * dist, zone)
+	var landing := _scatter_landing(origin_board, zone)
 	var c := spawn_card(id, landing)
 	c.zone = zone
 	_play_card_pop(c, 0.0, origin_display)
@@ -1257,17 +1690,21 @@ func _weighted_pick(options: Array) -> String:
 
 # ---------------------------------------------------------------- valuation / stage
 func _recompute_valuation() -> void:
+	_sync_cash_state()
 	var headcount := 0
 	var expense := 0
+	var patents := 0
 	for c in all_cards:
 		expense += int(c.cdef.get("salary", 0))
 		if c.ctype == "employee":
 			headcount += 1
+		if c.card_id == "patent":
+			patents += 1
 	for d in departments:
 		headcount += int(d["headcount"])
 	GameState.monthly_expense = expense
-	# 虚拟估值公式：现金 + 累计营收×3 + 人数×10 + 部门×25
-	var val := GameState.cash + GameState.total_revenue * 3 + headcount * 10 + departments.size() * 25
+	# 虚拟估值公式：现金 + 累计营收×3 + 人数×10 + 部门×25 + 专利×40（无形资产壁垒）
+	var val := GameState.cash + GameState.total_revenue * 3 + headcount * 10 + departments.size() * 25 + patents * 40
 	# 研发"估值"类节点每个 +10% 估值（解锁优化估值体系）
 	var mult := 1.0
 	for idea in GameState.unlocked_ideas.keys():
@@ -1281,12 +1718,9 @@ func _refresh_packs() -> void:
 		var pack: Dictionary = row["pack"]
 		var stg := int(pack.get("stage", 0))
 		var btn: Button = row["btn"]
-		if GameState.stage < stg:
-			btn.disabled = true
-			btn.text = "🔒 %s\n需「%s」阶段" % [String(pack.get("name", "")), GameState.STAGE_NAMES[stg]]
-		else:
-			btn.disabled = false
-			btn.text = "%s\n$%d" % [String(pack.get("name", "")), int(pack.get("price", 0))]
+		var locked := GameState.stage < stg
+		btn.disabled = locked
+		_style_pack_button(btn, String(pack.get("name", "")), int(pack.get("price", 0)), locked)
 
 func _on_stage_changed(_stage: int) -> void:
 	_show_toast("📈 公司进入「%s」阶段！解锁新卡包/研发" % GameState.stage_name())
@@ -1337,10 +1771,8 @@ func _float_text_screen(txt: String, pos: Vector2, col: Color) -> void:
 	tw.chain().tween_callback(l.queue_free)
 
 func _on_discovery(recipe_id: String) -> void:
-	var reward := int(DataLoader.balance.get("discovery_reward", 1))
-	if reward > 0:
-		GameState.add_cash(reward)
-	_show_toast("🎉 新发现：" + _recipe_name(recipe_id) + "  (+$" + str(reward) + ")")
+	# 首次发现配方不再奖励现金（现金只由「产品+客户」成交产生）
+	_show_toast("🎉 新发现：" + _recipe_name(recipe_id))
 	_refresh_recipe_book()
 
 func _recipe_name(id: String) -> String:
@@ -1377,13 +1809,49 @@ func _apply_pixel_font(c: Control, size: int) -> void:
 	c.add_theme_font_override("font", _ui_font())
 	c.add_theme_font_size_override("font_size", size)
 
+func _apply_bold_pixel_font(c: Control, size: int) -> void:
+	_apply_pixel_font(c, size)
+	c.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
+	c.add_theme_constant_override("outline_size", 1)
+
+func _ui_icon(name: String) -> Texture2D:
+	if ui_icon_cache.has(name):
+		return ui_icon_cache[name]
+	var path := "res://assets/ui/%s.svg" % name
+	if name.begins_with("streamline/"):
+		path = "res://assets/ui/%s.svg" % name
+	var tex := ResourceLoader.load(path) as Texture2D
+	ui_icon_cache[name] = tex
+	return tex
+
+func _set_button_icon(b: Button, icon_name: String) -> void:
+	var tex := _ui_icon(icon_name)
+	if tex == null:
+		return
+	b.icon = null
+	var tr := b.get_node_or_null("ButtonIcon") as TextureRect
+	if tr == null:
+		tr = TextureRect.new()
+		tr.name = "ButtonIcon"
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(tr)
+	tr.texture = tex
+	var icon_size := TOP_ICON_SIZE
+	tr.size = Vector2(icon_size, icon_size)
+	tr.position = Vector2((b.size.x - icon_size) * 0.5, (b.size.y - icon_size) * 0.5) if b.text == "" else Vector2(14, (b.size.y - icon_size) * 0.5)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
 # ---------------------------------------------------------------- HUD
 func _style_button(b: Button, fill: Color) -> void:
-	# 漫画风：淡彩底 + 墨线边 + 圆角，hover/press 微调
+	# 2.5D 像素风：粗墨线、硬边阴影；HUD 保持正交，不做透视/斜切
 	b.add_theme_font_override("font", _ui_font())
 	b.add_theme_color_override("font_color", INK)
 	b.add_theme_color_override("font_hover_color", INK)
 	b.add_theme_color_override("font_pressed_color", INK)
+	b.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.7))
+	b.add_theme_constant_override("outline_size", 1)
+	b.add_theme_constant_override("h_separation", 8)
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var sb := StyleBoxFlat.new()
 		var c := fill
@@ -1394,137 +1862,388 @@ func _style_button(b: Button, fill: Color) -> void:
 		elif state == "disabled":
 			c = fill.lerp(Color("d9d2c4"), 0.6)
 		sb.bg_color = c
-		sb.set_corner_radius_all(10)
+		sb.set_corner_radius_all(0)
+		sb.skew = Vector2.ZERO
 		sb.border_color = INK
-		sb.set_border_width_all(2)
-		sb.content_margin_left = 8
-		sb.content_margin_right = 8
-		sb.content_margin_top = 4
-		sb.content_margin_bottom = 4
+		sb.set_border_width_all(4)
+		sb.shadow_color = Color(0, 0, 0, 0.28)
+		sb.shadow_size = 4
+		sb.shadow_offset = Vector2(4, 5)
+		sb.content_margin_left = 11
+		sb.content_margin_right = 11
+		sb.content_margin_top = 7
+		sb.content_margin_bottom = 7
+		sb.corner_detail = 1
 		b.add_theme_stylebox_override(state, sb)
 
+	var gloss := b.get_node_or_null("ButtonGloss") as ColorRect
+	if gloss == null:
+		gloss = ColorRect.new()
+		gloss.name = "ButtonGloss"
+		gloss.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gloss.z_index = -1
+		b.add_child(gloss)
+	gloss.position = Vector2(8, 7)
+	gloss.size = Vector2(maxf(0, b.size.x - 16), maxf(0, b.size.y * 0.28))
+	gloss.color = Color(1, 1, 1, 0.16)
+
+func _ensure_top_icon(name: String, icon_name: String, pos: Vector2, icon_size: float = 18.0) -> TextureRect:
+	var tr := hud.get_node_or_null(name) as TextureRect
+	if tr == null:
+		tr = TextureRect.new()
+		tr.name = name
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hud.add_child(tr)
+	tr.texture = _ui_icon(icon_name)
+	tr.position = pos
+	tr.size = Vector2(icon_size, icon_size)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	return tr
+
+func _clear_button_style(b: Button) -> void:
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0, 0, 0, 0)
+		sb.border_color = Color(0, 0, 0, 0)
+		sb.set_border_width_all(0)
+		sb.content_margin_left = 0
+		sb.content_margin_right = 0
+		sb.content_margin_top = 0
+		sb.content_margin_bottom = 0
+		b.add_theme_stylebox_override(state, sb)
+
+func _pack_button_poly(size: Vector2, cut: float) -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(cut, 0), Vector2(size.x - cut, 0), Vector2(size.x, cut),
+		Vector2(size.x, size.y - cut), Vector2(size.x - cut, size.y),
+		Vector2(cut, size.y), Vector2(0, size.y - cut), Vector2(0, cut)])
+
+func _toolbar_y() -> float:
+	return HUD_H + (DRAW_Y1 - HUD_H - TOOLBAR_BUTTON_H) * 0.5
+
+func _top_icon_y() -> float:
+	return (HUD_H - TOP_ICON_SIZE) * 0.5
+
+func _top_label_y() -> float:
+	return (HUD_H - 40.0) * 0.5
+
+func _ensure_top_bar() -> Control:
+	top_bar = hud.get_node_or_null("TopBar") as Control
+	if top_bar == null:
+		top_bar = Control.new()
+		top_bar.name = "TopBar"
+		top_bar.position = Vector2.ZERO
+		top_bar.size = Vector2(BASE_W, HUD_H)
+		hud.add_child(top_bar)
+	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return top_bar
+
+func _clear_legacy_top_nodes() -> void:
+	for n in [
+		"StatusIcon", "RPIcon", "BusinessIcon", "FinanceIcon", "ExpenseIcon", "ValuationIcon",
+		"StatusLabel", "RPLabel", "BusinessLabel", "FinanceLabel", "ExpenseLabel", "ValuationLabel",
+		"MonthProgressFill"]:
+		var node := hud.get_node_or_null(n)
+		if node != null:
+			node.queue_free()
+
+func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) -> Label:
+	var group := top_bar.get_node_or_null(group_name) as Control
+	if group == null:
+		group = Control.new()
+		group.name = group_name
+		group.position = Vector2(x, 0)
+		group.size = Vector2(w, HUD_H)
+		group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top_bar.add_child(group)
+
+	var icon := group.get_node_or_null("Icon") as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "Icon"
+		icon.position = Vector2(0, _top_icon_y())
+		icon.size = Vector2(TOP_ICON_SIZE, TOP_ICON_SIZE)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		group.add_child(icon)
+	icon.texture = _ui_icon(icon_name)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	var label := group.get_node_or_null("Label") as Label
+	if label == null:
+		label = Label.new()
+		label.name = "Label"
+		label.position = Vector2(TOP_ICON_SIZE + 12, _top_label_y())
+		label.size = Vector2(w - TOP_ICON_SIZE - 12, 40)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		group.add_child(label)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_bold_pixel_font(label, TOP_LABEL_FONT_SIZE)
+	label.add_theme_color_override("font_color", INK)
+	return label
+
+func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool) -> void:
+	pb.text = ""
+	pb.icon = null
+	pb.clip_text = true
+	pb.mouse_filter = Control.MOUSE_FILTER_STOP
+	_clear_button_style(pb)
+	var size := pb.size
+	var cut := 8.0
+	var poly := _pack_button_poly(size, cut)
+
+	var shadow := pb.get_node_or_null("GlassShadow") as Polygon2D
+	if shadow == null:
+		shadow = Polygon2D.new()
+		shadow.name = "GlassShadow"
+		shadow.z_index = -3
+		pb.add_child(shadow)
+	shadow.position = Vector2(5, 6)
+	shadow.polygon = poly
+	shadow.color = Color(0, 0, 0, 0.32)
+
+	var fill := pb.get_node_or_null("GlassFill") as Polygon2D
+	if fill == null:
+		fill = Polygon2D.new()
+		fill.name = "GlassFill"
+		fill.z_index = -2
+		pb.add_child(fill)
+	fill.polygon = poly
+	fill.color = Color("34383b") if not locked else Color("464849")
+
+	var gloss := pb.get_node_or_null("GlassGloss") as Polygon2D
+	if gloss == null:
+		gloss = Polygon2D.new()
+		gloss.name = "GlassGloss"
+		gloss.z_index = -1
+		pb.add_child(gloss)
+	gloss.polygon = PackedVector2Array([
+		Vector2(cut + 4, 5), Vector2(size.x - cut - 4, 5), Vector2(size.x - cut - 10, 20),
+		Vector2(cut + 10, 20)])
+	gloss.color = Color(1, 1, 1, 0.18 if not locked else 0.08)
+
+	var border := pb.get_node_or_null("GlassBorder") as Line2D
+	if border == null:
+		border = Line2D.new()
+		border.name = "GlassBorder"
+		border.z_index = 0
+		border.closed = true
+		border.joint_mode = Line2D.LINE_JOINT_SHARP
+		pb.add_child(border)
+	border.points = poly
+	border.default_color = INK
+	border.width = 4.0
+
+	var hi := pb.get_node_or_null("GlassTopEdge") as Line2D
+	if hi == null:
+		hi = Line2D.new()
+		hi.name = "GlassTopEdge"
+		hi.z_index = 1
+		pb.add_child(hi)
+	hi.points = PackedVector2Array([Vector2(cut + 4, 5), Vector2(size.x - cut - 4, 5)])
+	hi.default_color = Color(1, 1, 1, 0.35 if not locked else 0.14)
+	hi.width = 2.0
+
+	var icon := pb.get_node_or_null("PackIcon") as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "PackIcon"
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pb.add_child(icon)
+	icon.texture = _ui_icon("icon_pack")
+	icon.position = Vector2((size.x - 34.0) * 0.5, 8)
+	icon.size = Vector2(34, 34)
+	icon.modulate = Color(1, 1, 1, 0.55 if locked else 1.0)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	var cost := pb.get_node_or_null("PackCost") as Label
+	if cost == null:
+		cost = Label.new()
+		cost.name = "PackCost"
+		cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pb.add_child(cost)
+	cost.text = str(price)
+	cost.position = Vector2((size.x - 34.0) * 0.5, 16)
+	cost.size = Vector2(34, 18)
+	cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_bold_pixel_font(cost, 15)
+	cost.add_theme_color_override("font_color", Color("141414") if not locked else Color("5f5c58"))
+
+	var label := pb.get_node_or_null("PackLabel") as Label
+	if label == null:
+		label = Label.new()
+		label.name = "PackLabel"
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pb.add_child(label)
+	label.text = pack_name
+	label.position = Vector2(7, 48)
+	label.size = Vector2(size.x - 14, 18)
+	label.clip_text = true
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_bold_pixel_font(label, 13)
+	label.add_theme_color_override("font_color", Color("f7f2e8") if not locked else Color("9b978f"))
+
 func _build_hud() -> void:
-	hud = CanvasLayer.new()
-	add_child(hud)
-	var bar := ColorRect.new()
-	bar.color = Color("f3ecdd")          # 奶白顶栏
-	bar.size = Vector2(BASE_W, HUD_H)
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(bar)
-	var barline := ColorRect.new()       # 底部墨线
-	barline.color = INK
-	barline.position = Vector2(0, HUD_H - 2)
-	barline.size = Vector2(BASE_W, 2)
-	barline.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(barline)
-	lbl_status = Label.new()
-	lbl_status.position = Vector2(16, 12)
-	lbl_status.size = Vector2(620, 34)
-	_apply_pixel_font(lbl_status, 22)
-	lbl_status.add_theme_color_override("font_color", INK)
-	lbl_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(lbl_status)
-	var progress_frame := ColorRect.new()
-	progress_frame.position = Vector2(646, 14)
-	progress_frame.size = Vector2(328, 24)
-	progress_frame.color = Color.WHITE
-	progress_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(progress_frame)
-	var progress_slot := ColorRect.new()
-	progress_slot.position = Vector2(650, 18)
-	progress_slot.size = Vector2(320, 16)
-	progress_slot.color = Color("8d8d8d")
-	progress_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(progress_slot)
-	month_progress = ColorRect.new()
-	month_progress.position = progress_slot.position
-	month_progress.size = progress_slot.size
-	month_progress.color = Color("141414")
+	hud = get_node_or_null("HUD") as CanvasLayer
+	if hud == null:
+		hud = CanvasLayer.new()
+		hud.name = "HUD"
+		add_child(hud)
+
+	_ensure_top_bar()
+	_clear_legacy_top_nodes()
+
+	lbl_status = _top_stat_label("StageGroup", "streamline/icon_stage", 24, 320)
+	lbl_top_rp = _top_stat_label("RPGroup", "streamline/icon_rp", 372, 120)
+
+	var progress_group := top_bar.get_node_or_null("ProgressGroup") as Control
+	if progress_group == null:
+		progress_group = Control.new()
+		progress_group.name = "ProgressGroup"
+		progress_group.position = Vector2(520, 0)
+		progress_group.size = Vector2(180, HUD_H)
+		progress_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top_bar.add_child(progress_group)
+	month_progress = progress_group.get_node_or_null("MonthProgressFill") as ColorRect
+	if month_progress == null:
+		month_progress = ColorRect.new()
+		month_progress.name = "MonthProgressFill"
+		month_progress.color = Color("141414")
+		month_progress.position = Vector2(0, (HUD_H - 16.0) * 0.5)
+		month_progress.size = Vector2(180, 16)
+		progress_group.add_child(month_progress)
+	month_progress_full_width = month_progress.size.x
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(month_progress)
-	lbl_finance = Label.new()
-	lbl_finance.position = Vector2(1180, 12)
-	lbl_finance.size = Vector2(190, 34)
-	_apply_pixel_font(lbl_finance, 22)
-	lbl_finance.add_theme_color_override("font_color", INK)
-	lbl_finance.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(lbl_finance)
-	lbl_expense = Label.new()                       # 月支出单独成段，可 hover 看构成
-	lbl_expense.position = Vector2(1380, 12)
-	lbl_expense.size = Vector2(220, 34)
-	_apply_pixel_font(lbl_expense, 22)
-	lbl_expense.add_theme_color_override("font_color", INK)
+
+	lbl_business = _top_stat_label("BusinessGroup", "streamline/icon_business", 735, 190)
+	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 965, 170)
+	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 1170, 235)
 	lbl_expense.mouse_filter = Control.MOUSE_FILTER_STOP
 	lbl_expense.mouse_entered.connect(_on_expense_hover)
 	lbl_expense.mouse_exited.connect(_hide_hover)
-	hud.add_child(lbl_expense)
-	lbl_val = Label.new()
-	lbl_val.position = Vector2(1620, 12)
-	lbl_val.size = Vector2(280, 34)
-	_apply_pixel_font(lbl_val, 22)
-	lbl_val.add_theme_color_override("font_color", INK)
-	lbl_val.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.add_child(lbl_val)
-	# 研发按钮：抽卡区最左
-	var rbtn := Button.new()
-	rbtn.text = "研发"
-	rbtn.position = Vector2(30, HUD_H + 8)
-	rbtn.size = Vector2(130, 84)
-	_apply_pixel_font(rbtn, 22)
-	_style_button(rbtn, Color("aecbe0"))
-	rbtn.pressed.connect(_toggle_research)
-	hud.add_child(rbtn)
+	lbl_val = _top_stat_label("ValuationGroup", "streamline/icon_valuation", 1450, 260)
 
-	var book_btn := Button.new()
-	book_btn.text = "配方书"
-	book_btn.position = Vector2(30, INFO_Y - 88)
-	book_btn.size = Vector2(130, 64)
+	var gear_btn := top_bar.get_node_or_null("GearButton") as Button
+	if gear_btn == null:
+		gear_btn = Button.new()
+		gear_btn.name = "GearButton"
+		gear_btn.text = ""
+		gear_btn.position = Vector2(1844, (HUD_H - 44.0) * 0.5)
+		gear_btn.size = Vector2(64, 44)
+		top_bar.add_child(gear_btn)
+	_apply_pixel_font(gear_btn, 26)
+	_style_button(gear_btn, Color("f3ead7"))
+	_set_button_icon(gear_btn, "streamline/icon_settings")
+	gear_btn.pressed.connect(_toggle_gear_menu)
+
+	var rbtn := hud.get_node_or_null("Buttons/ResearchButton") as Button
+	if rbtn == null:
+		rbtn = Button.new()
+		rbtn.name = "ResearchButton"
+		rbtn.position = Vector2(28, _toolbar_y())
+		rbtn.size = Vector2(128, TOOLBAR_BUTTON_H)
+		hud.add_child(rbtn)
+	rbtn.text = "研发"
+	_apply_bold_pixel_font(rbtn, 22)
+	_style_button(rbtn, Color("6f8793"))
+	_set_button_icon(rbtn, "icon_research")
+	rbtn.pressed.connect(_toggle_research)
+
+	var book_btn := hud.get_node_or_null("Buttons/RecipeBookButton") as Button
+	if book_btn == null:
+		book_btn = Button.new()
+		book_btn.name = "RecipeBookButton"
+		book_btn.text = "配方书"
+		book_btn.position = Vector2(30, INFO_Y - 88)
+		book_btn.size = Vector2(130, 64)
+		hud.add_child(book_btn)
 	_apply_pixel_font(book_btn, 20)
 	_style_button(book_btn, Color("c2b6d6"))
 	book_btn.pressed.connect(_toggle_recipe_book)
-	hud.add_child(book_btn)
 
-	# stage packs row in the top (抽卡区) strip — 研发右侧、银行左侧之间
-	var px := 185.0
+	bank_button = hud.get_node_or_null("BankButton") as Button
+	if bank_button == null:
+		bank_button = Button.new()
+		bank_button.name = "BankButton"
+		bank_button.position = Vector2(1610, _toolbar_y())
+		bank_button.size = Vector2(260, TOOLBAR_BUTTON_H)
+		hud.add_child(bank_button)
+	bank_button.text = "银行"
+	_apply_bold_pixel_font(bank_button, 24)
+	_style_button(bank_button, Color("c8a55a"))
+	_set_button_icon(bank_button, "icon_bank")
+	bank_button.pressed.connect(_withdraw_cash_from_bank)
+
+	var pack_container := hud.get_node_or_null("PackButtons")
+	var pack_count := DataLoader.packs.size()
+	var pack_w := 120.0
+	var pack_gap := 126.0
+	var pack_total_w := pack_w + maxf(0.0, pack_count - 1.0) * pack_gap
+	var pack_space_x0 := rbtn.position.x + rbtn.size.x + 26.0
+	var pack_space_x1 := bank_button.position.x - 26.0
+	var px := pack_space_x0 + maxf(0.0, (pack_space_x1 - pack_space_x0 - pack_total_w) * 0.5)
+	var pack_i := 0
 	for pid in DataLoader.packs.keys():
 		var pack: Dictionary = DataLoader.packs[pid]
-		var pb := Button.new()
-		pb.position = Vector2(px, HUD_H + 8)
-		pb.size = Vector2(150, 84)
-		_apply_pixel_font(pb, 16)
-		pb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_style_button(pb, Color("dcc9a6"))
+		var pb: Button = null
+		if pack_container != null and pack_i < pack_container.get_child_count():
+			pb = pack_container.get_child(pack_i) as Button
+		if pb == null:
+			pb = Button.new()
+			pb.name = "PackButton%d" % (pack_i + 1)
+			pb.position = Vector2(px, _toolbar_y())
+			pb.size = Vector2(pack_w, TOOLBAR_BUTTON_H)
+			if pack_container != null:
+				pack_container.add_child(pb)
+			else:
+				hud.add_child(pb)
+		pb.autowrap_mode = TextServer.AUTOWRAP_OFF
+		_style_pack_button(pb, String(pack.get("name", "")), int(pack.get("price", 0)), false)
 		pb.pressed.connect(buy_pack.bind(String(pid)))
 		pb.mouse_entered.connect(_on_pack_hover.bind(String(pid)))   # hover 显示可抽到的牌
 		pb.mouse_exited.connect(_hide_hover)
-		hud.add_child(pb)
 		pack_buttons.append({ "btn": pb, "id": String(pid), "pack": pack })
-		px += 162.0
+		px += pack_gap
+		pack_i += 1
 
 	_refresh_packs()
 	_build_research_panel()
 	_build_recipe_book_panel()
+	_build_codex_panel()
+	_build_settings_panel()
+	_build_gear_menu()
 	_build_hover_panel()
 
 # ---------------------------------------------------------------- hover tooltip
 func _build_hover_panel() -> void:
-	hover_panel = Panel.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("fbf6ec")
-	sb.border_color = INK
-	sb.set_border_width_all(3)
-	sb.set_corner_radius_all(6)
-	hover_panel.add_theme_stylebox_override("panel", sb)
+	hover_panel = hud.get_node_or_null("HoverPanel") as Panel
+	if hover_panel == null:
+		hover_panel = Panel.new()
+		hover_panel.name = "HoverPanel"
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color("fbf6ec")
+		sb.border_color = INK
+		sb.set_border_width_all(3)
+		sb.set_corner_radius_all(6)
+		hover_panel.add_theme_stylebox_override("panel", sb)
+		hud.add_child(hover_panel)
 	hover_panel.z_index = 4096
 	hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hover_panel.visible = false
-	hud.add_child(hover_panel)
-	hover_label = Label.new()
-	hover_label.position = Vector2(12, 8)
+	hover_label = hover_panel.get_node_or_null("HoverLabel") as Label
+	if hover_label == null:
+		hover_label = Label.new()
+		hover_label.name = "HoverLabel"
+		hover_label.position = Vector2(12, 8)
+		hover_panel.add_child(hover_label)
 	_apply_pixel_font(hover_label, 18)
 	hover_label.add_theme_color_override("font_color", INK)
 	hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hover_panel.add_child(hover_label)
 
 func _show_hover(text: String, anchor: Control) -> void:
 	if hover_panel == null:
@@ -1574,22 +2293,32 @@ func _pack_hover_text(pid: String) -> String:
 
 func _current_expense() -> int:
 	var p := 0
-	var o := 0
 	for c in all_cards:
 		p += int(c.cdef.get("salary", 0))
+	return p
+
+func _business_card_count() -> int:
+	var n := 0
+	for c in all_cards:
+		if c.card_id == "cash" or c.card_id == "revenue":
+			continue
+		n += 1
+	return n
+
+func _business_card_capacity() -> int:
+	var offices := 0
+	for c in all_cards:
 		if c.card_id == "office":
-			o += 1
-	return maxi(0, p - o * 2)
+			offices += 1
+	var cap := maxi(1, offices) * BUSINESS_CAPACITY_PER_OFFICE
+	return maxi(cap, _business_card_count())
 
 func _on_expense_hover() -> void:
 	_show_hover(_expense_hover_text(), lbl_expense)
 
 func _expense_hover_text() -> String:
 	var by_name: Dictionary = {}
-	var office_n := 0
 	for c in all_cards:
-		if c.card_id == "office":
-			office_n += 1
 		var s := int(c.cdef.get("salary", 0))
 		if s <= 0:
 			continue
@@ -1605,9 +2334,7 @@ func _expense_hover_text() -> String:
 		var each: int = by_name[nm][1]
 		total += cnt * each
 		lines.append("· %s ×%d  $%d" % [nm, cnt, cnt * each])
-	if office_n > 0:
-		lines.append("· 办公室行政减免  -$%d" % (office_n * 2))
-	lines.append("合计  $%d / 月" % maxi(0, total - office_n * 2))
+	lines.append("合计  $%d / 月" % total)
 	return _join_text(lines, "\n")
 
 func _show_toast(txt: String) -> void:
@@ -1677,6 +2404,374 @@ func _toggle_recipe_book() -> void:
 	recipe_panel.visible = not recipe_panel.visible
 	if recipe_panel.visible:
 		_refresh_recipe_book()
+
+# ---------------------------------------------------------------- gear menu
+func _panel_stylebox() -> StyleBoxFlat:
+	var psb := StyleBoxFlat.new()
+	psb.bg_color = Color(0.98, 0.95, 0.89, 0.97)
+	psb.set_corner_radius_all(8)
+	psb.border_color = INK
+	psb.set_border_width_all(3)
+	psb.content_margin_left = 18
+	psb.content_margin_right = 18
+	psb.content_margin_top = 16
+	psb.content_margin_bottom = 16
+	return psb
+
+func _build_gear_menu() -> void:
+	gear_menu = Control.new()
+	gear_menu.name = "GearMenu"
+	gear_menu.position = Vector2.ZERO
+	gear_menu.size = Vector2(BASE_W, BASE_H)
+	gear_menu.visible = false
+	gear_menu.process_mode = Node.PROCESS_MODE_ALWAYS   # 暂停时仍可交互
+	hud.add_child(gear_menu)
+
+	# 半透明遮罩，拦截下层点击
+	var dim := ColorRect.new()
+	dim.color = Color(0.10, 0.09, 0.08, 0.55)
+	dim.position = Vector2.ZERO
+	dim.size = Vector2(BASE_W, BASE_H)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	gear_menu.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _panel_stylebox())
+	panel.position = Vector2(BASE_W * 0.5 - 180, 300)
+	panel.size = Vector2(360, 0)
+	gear_menu.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	panel.add_child(box)
+
+	var title := Label.new()
+	title.text = "菜单"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_apply_pixel_font(title, 30)
+	title.add_theme_color_override("font_color", INK)
+	box.add_child(title)
+
+	var items := [
+		{"t": "继续", "c": Color("aecbe0"), "f": Callable(self, "_gear_continue")},
+		{"t": "重新开始", "c": Color("dcc9a6"), "f": Callable(self, "_gear_restart")},
+		{"t": "图鉴", "c": Color("b9d6c2"), "f": Callable(self, "_gear_codex")},
+		{"t": "组合", "c": Color("c2b6d6"), "f": Callable(self, "_gear_recipes")},
+		{"t": "设置", "c": Color("e0c39a"), "f": Callable(self, "_gear_settings")},
+		{"t": "回到主菜单", "c": Color("d8b3b0"), "f": Callable(self, "_gear_main_menu")},
+	]
+	for it in items:
+		var b := Button.new()
+		b.text = String(it["t"])
+		b.custom_minimum_size = Vector2(0, 56)
+		_apply_pixel_font(b, 24)
+		_style_button(b, it["c"])
+		b.pressed.connect(it["f"])
+		box.add_child(b)
+
+func _toggle_gear_menu() -> void:
+	if gear_menu == null:
+		return
+	var open := not gear_menu.visible
+	gear_menu.visible = open
+	get_tree().paused = open
+
+func _close_gear_menu() -> void:
+	if gear_menu != null:
+		gear_menu.visible = false
+	get_tree().paused = false
+
+func _gear_continue() -> void:
+	_close_gear_menu()
+
+func _gear_restart() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
+func _gear_codex() -> void:
+	_close_gear_menu()
+	_toggle_codex()
+
+func _gear_recipes() -> void:
+	_close_gear_menu()
+	_toggle_recipe_book()
+
+func _gear_settings() -> void:
+	_close_gear_menu()
+	_toggle_settings()
+
+func _gear_main_menu() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/StartMenu.tscn")
+
+# ---------------------------------------------------------------- codex (全卡图鉴)
+const CODEX_TYPE := {
+	"employee": "员工", "resource_node": "资源点", "facility": "设施", "resource": "资源",
+}
+# 列：名称 / 类型 / 数值 / 卡包 / 解锁 / 配方
+const CODEX_COLS := ["名称", "类型", "数值", "卡包", "解锁前置", "产出配方"]
+const CODEX_W := [150.0, 80.0, 250.0, 230.0, 230.0, 250.0]
+
+func _build_codex_panel() -> void:
+	codex_panel = PanelContainer.new()
+	codex_panel.size = Vector2(1320, 840)
+	codex_panel.position = Vector2((BASE_W - 1320) * 0.5 - 110, 120)   # 偏左，右侧留出卡片预览位
+	codex_panel.visible = false
+	codex_panel.add_theme_stylebox_override("panel", _panel_stylebox())
+	hud.add_child(codex_panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	codex_panel.add_child(box)
+
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var title := Label.new()
+	title.text = "图鉴 · 全卡属性"
+	_apply_pixel_font(title, 28)
+	title.add_theme_color_override("font_color", INK)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var tip := Label.new()
+	tip.text = "悬停卡名查看卡面"
+	_apply_pixel_font(tip, 15)
+	tip.add_theme_color_override("font_color", Color("8a8175"))
+	head.add_child(tip)
+	var close := Button.new()
+	close.text = "关闭"
+	close.custom_minimum_size = Vector2(90, 42)
+	_apply_pixel_font(close, 16)
+	_style_button(close, Color("e0c39a"))
+	close.pressed.connect(_toggle_codex)
+	head.add_child(close)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(scroll)
+
+	codex_grid = GridContainer.new()
+	codex_grid.columns = CODEX_COLS.size()
+	codex_grid.add_theme_constant_override("h_separation", 14)
+	codex_grid.add_theme_constant_override("v_separation", 7)
+	codex_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(codex_grid)
+
+	# 右侧悬停卡面预览（背景 + Card 实例）
+	codex_preview_bg = Panel.new()
+	var pbg := StyleBoxFlat.new()
+	pbg.bg_color = Color(0.10, 0.09, 0.08, 0.92)
+	pbg.set_corner_radius_all(10)
+	pbg.border_color = INK
+	pbg.set_border_width_all(3)
+	codex_preview_bg.add_theme_stylebox_override("panel", pbg)
+	codex_preview_bg.size = Vector2(212, 232)
+	codex_preview_bg.visible = false
+	codex_preview_bg.z_index = 4000
+	hud.add_child(codex_preview_bg)
+
+	codex_preview = CardScript.new()
+	codex_preview.visible = false
+	codex_preview.z_index = 4001
+	hud.add_child(codex_preview)
+
+	_refresh_codex()
+
+func _toggle_codex() -> void:
+	if codex_panel == null:
+		return
+	codex_panel.visible = not codex_panel.visible
+	if codex_panel.visible:
+		_refresh_codex()
+	else:
+		_codex_unhover()
+
+func _refresh_codex() -> void:
+	if codex_grid == null:
+		return
+	for c in codex_grid.get_children():
+		c.queue_free()
+	# 表头
+	for i in range(CODEX_COLS.size()):
+		var h := _codex_cell(String(CODEX_COLS[i]), CODEX_W[i], true)
+		h.add_theme_color_override("font_color", INK)
+		codex_grid.add_child(h)
+	# 行（按类型分组排序）
+	var order := ["employee", "resource_node", "facility", "resource"]
+	var ids := DataLoader.cards.keys()
+	ids.sort_custom(func(a, b):
+		var ta := order.find(String(DataLoader.cards[a].get("type", "")))
+		var tb := order.find(String(DataLoader.cards[b].get("type", "")))
+		if ta != tb:
+			return ta < tb
+		return a < b)
+	for id in ids:
+		var d: Dictionary = DataLoader.cards[id]
+		# 名称（可悬停 → 卡面预览）
+		var nm := _codex_cell(String(d.get("name", id)), CODEX_W[0], false)
+		nm.add_theme_color_override("font_color", Color("2b6cb0"))
+		nm.mouse_filter = Control.MOUSE_FILTER_STOP
+		nm.mouse_entered.connect(_codex_hover.bind(String(id), nm))
+		nm.mouse_exited.connect(_codex_unhover)
+		codex_grid.add_child(nm)
+		codex_grid.add_child(_codex_cell(String(CODEX_TYPE.get(String(d.get("type", "")), "—")), CODEX_W[1], false))
+		codex_grid.add_child(_codex_cell(_codex_values(d), CODEX_W[2], false))
+		codex_grid.add_child(_codex_cell(_codex_packs_label(String(id)), CODEX_W[3], false))
+		codex_grid.add_child(_codex_cell(_codex_unlock_label(String(id)), CODEX_W[4], false))
+		codex_grid.add_child(_codex_cell(_codex_recipes_label(String(id)), CODEX_W[5], false))
+
+func _codex_cell(text: String, w: float, header: bool) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.custom_minimum_size = Vector2(w, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_pixel_font(l, 17 if header else 16)
+	l.add_theme_color_override("font_color", INK if header else Color("4a443c"))
+	return l
+
+func _codex_values(d: Dictionary) -> String:
+	var parts: Array = []
+	if int(d.get("salary", 0)) > 0:
+		parts.append("薪$%d" % int(d["salary"]))
+	if int(d.get("capacity", 0)) > 0:
+		parts.append("产能%d" % int(d["capacity"]))
+	if int(d.get("sell", 0)) > 0:
+		parts.append("售$%d" % int(d["sell"]))
+	if int(d.get("maxUses", -1)) > 0:
+		parts.append("可用%d次" % int(d["maxUses"]))
+	var tags = d.get("workTags", [])
+	if tags is Array and not tags.is_empty():
+		parts.append("[%s]" % _join_text(tags, "/"))
+	return _join_text(parts, " ") if not parts.is_empty() else "—"
+
+func _codex_packs_of(id: String) -> Array:
+	var out: Array = []
+	for pid in DataLoader.packs.keys():
+		var p: Dictionary = DataLoader.packs[pid]
+		var found := false
+		for slot in p.get("slots", []):
+			for opt in slot:
+				if String(opt.get("id", "")) == id:
+					found = true
+					break
+			if found:
+				break
+		if found:
+			out.append(p)
+	return out
+
+func _codex_packs_label(id: String) -> String:
+	var names: Array = []
+	for p in _codex_packs_of(id):
+		names.append(String(p.get("name", "")))
+	return _join_text(names, "、") if not names.is_empty() else "—"
+
+func _codex_recipes_of(id: String) -> Array:
+	var out: Array = []
+	for r in DataLoader.recipes:
+		for o in r.get("outputs", []):
+			if String(o.get("id", "")) == id:
+				out.append(r)
+				break
+	return out
+
+func _codex_recipes_label(id: String) -> String:
+	var out: Array = []
+	for r in _codex_recipes_of(id):
+		out.append("%s（%s）" % [String(r.get("name", "")), _recipe_formula(r)])
+	return _join_text(out, "\n") if not out.is_empty() else "—"
+
+func _codex_unlock_label(id: String) -> String:
+	var parts: Array = []
+	# 卡包阶段（取最低阶）
+	var min_stage := 99
+	for p in _codex_packs_of(id):
+		min_stage = mini(min_stage, int(p.get("stage", 0)))
+	if min_stage < 99:
+		parts.append("阶段「%s」" % GameState.STAGE_NAMES[clampi(min_stage, 0, GameState.STAGE_NAMES.size() - 1)])
+	# 产出配方所需研发
+	var ideas: Array = []
+	for r in _codex_recipes_of(id):
+		var gate := String(r.get("requiredIdeaId", ""))
+		if gate != "" and not ideas.has(gate):
+			ideas.append(gate)
+	for g in ideas:
+		var rd: Dictionary = DataLoader.research.get(g, {})
+		parts.append("研发「%s」" % String(rd.get("name", g)))
+	return _join_text(parts, " / ") if not parts.is_empty() else "初始可得"
+
+func _codex_hover(id: String, lbl: Label) -> void:
+	if codex_preview == null or not is_instance_valid(codex_preview):
+		return
+	codex_preview.setup(id)
+	codex_preview.queue_redraw()
+	var px := minf(codex_panel.position.x + codex_panel.size.x + 26, BASE_W - 220)
+	var py := clampf(lbl.global_position.y - 60, 130, BASE_H - 250)
+	codex_preview.position = Vector2(px, py)
+	codex_preview.visible = true
+	codex_preview_bg.position = Vector2(px - 16, py - 16)
+	codex_preview_bg.visible = true
+
+func _codex_unhover() -> void:
+	if codex_preview and is_instance_valid(codex_preview):
+		codex_preview.visible = false
+	if codex_preview_bg and is_instance_valid(codex_preview_bg):
+		codex_preview_bg.visible = false
+
+# ---------------------------------------------------------------- settings
+func _build_settings_panel() -> void:
+	settings_panel = PanelContainer.new()
+	settings_panel.position = Vector2(BASE_W * 0.5 - 230, 320)
+	settings_panel.size = Vector2(460, 0)
+	settings_panel.visible = false
+	settings_panel.add_theme_stylebox_override("panel", _panel_stylebox())
+	hud.add_child(settings_panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	settings_panel.add_child(box)
+
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var title := Label.new()
+	title.text = "设置"
+	_apply_pixel_font(title, 28)
+	title.add_theme_color_override("font_color", INK)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var close := Button.new()
+	close.text = "关闭"
+	close.size = Vector2(90, 42)
+	_apply_pixel_font(close, 16)
+	_style_button(close, Color("e0c39a"))
+	close.pressed.connect(_toggle_settings)
+	head.add_child(close)
+
+	var fs := CheckButton.new()
+	fs.text = "全屏"
+	fs.button_pressed = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	_apply_pixel_font(fs, 22)
+	fs.add_theme_color_override("font_color", INK)
+	fs.toggled.connect(_on_fullscreen_toggled)
+	box.add_child(fs)
+
+	var todo := Label.new()
+	todo.text = "更多选项（音量等）开发中…"
+	_apply_pixel_font(todo, 16)
+	todo.add_theme_color_override("font_color", Color("777067"))
+	box.add_child(todo)
+
+func _toggle_settings() -> void:
+	if settings_panel != null:
+		settings_panel.visible = not settings_panel.visible
+
+func _on_fullscreen_toggled(on: bool) -> void:
+	DisplayServer.window_set_mode(
+		DisplayServer.WINDOW_MODE_FULLSCREEN if on else DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _refresh_recipe_book() -> void:
 	if recipe_list == null:
@@ -1759,11 +2854,14 @@ func _join_text(parts: Array, sep: String) -> String:
 
 # ---------------------------------------------------------------- research panel
 func _build_research_panel() -> void:
-	research_panel = preload("res://scripts/ResearchGraph.gd").new()
-	research_panel.position = Vector2.ZERO
-	research_panel.size = Vector2(BASE_W, BASE_H)
+	research_panel = hud.get_node_or_null("ResearchPanel") as Control
+	if research_panel == null:
+		research_panel = preload("res://scripts/ResearchGraph.gd").new()
+		research_panel.name = "ResearchPanel"
+		research_panel.position = Vector2.ZERO
+		research_panel.size = Vector2(BASE_W, BASE_H)
+		hud.add_child(research_panel)
 	research_panel.visible = false
-	hud.add_child(research_panel)
 
 func _toggle_research() -> void:
 	if research_panel:
@@ -1791,13 +2889,18 @@ func _on_idea_unlocked(idea_id: String) -> void:
 func _update_hud() -> void:
 	if lbl_status == null:
 		return
-	lbl_status.text = "阶段「%s」    第%d月    RP %d%s" % [
-		GameState.stage_name(), GameState.month, int(GameState.rp),
+	_sync_cash_state()
+	lbl_status.text = "阶段「%s」  第%d月%s" % [
+		GameState.stage_name(), GameState.month,
 		("   [紧急!]" if emergency else "")]
+	if lbl_top_rp:
+		lbl_top_rp.text = "RP %d" % int(GameState.rp)
 	if month_progress:
 		var total := float(DataLoader.balance.get("month_seconds", 90.0))
 		var ratio := clampf(month_time / maxf(1.0, total), 0.0, 1.0)
-		month_progress.size = Vector2(320.0 * ratio, 16.0)
+		month_progress.size = Vector2(month_progress_full_width * ratio, month_progress.size.y)
+	if lbl_business:
+		lbl_business.text = "业务 %d/%d" % [_business_card_count(), _business_card_capacity()]
 	if lbl_finance:
 		lbl_finance.text = "资金 $%d" % GameState.cash
 	if lbl_expense:
@@ -1814,37 +2917,33 @@ func _draw() -> void:
 	var cf_quad := [
 		_project(Vector2(CANVAS_X0, MID_Y0)), _project(Vector2(CANVAS_X1, MID_Y0)),
 		_project(Vector2(CANVAS_X1, MID_Y1)), _project(Vector2(CANVAS_X0, MID_Y1))]
-	var cf_r := 16.0 * view_zoom
-	draw_colored_polygon(_round_corners(cf_quad, cf_r), BG)
-	# all bands drawn as perspective trapezoids (top narrower than bottom)
-	draw_colored_polygon(_band(CANVAS_X0, DIVIDER_X, MID_Y0, MID_Y1), OFFICE_BG)
-	draw_colored_polygon(_band(DIVIDER_X, CANVAS_X1, MID_Y0, MID_Y1), MARKET_BG)
-	# 轻微暖光渐变（顶亮→底稍沉），保持淡雅
-	var col := _band(CANVAS_X0, CANVAS_X1, DRAW_Y0, MID_Y1)
-	draw_polygon(col, PackedColorArray([
-		Color(1, 1, 1, 0.04), Color(1, 1, 1, 0.04), Color(0.23, 0.21, 0.18, 0.03), Color(0.23, 0.21, 0.18, 0.03)]))
-	# 墨线分隔（漫画感）
-	draw_line(_project(Vector2(DIVIDER_X, MID_Y0)), _project(Vector2(DIVIDER_X, MID_Y1)), Color(0.23, 0.21, 0.18, 0.55), 2.5)
-	draw_line(_project(Vector2(CANVAS_X0, DRAW_Y1)), _project(Vector2(CANVAS_X1, DRAW_Y1)), Color(0.23, 0.21, 0.18, 0.5), 2.5)
-	draw_line(_project(Vector2(CANVAS_X0, MID_Y1)), _project(Vector2(CANVAS_X1, MID_Y1)), Color(0.23, 0.21, 0.18, 0.5), 2.5)
+	var cf_r := 28.0 * view_zoom
+	var cf_poly := _round_corners(cf_quad, cf_r)
+	if canvas_bg_tex != null:
+		_draw_canvas_image()                                  # 背景图：铺满画布矩形 + 随透视投影
+		for cutout in _round_corner_cutouts(cf_quad, cf_r):
+			draw_colored_polygon(cutout, BG_OUT)
+		draw_colored_polygon(cf_poly, Color(1, 1, 1, 0.62))   # 半透明白覆盖，压淡背景衬托卡片
+	else:
+		draw_colored_polygon(cf_poly, BG)
+	# 顶/底硬墨线（无抗锯齿）
+	draw_line(_project(Vector2(CANVAS_X0, DRAW_Y1)), _project(Vector2(CANVAS_X1, DRAW_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
+	draw_line(_project(Vector2(CANVAS_X0, MID_Y1)), _project(Vector2(CANVAS_X1, MID_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
 
-	# 画布外框（跟随透视斜边的圆角梯形）：白色粗外框 + 黑色粗内框；上框线锚定 UI 下方
-	var cf_outer := _round_corners(cf_quad, cf_r)
+	# 画布外框（厚像素框，跟随透视斜边）：白色外框 + 黑色内框
+	var cf_outer := cf_poly.duplicate()
 	cf_outer.append(cf_outer[0])
-	draw_polyline(cf_outer, Color.WHITE, maxf(2.0, 12.0 * view_zoom), true)
-	var cf_inner := _round_corners(_inset_quad(cf_quad, 9.0 * view_zoom), maxf(2.0, cf_r - 4.0))
+	draw_polyline(cf_outer, Color.WHITE, maxf(3.0, 16.0 * view_zoom), true)
+	var cf_inner := _round_corners(_inset_quad(cf_quad, 12.0 * view_zoom), maxf(2.0, cf_r - 6.0 * view_zoom))
 	cf_inner.append(cf_inner[0])
-	draw_polyline(cf_inner, Color("141414"), maxf(2.0, 7.0 * view_zoom), true)
+	draw_polyline(cf_inner, Color("141414"), maxf(3.0, 12.0 * view_zoom), true)
 
 	var f := _ui_font()
-	var lbl := Color(0.36, 0.33, 0.29, 0.85)   # 深墨字标签
-	draw_string(f, _project(Vector2(40, MID_Y0 + 36)), "办公室区（研发 / 行政 / 运营）", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, lbl)
-	draw_string(f, _project(Vector2(DIVIDER_X + 30, MID_Y0 + 36)), "市场区（线索 / 推广 / 对外）", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, lbl)
-
 	# fixed bank slot, outside the zoomable canvas
-	draw_rect(BANK_RECT, Color("f3ead7"), true)
-	draw_rect(BANK_RECT, Color("d9a552"), false, 3.0)
-	draw_string(f, BANK_RECT.position + Vector2(116, 54), "银行", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("3a352f"))
+	if bank_button == null or not is_instance_valid(bank_button):
+		draw_rect(BANK_RECT, Color("f3ead7"), true)
+		draw_rect(BANK_RECT, Color("d9a552"), false, 3.0)
+		draw_string(f, BANK_RECT.position + Vector2(116, 54), "银行", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("3a352f"))
 
 	# 底部信息栏：所有解说/hint，斜体「」呈现
 	draw_rect(Rect2(0, INFO_Y, BASE_W, BASE_H - INFO_Y), ORG_BG, true)
@@ -1871,6 +2970,24 @@ func _round_corners(q: Array, r: float) -> PackedVector2Array:
 			var t := float(s) / 4.0
 			out.append(a.lerp(p, t).lerp(p.lerp(b, t), t))
 		out.append(b)
+	return out
+
+func _round_corner_cutouts(q: Array, r: float) -> Array:
+	var out := []
+	var n := q.size()
+	for i in n:
+		var p: Vector2 = q[i]
+		var prev: Vector2 = q[(i - 1 + n) % n]
+		var nxt: Vector2 = q[(i + 1) % n]
+		var rr := minf(r, minf(p.distance_to(prev), p.distance_to(nxt)) * 0.5)
+		var a := p + (prev - p).normalized() * rr
+		var b := p + (nxt - p).normalized() * rr
+		var cut := PackedVector2Array([p, a])
+		for s in range(1, 4):
+			var t := float(s) / 4.0
+			cut.append(a.lerp(p, t).lerp(p.lerp(b, t), t))
+		cut.append(b)
+		out.append(cut)
 	return out
 
 func _inset_quad(q: Array, d: float) -> Array:

@@ -1,0 +1,130 @@
+# 卡牌 SVG 命名规则
+
+卡牌中心图案优先加载：
+
+1. `res://assets/cards/<卡牌显示名>.svg`
+2. `res://assets/cards/<卡牌显示名>.png`
+3. `res://assets/cards/<card_id>.svg`
+4. `res://assets/cards/<card_id>.png`
+
+也就是说，新 SVG 放在 `game/assets/cards/` 目录下，文件名直接用卡牌显示名即可，例如：
+
+- `创始人.svg`
+- `客户资源.svg`
+- `CRM系统.svg`
+
+重名卡会共享同一个中文名 SVG。目前重名项：
+
+- `实习生.svg`: `intern`, `p1_intern`
+- `大学.svg`: `university`, `p1_university`
+- `办公室.svg`: `office`, `p1_office`
+
+如果重名卡需要不同图案，可以改用对应 id 文件名，例如 `p1_office.svg`。
+
+## 全部卡牌文件名
+
+- `创始人.svg` (`founder`)
+- `实习生.svg` (`intern`)
+- `毕业生.svg` (`grad`)
+- `销售经理.svg` (`sales_mgr`)
+- `市场经理.svg` (`market_mgr`)
+- `研发经理.svg` (`dev_mgr`)
+- `行政经理.svg` (`admin_mgr`)
+- `数据经理.svg` (`data_mgr`)
+- `财务经理.svg` (`finance_mgr`)
+- `销售总监.svg` (`sales_dir`)
+- `市场总监.svg` (`market_dir`)
+- `研发总监.svg` (`dev_dir`)
+- `行政总监.svg` (`admin_dir`)
+- `数据总监.svg` (`data_dir`)
+- `首席技术官.svg` (`cto`)
+- `首席营销官.svg` (`cmo`)
+- `首席运营官.svg` (`coo`)
+- `首席财务官.svg` (`cfo`)
+- `增长黑客.svg` (`growth_hacker`)
+- `架构师.svg` (`architect`)
+- `法务.svg` (`legal`)
+- `公关.svg` (`pr`)
+- `顾问.svg` (`consultant`)
+- `销售技能包.svg` (`sales_kit`)
+- `市场技能包.svg` (`market_kit`)
+- `研发技能包.svg` (`dev_kit`)
+- `行政技能包.svg` (`admin_kit`)
+- `数据技能包.svg` (`data_kit`)
+- `财务技能包.svg` (`finance_kit`)
+- `高管课程.svg` (`exec_course`)
+- `增长课程.svg` (`growth_course`)
+- `架构课程.svg` (`architect_course`)
+- `抗压课.svg` (`resilience_course`)
+- `人脉.svg` (`network`)
+- `现金.svg` (`cash`)
+- `线索.svg` (`lead`)
+- `客户名单.svg` (`customer_list`)
+- `订单.svg` (`order`)
+- `大单.svg` (`bigdeal`)
+- `营收.svg` (`revenue`)
+- `资料.svg` (`doc`)
+- `代码.svg` (`code`)
+- `模块.svg` (`module`)
+- `技术方案.svg` (`prd`)
+- `产品.svg` (`product`)
+- `数据.svg` (`data`)
+- `洞察.svg` (`insight`)
+- `流量.svg` (`traffic`)
+- `用户.svg` (`user`)
+- `报告.svg` (`report`)
+- `合同.svg` (`contract`)
+- `方案.svg` (`proposal`)
+- `专利.svg` (`patent`)
+- `品牌.svg` (`brand`)
+- `牌照.svg` (`license`)
+- `培训.svg` (`training`)
+- `行业报告.svg` (`market_report`)
+- `股权.svg` (`equity`)
+- `客户资源.svg` (`customer_pool`)
+- `展会摊位.svg` (`expo_booth`)
+- `应用商店.svg` (`app_store`)
+- `开源代码库.svg` (`oss_repo`)
+- `热点话题.svg` (`hot_topic`)
+- `数据源.svg` (`data_source`)
+- `文档库.svg` (`archive`)
+- `资本市场.svg` (`capital_market`)
+- `海外市场.svg` (`overseas`)
+- `人才市场.svg` (`talent_pool`)
+- `大学.svg` (`university`)
+- `研发台.svg` (`research_bench`)
+- `工位.svg` (`desk`)
+- `办公室.svg` (`office`)
+- `仓库.svg` (`warehouse`)
+- `会议室.svg` (`meeting_room`)
+- `培训中心.svg` (`training_center`)
+- `茶水间.svg` (`pantry`)
+- `商务大厅.svg` (`biz_hall`)
+- `CRM系统.svg` (`crm`)
+- `服务器.svg` (`server`)
+- `数据中心.svg` (`data_center`)
+- `商学院.svg` (`business_school`)
+- `总部大楼.svg` (`hq`)
+- `巷口奶茶店.svg` (`r_teashop`)
+- `老李打印铺.svg` (`r_printshop`)
+- `二手电脑城.svg` (`r_usedpc`)
+- `橙子科技.svg` (`r_orange`)
+- `蓝鲸网络.svg` (`r_whale`)
+- `大象搬家.svg` (`r_elephant`)
+- `猎头老张.svg` (`r_headhunter`)
+- `影子公司.svg` (`r_shadow`)
+- `键盘侠联盟.svg` (`r_trolls`)
+- `宇宙集团.svg` (`r_cosmos`)
+- `巨无霸控股.svg` (`r_titan`)
+- `吞天资本.svg` (`r_devour`)
+- `居住小区.svg` (`p1_neighborhood`)
+- `小区青年.svg` (`p1_youth`)
+- `市场调研.svg` (`p1_survey`)
+- `靠谱客户.svg` (`p1_customer`)
+- `大学.svg` (`p1_university`)
+- `实习生.svg` (`p1_intern`)
+- `批发市场.svg` (`p1_wholesale`)
+- `裸奔粗糙产品.svg` (`p1_rawprod`)
+- `营销策划.svg` (`p1_marketing`)
+- `带包装粗糙产品.svg` (`p1_package`)
+- `办公室.svg` (`p1_office`)

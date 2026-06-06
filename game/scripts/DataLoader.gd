@@ -8,13 +8,211 @@ var balance: Dictionary = {}
 var research: Dictionary = {}
 var idea_pools: Dictionary = {}
 
+const XlsxReader = preload("res://scripts/XlsxReader.gd")
+const XLSX_PATH := "res://data/startx_data.xlsx"
+
 func _ready() -> void:
-	cards = _load("res://data/cards.json")
-	recipes = _load("res://data/recipes.json")
-	packs = _load("res://data/packs.json")
+	# 卡牌 / 配方 / 卡包：以 Excel 表为唯一数据源（启动时实时读取）
+	_load_workbook()
+	# 其余非卡牌配置仍走 JSON
 	balance = _load("res://data/balance.json")
 	research = _load("res://data/research.json")
 	idea_pools = _load("res://data/idea_pools.json")
+
+# ---------------------------------------------------------------- Excel 数据源
+func _load_workbook() -> void:
+	var sheets := XlsxReader.read(XLSX_PATH)
+	if sheets.is_empty() or not sheets.has("cards"):
+		push_error("DataLoader: 读取 %s 失败，卡牌数据为空" % XLSX_PATH)
+		return
+	cards = _parse_cards(_rows_as_dicts(sheets.get("cards", [])))
+	recipes = _parse_recipes(_rows_as_dicts(sheets.get("recipes", [])))
+	packs = _parse_packs(_rows_as_dicts(sheets.get("packs", [])))
+	print("DataLoader: 从 Excel 载入 %d 卡 / %d 配方 / %d 卡包" % [cards.size(), recipes.size(), packs.size()])
+
+# 用表头行把每行转成 { 列名: 字符串值 }
+func _rows_as_dicts(rows: Array) -> Array:
+	var out: Array = []
+	if rows.size() < 2:
+		return out
+	var head: Array = rows[0]
+	for r in range(1, rows.size()):
+		var row: Array = rows[r]
+		# 跳过 id 为空的行（空行 / 注释行）
+		if row.is_empty() or String(row[0]).strip_edges() == "":
+			continue
+		var d := {}
+		for c in range(head.size()):
+			var key := String(head[c]).strip_edges()
+			if key == "":
+				continue
+			d[key] = String(row[c]) if c < row.size() else ""
+		out.append(d)
+	return out
+
+func _split_list(s: String) -> Array:
+	var out: Array = []
+	for part in s.split(",", false):
+		var p := part.strip_edges()
+		if p != "":
+			out.append(p)
+	return out
+
+func _parse_cards(rows: Array) -> Dictionary:
+	var out := {}
+	for d in rows:
+		var id := String(d.get("id", "")).strip_edges()
+		if id == "":
+			continue
+		var c := {
+			"name": String(d.get("name", id)),
+			"type": String(d.get("type", "resource")),
+			"workTags": _split_list(String(d.get("workTags", ""))),
+			"salary": String(d.get("salary", "0")).to_int(),
+			"capacity": String(d.get("capacity", "0")).to_int(),
+			"sell": String(d.get("sell", "0")).to_int(),
+		}
+		var mu := String(d.get("maxUses", "")).strip_edges()
+		if mu != "":
+			# 支持区间写法 "3-5"：每次生成时在 [min,max] 随机取剩余次数
+			if "-" in mu:
+				var parts := mu.split("-")
+				c["maxUsesMin"] = String(parts[0]).strip_edges().to_int()
+				c["maxUsesMax"] = String(parts[1]).strip_edges().to_int()
+				c["maxUses"] = c["maxUsesMax"]
+			else:
+				c["maxUses"] = mu.to_int()
+		var hp := String(d.get("hp", "")).strip_edges()
+		if hp != "":
+			c["hp"] = hp.to_int()
+		var atk := String(d.get("attack", "")).strip_edges()
+		if atk != "":
+			c["attack"] = atk.to_int()
+		var wr := String(d.get("workRequired", "")).strip_edges()
+		if wr != "":
+			c["workRequired"] = wr.to_int()
+		out[id] = c
+	return out
+
+func _parse_recipes(rows: Array) -> Array:
+	var out: Array = []
+	for d in rows:
+		var id := String(d.get("id", "")).strip_edges()
+		if id == "":
+			continue
+		var r := {
+			"id": id,
+			"name": String(d.get("name", id)),
+			"worker_tags": _split_list(String(d.get("worker_tags", ""))),
+			"duration": String(d.get("duration", "0")).to_float(),
+			"inputs": _parse_inputs(d),
+			"outputs": _parse_outputs(d),
+		}
+		var gate := String(d.get("requiredIdeaId", "")).strip_edges()
+		if gate != "":
+			r["requiredIdeaId"] = gate
+		var zone := String(d.get("output_zone", "")).strip_edges()
+		if zone != "":
+			r["output_zone"] = zone
+		out.append(r)
+	return out
+
+func _parse_inputs(d: Dictionary) -> Array:
+	if String(d.get("input1", "")).strip_edges() == "":
+		return _parse_io(String(d.get("inputs", "")), true)
+	var out: Array = []
+	for i in range(1, 6):
+		var cid := String(d.get("input%d" % i, "")).strip_edges()
+		if cid == "":
+			continue
+		var entry := {"id": cid}
+		var count := String(d.get("input%dCount" % i, "")).strip_edges()
+		entry["count"] = count.to_int() if count != "" else 1
+		var consume := String(d.get("input%dConsume" % i, "")).strip_edges().to_lower()
+		entry["consume"] = consume == "true" or consume == "1" or consume == "yes"
+		out.append(entry)
+	return out
+
+func _parse_outputs(d: Dictionary) -> Array:
+	if String(d.get("output1", "")).strip_edges() == "":
+		return _parse_io(String(d.get("outputs", "")), false)
+	var out: Array = []
+	for i in range(1, 6):
+		var cid := String(d.get("output%d" % i, "")).strip_edges()
+		if cid == "":
+			continue
+		var count := String(d.get("output%dCount" % i, "")).strip_edges()
+		out.append({
+			"id": cid,
+			"count": count.to_int() if count != "" else 1,
+		})
+	return out
+
+# inputs:  "id:count:consume" 用 | 连接；outputs: "id:count" 用 | 连接
+func _parse_io(s: String, is_input: bool) -> Array:
+	var out: Array = []
+	for item in s.split("|", false):
+		var parts := item.strip_edges().split(":")
+		if parts.size() < 1 or String(parts[0]).strip_edges() == "":
+			continue
+		var entry := {"id": String(parts[0]).strip_edges()}
+		entry["count"] = String(parts[1]).to_int() if parts.size() > 1 else 1
+		if is_input:
+			entry["consume"] = parts.size() > 2 and String(parts[2]).strip_edges().to_lower() == "true"
+		out.append(entry)
+	return out
+
+func _parse_packs(rows: Array) -> Dictionary:
+	var out := {}
+	for d in rows:
+		var id := String(d.get("id", "")).strip_edges()
+		if id == "":
+			continue
+		out[id] = {
+			"name": String(d.get("name", id)),
+			"stage": String(d.get("stage", "0")).to_int(),
+			"price": String(d.get("price", "0")).to_int(),
+			"minCards": String(d.get("minCards", "0")).to_int(),
+			"maxCards": String(d.get("maxCards", "0")).to_int(),
+			"slots": _parse_pack_slots(d),
+		}
+	return out
+
+func _parse_pack_slots(d: Dictionary) -> Array:
+	if String(d.get("slot1Card1", "")).strip_edges() == "":
+		return _parse_slots(String(d.get("slots", "")))
+	var out: Array = []
+	for s in range(1, 6):
+		var slot: Array = []
+		for o in range(1, 5):
+			var cid := String(d.get("slot%dCard%d" % [s, o], "")).strip_edges()
+			if cid == "":
+				continue
+			var weight := String(d.get("slot%dProb%d" % [s, o], "")).strip_edges()
+			slot.append({
+				"id": cid,
+				"w": weight.to_int() if weight != "" else 0,
+			})
+		if not slot.is_empty():
+			out.append(slot)
+	return out
+
+# slots:  slot = "id:w,id:w"；slots 用 | 连接
+func _parse_slots(s: String) -> Array:
+	var out: Array = []
+	for slot_str in s.split("|", false):
+		var slot: Array = []
+		for opt in slot_str.split(",", false):
+			var parts := opt.strip_edges().split(":")
+			if String(parts[0]).strip_edges() == "":
+				continue
+			slot.append({
+				"id": String(parts[0]).strip_edges(),
+				"w": String(parts[1]).to_int() if parts.size() > 1 else 0,
+			})
+		if not slot.is_empty():
+			out.append(slot)
+	return out
 
 func _load(path: String) -> Variant:
 	var f := FileAccess.open(path, FileAccess.READ)

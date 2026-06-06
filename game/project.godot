@@ -11,10 +11,20 @@ config_version=5
 [application]
 
 config/name="StartX"
-run/main_scene="res://scenes/Main.tscn"
+run/main_scene="res://scenes/StartMenu.tscn"
 config/features=PackedStringArray("4.6")
 
 [autoload]
+
+
+
+
+
+
+
+
+
+
 
 
 

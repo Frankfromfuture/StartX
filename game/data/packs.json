@@ -1,99 +1,630 @@
 {
-  "startup": {
-    "name": "创业起步包",
+  "garage_pack": {
+    "name": "车库创业包",
     "stage": 0,
     "price": 3,
     "minCards": 3,
     "maxCards": 4,
     "slots": [
-      [ { "id": "sales_rep", "w": 40 }, { "id": "market_lead_pool", "w": 60 } ],
-      [ { "id": "market_research", "w": 50 }, { "id": "market_lead_pool", "w": 50 } ],
-      [ { "id": "lead", "w": 60 }, { "id": "office", "w": 25 }, { "id": "business_school", "w": 15 } ],
-      [ { "id": "lead", "w": 100 } ]
+      [
+        {
+          "id": "intern",
+          "w": 50
+        },
+        {
+          "id": "grad",
+          "w": 30
+        },
+        {
+          "id": "cash",
+          "w": 20
+        }
+      ],
+      [
+        {
+          "id": "customer_pool",
+          "w": 40
+        },
+        {
+          "id": "oss_repo",
+          "w": 35
+        },
+        {
+          "id": "archive",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "sales_kit",
+          "w": 35
+        },
+        {
+          "id": "dev_kit",
+          "w": 35
+        },
+        {
+          "id": "doc",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "lead",
+          "w": 60
+        },
+        {
+          "id": "cash",
+          "w": 40
+        }
+      ]
     ]
   },
-  "sales_growth": {
-    "name": "销售增长包",
+  "hiring_fair": {
+    "name": "招聘会包",
+    "stage": 1,
+    "price": 5,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [
+        {
+          "id": "grad",
+          "w": 45
+        },
+        {
+          "id": "intern",
+          "w": 35
+        },
+        {
+          "id": "university",
+          "w": 20
+        }
+      ],
+      [
+        {
+          "id": "sales_kit",
+          "w": 25
+        },
+        {
+          "id": "market_kit",
+          "w": 25
+        },
+        {
+          "id": "dev_kit",
+          "w": 25
+        },
+        {
+          "id": "admin_kit",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "talent_pool",
+          "w": 40
+        },
+        {
+          "id": "meeting_room",
+          "w": 30
+        },
+        {
+          "id": "grad",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "data_kit",
+          "w": 50
+        },
+        {
+          "id": "finance_kit",
+          "w": 50
+        }
+      ]
+    ]
+  },
+  "channel_pack": {
+    "name": "获客渠道包",
     "stage": 1,
     "price": 6,
     "minCards": 3,
     "maxCards": 5,
     "slots": [
-      [ { "id": "sales_rep", "w": 35 }, { "id": "lead", "w": 65 } ],
-      [ { "id": "market_lead_pool", "w": 30 }, { "id": "opportunity", "w": 40 }, { "id": "lead", "w": 30 } ],
-      [ { "id": "crm", "w": 40 }, { "id": "lead", "w": 60 } ],
-      [ { "id": "market_research", "w": 25 }, { "id": "lead", "w": 60 }, { "id": "business_school", "w": 15 } ],
-      [ { "id": "lead", "w": 80 }, { "id": "opportunity", "w": 20 } ]
+      [
+        {
+          "id": "customer_pool",
+          "w": 30
+        },
+        {
+          "id": "app_store",
+          "w": 30
+        },
+        {
+          "id": "expo_booth",
+          "w": 40
+        }
+      ],
+      [
+        {
+          "id": "hot_topic",
+          "w": 40
+        },
+        {
+          "id": "lead",
+          "w": 60
+        }
+      ],
+      [
+        {
+          "id": "customer_list",
+          "w": 50
+        },
+        {
+          "id": "traffic",
+          "w": 50
+        }
+      ],
+      [
+        {
+          "id": "lead",
+          "w": 70
+        },
+        {
+          "id": "order",
+          "w": 30
+        }
+      ]
     ]
   },
-  "product_lab": {
+  "product_pack": {
     "name": "产品研发包",
     "stage": 2,
     "price": 10,
     "minCards": 3,
     "maxCards": 5,
     "slots": [
-      [ { "id": "dev_mgr", "w": 40 }, { "id": "client_demand", "w": 60 } ],
-      [ { "id": "client_demand", "w": 50 }, { "id": "prd", "w": 50 } ],
-      [ { "id": "research_bench", "w": 50 }, { "id": "market_research", "w": 50 } ],
-      [ { "id": "prd", "w": 60 }, { "id": "requirement", "w": 40 } ],
-      [ { "id": "client_demand", "w": 100 } ]
+      [
+        {
+          "id": "oss_repo",
+          "w": 40
+        },
+        {
+          "id": "data_source",
+          "w": 35
+        },
+        {
+          "id": "research_bench",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "code",
+          "w": 50
+        },
+        {
+          "id": "data",
+          "w": 50
+        }
+      ],
+      [
+        {
+          "id": "module",
+          "w": 40
+        },
+        {
+          "id": "prd",
+          "w": 30
+        },
+        {
+          "id": "server",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "code",
+          "w": 60
+        },
+        {
+          "id": "product",
+          "w": 20
+        },
+        {
+          "id": "data",
+          "w": 20
+        }
+      ]
     ]
   },
-  "engineering": {
-    "name": "工程研发包",
+  "office_pack": {
+    "name": "办公装修包",
+    "stage": 2,
+    "price": 8,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [
+        {
+          "id": "desk",
+          "w": 50
+        },
+        {
+          "id": "office",
+          "w": 30
+        },
+        {
+          "id": "warehouse",
+          "w": 20
+        }
+      ],
+      [
+        {
+          "id": "meeting_room",
+          "w": 35
+        },
+        {
+          "id": "pantry",
+          "w": 35
+        },
+        {
+          "id": "training_center",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "crm",
+          "w": 50
+        },
+        {
+          "id": "server",
+          "w": 50
+        }
+      ],
+      [
+        {
+          "id": "doc",
+          "w": 60
+        },
+        {
+          "id": "cash",
+          "w": 40
+        }
+      ]
+    ]
+  },
+  "rival_pack": {
+    "name": "商战来袭包",
     "stage": 3,
+    "price": 12,
+    "minCards": 3,
+    "maxCards": 5,
+    "slots": [
+      [
+        {
+          "id": "r_teashop",
+          "w": 35
+        },
+        {
+          "id": "r_printshop",
+          "w": 35
+        },
+        {
+          "id": "r_usedpc",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "r_orange",
+          "w": 40
+        },
+        {
+          "id": "r_elephant",
+          "w": 35
+        },
+        {
+          "id": "r_headhunter",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "resilience_course",
+          "w": 40
+        },
+        {
+          "id": "legal",
+          "w": 30
+        },
+        {
+          "id": "pr",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "r_whale",
+          "w": 40
+        },
+        {
+          "id": "r_shadow",
+          "w": 35
+        },
+        {
+          "id": "r_trolls",
+          "w": 25
+        }
+      ]
+    ]
+  },
+  "data_pack": {
+    "name": "数据增长包",
+    "stage": 4,
     "price": 16,
     "minCards": 3,
     "maxCards": 5,
     "slots": [
-      [ { "id": "dev_rep", "w": 45 }, { "id": "research_bench", "w": 55 } ],
-      [ { "id": "dev_studio", "w": 40 }, { "id": "prototype", "w": 60 } ],
-      [ { "id": "prd", "w": 50 }, { "id": "prototype", "w": 50 } ],
-      [ { "id": "lab_equipment", "w": 50 }, { "id": "research_bench", "w": 50 } ],
-      [ { "id": "dev_rep", "w": 100 } ]
-    ]
-  },
-  "data_growth": {
-    "name": "数据增长包",
-    "stage": 4,
-    "price": 22,
-    "minCards": 3,
-    "maxCards": 5,
-    "slots": [
-      [ { "id": "admin_rep", "w": 45 }, { "id": "data_source", "w": 55 } ],
-      [ { "id": "data_source", "w": 50 }, { "id": "insight", "w": 50 } ],
-      [ { "id": "data", "w": 60 }, { "id": "crm", "w": 40 } ],
-      [ { "id": "insight", "w": 50 }, { "id": "product", "w": 50 } ],
-      [ { "id": "admin_rep", "w": 100 } ]
+      [
+        {
+          "id": "data_source",
+          "w": 40
+        },
+        {
+          "id": "data_mgr",
+          "w": 30
+        },
+        {
+          "id": "data_kit",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "data",
+          "w": 40
+        },
+        {
+          "id": "insight",
+          "w": 35
+        },
+        {
+          "id": "user",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "traffic",
+          "w": 40
+        },
+        {
+          "id": "growth_course",
+          "w": 30
+        },
+        {
+          "id": "growth_hacker",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "report",
+          "w": 50
+        },
+        {
+          "id": "crm",
+          "w": 50
+        }
+      ]
     ]
   },
   "scale_pack": {
     "name": "规模扩张包",
     "stage": 5,
+    "price": 24,
+    "minCards": 4,
+    "maxCards": 5,
+    "slots": [
+      [
+        {
+          "id": "sales_dir",
+          "w": 30
+        },
+        {
+          "id": "dev_dir",
+          "w": 30
+        },
+        {
+          "id": "market_dir",
+          "w": 40
+        }
+      ],
+      [
+        {
+          "id": "product",
+          "w": 40
+        },
+        {
+          "id": "brand",
+          "w": 30
+        },
+        {
+          "id": "hq",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "overseas",
+          "w": 50
+        },
+        {
+          "id": "data_center",
+          "w": 50
+        }
+      ],
+      [
+        {
+          "id": "exec_course",
+          "w": 40
+        },
+        {
+          "id": "architect",
+          "w": 30
+        },
+        {
+          "id": "consultant",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "module",
+          "w": 45
+        },
+        {
+          "id": "product",
+          "w": 45
+        },
+        {
+          "id": "r_cosmos",
+          "w": 10
+        }
+      ]
+    ]
+  },
+  "funding_pack": {
+    "name": "融资轮包",
+    "stage": 5,
     "price": 34,
     "minCards": 4,
     "maxCards": 5,
     "slots": [
-      [ { "id": "business_school", "w": 40 }, { "id": "product", "w": 60 } ],
-      [ { "id": "dev_mgr", "w": 50 }, { "id": "dev_rep", "w": 50 } ],
-      [ { "id": "lab_equipment", "w": 100 } ],
-      [ { "id": "product", "w": 60 }, { "id": "contract", "w": 40 } ],
-      [ { "id": "dev_studio", "w": 50 }, { "id": "data_source", "w": 50 } ]
+      [
+        {
+          "id": "capital_market",
+          "w": 40
+        },
+        {
+          "id": "finance_mgr",
+          "w": 30
+        },
+        {
+          "id": "cfo",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "cash",
+          "w": 50
+        },
+        {
+          "id": "report",
+          "w": 50
+        }
+      ],
+      [
+        {
+          "id": "license",
+          "w": 40
+        },
+        {
+          "id": "market_report",
+          "w": 30
+        },
+        {
+          "id": "contract",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "equity",
+          "w": 45
+        },
+        {
+          "id": "brand",
+          "w": 45
+        },
+        {
+          "id": "r_titan",
+          "w": 10
+        }
+      ]
     ]
   },
-  "capital": {
-    "name": "融资上市包",
+  "ipo_pack": {
+    "name": "上市包",
     "stage": 6,
     "price": 50,
     "minCards": 4,
     "maxCards": 5,
     "slots": [
-      [ { "id": "founder", "w": 30 }, { "id": "dev_rep", "w": 70 } ],
-      [ { "id": "business_school", "w": 50 }, { "id": "product", "w": 50 } ],
-      [ { "id": "product", "w": 100 } ],
-      [ { "id": "admin_rep", "w": 50 }, { "id": "data_source", "w": 50 } ],
-      [ { "id": "contract", "w": 50 }, { "id": "product", "w": 50 } ]
+      [
+        {
+          "id": "hq",
+          "w": 30
+        },
+        {
+          "id": "brand",
+          "w": 35
+        },
+        {
+          "id": "equity",
+          "w": 35
+        }
+      ],
+      [
+        {
+          "id": "patent",
+          "w": 40
+        },
+        {
+          "id": "license",
+          "w": 30
+        },
+        {
+          "id": "market_report",
+          "w": 30
+        }
+      ],
+      [
+        {
+          "id": "cto",
+          "w": 25
+        },
+        {
+          "id": "cmo",
+          "w": 25
+        },
+        {
+          "id": "coo",
+          "w": 25
+        },
+        {
+          "id": "cfo",
+          "w": 25
+        }
+      ],
+      [
+        {
+          "id": "revenue",
+          "w": 45
+        },
+        {
+          "id": "product",
+          "w": 45
+        },
+        {
+          "id": "r_devour",
+          "w": 10
+        }
+      ]
     ]
   }
 }

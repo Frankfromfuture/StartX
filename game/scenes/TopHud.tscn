@@ -1,0 +1,286 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_stage.svg" id="1_stage"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_rp.svg" id="2_rp"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_business.svg" id="3_business"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_cash.svg" id="4_cash"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_expense.svg" id="5_expense"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_valuation.svg" id="6_valuation"]
+[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_settings.svg" id="7_settings"]
+
+[node name="HUD" type="CanvasLayer"]
+
+[node name="TopBar" type="Control" parent="."]
+offset_right = 1920.0
+offset_bottom = 78.0
+
+[node name="TopBarBg" type="ColorRect" parent="TopBar"]
+mouse_filter = 2
+color = Color(0.952941, 0.92549, 0.866667, 1)
+offset_right = 1920.0
+offset_bottom = 78.0
+
+[node name="TopBarLine" type="ColorRect" parent="TopBar"]
+mouse_filter = 2
+color = Color(0.227451, 0.207843, 0.184314, 1)
+offset_top = 76.0
+offset_right = 1920.0
+offset_bottom = 78.0
+
+[node name="StageGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 24.0
+offset_right = 344.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/StageGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("1_stage")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/StageGroup"]
+mouse_filter = 2
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 320.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="RPGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 372.0
+offset_right = 492.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/RPGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("2_rp")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/RPGroup"]
+mouse_filter = 2
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 120.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="ProgressGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 520.0
+offset_right = 700.0
+offset_bottom = 78.0
+
+[node name="MonthProgressSlot" type="ColorRect" parent="TopBar/ProgressGroup"]
+mouse_filter = 2
+color = Color(0.552941, 0.552941, 0.552941, 1)
+offset_top = 31.0
+offset_right = 180.0
+offset_bottom = 47.0
+
+[node name="MonthProgressFill" type="ColorRect" parent="TopBar/ProgressGroup"]
+mouse_filter = 2
+color = Color(0.0784314, 0.0784314, 0.0784314, 1)
+offset_top = 31.0
+offset_right = 180.0
+offset_bottom = 47.0
+
+[node name="BusinessGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 735.0
+offset_right = 925.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/BusinessGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("3_business")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/BusinessGroup"]
+mouse_filter = 2
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 190.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="FinanceGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 965.0
+offset_right = 1135.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/FinanceGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("4_cash")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/FinanceGroup"]
+mouse_filter = 2
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 170.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="ExpenseGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 1170.0
+offset_right = 1405.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/ExpenseGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("5_expense")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/ExpenseGroup"]
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 235.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="ValuationGroup" type="Control" parent="TopBar"]
+mouse_filter = 2
+offset_left = 1450.0
+offset_right = 1710.0
+offset_bottom = 78.0
+
+[node name="Icon" type="TextureRect" parent="TopBar/ValuationGroup"]
+mouse_filter = 2
+offset_top = 27.0
+offset_right = 24.0
+offset_bottom = 51.0
+texture = ExtResource("6_valuation")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TopBar/ValuationGroup"]
+mouse_filter = 2
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 260.0
+offset_bottom = 59.0
+vertical_alignment = 1
+
+[node name="GearButton" type="Button" parent="TopBar"]
+offset_left = 1844.0
+offset_top = 17.0
+offset_right = 1908.0
+offset_bottom = 61.0
+
+[node name="ButtonIcon" type="TextureRect" parent="TopBar/GearButton"]
+mouse_filter = 2
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 44.0
+offset_bottom = 34.0
+texture = ExtResource("7_settings")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Buttons" type="Node" parent="."]
+
+[node name="ResearchButton" type="Button" parent="Buttons"]
+offset_left = 28.0
+offset_top = 83.0
+offset_right = 156.0
+offset_bottom = 155.0
+text = "研发"
+
+[node name="RecipeBookButton" type="Button" parent="Buttons"]
+offset_left = 30.0
+offset_top = 928.0
+offset_right = 160.0
+offset_bottom = 992.0
+text = "配方书"
+
+[node name="PackButtons" type="Node" parent="."]
+
+[node name="PackButton1" type="Button" parent="PackButtons"]
+offset_left = 180.0
+offset_top = 83.0
+offset_right = 300.0
+offset_bottom = 155.0
+
+[node name="PackButton2" type="Button" parent="PackButtons"]
+offset_left = 306.0
+offset_top = 83.0
+offset_right = 426.0
+offset_bottom = 155.0
+
+[node name="PackButton3" type="Button" parent="PackButtons"]
+offset_left = 432.0
+offset_top = 83.0
+offset_right = 552.0
+offset_bottom = 155.0
+
+[node name="PackButton4" type="Button" parent="PackButtons"]
+offset_left = 558.0
+offset_top = 83.0
+offset_right = 678.0
+offset_bottom = 155.0
+
+[node name="PackButton5" type="Button" parent="PackButtons"]
+offset_left = 684.0
+offset_top = 83.0
+offset_right = 804.0
+offset_bottom = 155.0
+
+[node name="PackButton6" type="Button" parent="PackButtons"]
+offset_left = 810.0
+offset_top = 83.0
+offset_right = 930.0
+offset_bottom = 155.0
+
+[node name="PackButton7" type="Button" parent="PackButtons"]
+offset_left = 936.0
+offset_top = 83.0
+offset_right = 1056.0
+offset_bottom = 155.0
+
+[node name="PackButton8" type="Button" parent="PackButtons"]
+offset_left = 1062.0
+offset_top = 83.0
+offset_right = 1182.0
+offset_bottom = 155.0
+
+[node name="PackButton9" type="Button" parent="PackButtons"]
+offset_left = 1188.0
+offset_top = 83.0
+offset_right = 1308.0
+offset_bottom = 155.0
+
+[node name="PackButton10" type="Button" parent="PackButtons"]
+offset_left = 1314.0
+offset_top = 83.0
+offset_right = 1434.0
+offset_bottom = 155.0
+
+[node name="BankButton" type="Button" parent="."]
+offset_left = 1610.0
+offset_top = 83.0
+offset_right = 1870.0
+offset_bottom = 155.0
+text = "银行"

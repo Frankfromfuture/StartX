@@ -90,6 +90,7 @@ var month_progress: Panel
 var month_progress_full_width: float = 320.0
 var bank_button: Button
 var pixel_font: Font
+var pixel_regular_font: Font
 var hint_text: String = DEFAULT_HINT
 var selected_card = null
 var toast_t: float = 0.0
@@ -2159,6 +2160,29 @@ func _ui_font() -> Font:
 	pixel_font = ThemeDB.fallback_font
 	return pixel_font
 
+func _ui_regular_font() -> Font:
+	if pixel_regular_font != null:
+		return pixel_regular_font
+	var candidates := [
+		"res://fonts/HarmonyOS_Sans_SC_Regular.ttf",
+		"/Users/frankfan/Library/Fonts/HarmonyOS_Sans_SC_Regular.ttf",
+		"/System/Library/Fonts/STHeiti Medium.ttc",
+		"/System/Library/Fonts/PingFang.ttc",
+		"/System/Library/Fonts/SFNSMono.ttf",
+		"/System/Library/Fonts/Supplemental/PTMono.ttc"
+	]
+	for path in candidates:
+		if not FileAccess.file_exists(path):
+			continue
+		var ff := FontFile.new()
+		ff.load_dynamic_font(path)
+		ff.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+		ff.generate_mipmaps = true
+		pixel_regular_font = ff
+		return pixel_regular_font
+	pixel_regular_font = ThemeDB.fallback_font
+	return pixel_regular_font
+
 func _apply_pixel_font(c: Control, size: int) -> void:
 	c.add_theme_font_override("font", _ui_font())
 	c.add_theme_font_size_override("font_size", size)
@@ -3545,45 +3569,68 @@ func _show_founder_bubble(text: String) -> void:
 	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0, 0, 0, 0.75)
-	sb.set_corner_radius_all(12)
+	sb.bg_color = Color.WHITE
+	sb.set_corner_radius_all(16)
+	sb.border_width_left = 3
+	sb.border_width_right = 3
+	sb.border_width_top = 3
+	sb.border_width_bottom = 3
+	sb.border_color = Color.BLACK
 	sb.content_margin_left = 18
 	sb.content_margin_right = 18
 	sb.content_margin_top = 10
 	sb.content_margin_bottom = 10
+	
+	# Premium drop shadow for comic effect
+	sb.shadow_color = Color(0, 0, 0, 0.15)
+	sb.shadow_size = 4
+	sb.shadow_offset = Vector2(4, 4)
 	bubble.add_theme_stylebox_override("panel", sb)
 	
 	var label := Label.new()
 	label.name = "BubbleLabel"
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_font_override("font", _ui_font())
-	label.add_theme_font_size_override("font_size", 20)
+	label.add_theme_color_override("font_color", Color.BLACK)
+	label.add_theme_font_override("font", _ui_regular_font())
+	label.add_theme_font_size_override("font_size", 18)
 	bubble.add_child(label)
 	
 	# Connect draw signal to draw the comic speech balloon pointing tail
 	bubble.draw.connect(func():
-		var f := _founder_on_board()
+		var f = _founder_on_board()
 		if not is_instance_valid(f):
 			return
-		var f_pos := _project(f.position + Vector2(CW * 0.5, 0.0))
-		var local_pivot := f_pos - bubble.position
-		var w := bubble.size.x
-		var h := bubble.size.y
+		var f_pos = _project(f.position + Vector2(CW * 0.5, 0.0))
+		var local_pivot = f_pos - bubble.position
+		var w = bubble.size.x
+		var h = bubble.size.y
 		
-		# Base of triangle on bubble's bottom edge, clamped within bubble width bounds
-		var bx := clampf(local_pivot.x - 12.0, 12.0, w - 12.0)
-		var cx := clampf(local_pivot.x + 12.0, 12.0, w - 12.0)
+		# Base of triangle on bubble's bottom edge (or top edge), clamped within bubble width bounds
+		var bx = clampf(local_pivot.x - 10.0, 16.0, w - 16.0)
+		var cx = clampf(local_pivot.x + 10.0, 16.0, w - 16.0)
 		
-		var pt_a := local_pivot
-		var pt_b := Vector2(bx, h)
-		var pt_c := Vector2(cx, h)
+		var pt_a = local_pivot
+		var pt_b = Vector2.ZERO
+		var pt_c = Vector2.ZERO
 		
+		if local_pivot.y > h:
+			# Card is below bubble, point down
+			pt_b = Vector2(bx, h - 3.0)
+			pt_c = Vector2(cx, h - 3.0)
+		else:
+			# Card is above bubble, point up
+			pt_b = Vector2(bx, 3.0)
+			pt_c = Vector2(cx, 3.0)
+			
+		# Draw solid white polygon first to merge seamlessly into bubble background
 		bubble.draw_polygon(
 			PackedVector2Array([pt_b, pt_a, pt_c]),
-			PackedColorArray([Color(0, 0, 0, 0.75), Color(0, 0, 0, 0.75), Color(0, 0, 0, 0.75)])
+			PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE])
 		)
+		# Draw the comic black outline lines
+		bubble.draw_line(pt_b, pt_a, Color.BLACK, 3.0)
+		bubble.draw_line(pt_c, pt_a, Color.BLACK, 3.0)
 	)
 	
 	founder_bubble = bubble
@@ -3597,26 +3644,26 @@ func _show_founder_bubble(text: String) -> void:
 	tw.tween_callback(bubble.queue_free)
 
 func _reposition_founder_bubble(bubble: Control, founder: Node2D) -> void:
-	var founder_screen_pos := _project(founder.position + Vector2(CW * 0.5, 0.0))
+	var founder_screen_pos = _project(founder.position + Vector2(CW * 0.5, 0.0))
 	
 	if bubble.size == Vector2.ZERO:
 		bubble.reset_size()
 		
-	var w := bubble.size.x
-	var h := bubble.size.y
+	var w = bubble.size.x
+	var h = bubble.size.y
 	
-	var x := 0.0
+	var x = 0.0
 	if founder_screen_pos.x > BASE_W * 0.5:
 		x = founder_screen_pos.x - w
 	else:
 		x = founder_screen_pos.x
 		
 	x = clampf(x, 16.0, BASE_W - w - 16.0)
-	var y := founder_screen_pos.y - h - 12.0
+	var y = founder_screen_pos.y - h - 16.0
 	y = clampf(y, HUD_H + 8.0, BASE_H - h - 8.0)
 	
 	bubble.position = Vector2(x, y)
 	
-	var local_pivot := founder_screen_pos - bubble.position
+	var local_pivot = founder_screen_pos - bubble.position
 	bubble.pivot_offset = Vector2(clampf(local_pivot.x, 0.0, w), clampf(local_pivot.y, 0.0, h))
 	bubble.queue_redraw()

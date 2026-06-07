@@ -39,6 +39,7 @@ func _ready() -> void:
 
 	box.add_child(_make_button("新开始游戏", Color("aecbe0"), _start_game))
 	box.add_child(_make_button("新开始游戏（DEV）", Color("b9d6c2"), _start_game_dev))
+	box.add_child(_make_button("City Builder", Color("d9c79a"), _open_city_builder))
 	box.add_child(_make_button("退出", Color("d8b3b0"), _quit))
 
 func _make_button(text: String, fill: Color, cb: Callable) -> Button:
@@ -57,6 +58,18 @@ func _start_game() -> void:
 func _start_game_dev() -> void:
 	GameState.dev_mode = true
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
+# 打开同目录下的独立 City-Builder 工程（用当前 Godot 可执行文件启动，免硬编码路径）
+func _open_city_builder() -> void:
+	var godot := OS.get_executable_path()
+	# res:// 对应 game/，City-Builder 在其上一级目录
+	var proj := (ProjectSettings.globalize_path("res://") + "../City-Builder").simplify_path()
+	if not DirAccess.dir_exists_absolute(proj):
+		push_warning("未找到 City-Builder 工程：%s" % proj)
+		return
+	var pid := OS.create_process(godot, ["--path", proj])
+	if pid <= 0:
+		push_warning("启动 City Builder 失败（pid=%d）" % pid)
 
 func _quit() -> void:
 	get_tree().quit()

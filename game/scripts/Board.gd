@@ -20,12 +20,14 @@ const HUD_H := 62.0
 const DRAW_Y0 := 52.0
 const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|出售同排）
 const MID_Y0 := 160.0           # 画布上边（锚定在 UI 区下方）
-const MID_Y1 := 2552.0          # 画布下边（画布区再翻倍：高 1196→2392）
-const ORG_Y0 := 2552.0          # 组织/部门折叠区位于画布底部
+# 活跃画布 = City-Builder 里 9×5 的白色标记板：CELL=168 单位/格，宽=9 格(1512)、高=5 格(840)
+const CITY_CELL := 168.0        # 每个 city-builder 格子对应的画布单位
+const MID_Y1 := 1000.0          # 画布下边 = MID_Y0 + 5*CITY_CELL = 160+840（高=5 格）
+const ORG_Y0 := 1000.0          # 组织/部门折叠区位于画布底部（跟随 MID_Y1）
 const INFO_Y := 1016.0          # fixed bottom information strip
 const DIVIDER_X := 960.0
-const CANVAS_X0 := -1560.0      # 画布左边（以中线 960 为中心对称扩大：宽 2520→5040）
-const CANVAS_X1 := 3480.0       # 画布右边
+const CANVAS_X0 := 204.0        # 画布左边 = 960 - 4.5*CITY_CELL（以中线 960 为中心，宽 9 格=1512）
+const CANVAS_X1 := 1716.0       # 画布右边 = 960 + 4.5*CITY_CELL
 const GAP := 16.0
 const BANK_RECT := Rect2(1590, 60, 300, 84)     # fixed HUD bank, outside canvas zoom
 const VIEW_PAD := 420.0
@@ -129,13 +131,24 @@ var emergency: bool = false
 var emergency_t: float = 0.0
 var game_over: bool = false
 var dbg_last := Vector2.ZERO
-var view_zoom: float = 0.6             # 初始拉远：视野更大、卡片更小
-var view_offset: Vector2 = Vector2.ZERO
+var view_zoom: float = 0.6             # 派生量：屏幕每 board 单位的像素数（特效仍按它缩放）
+var view_offset: Vector2 = Vector2.ZERO   # 弃用（保留以兼容旧引用）
 var panning_canvas: bool = false
 var pan_last: Vector2 = Vector2.ZERO
-const VIEW_ZOOM_MIN := 0.286   # 再降两级，可缩到纵览整个画面
+const VIEW_ZOOM_MIN := 0.286
 const VIEW_ZOOM_MAX := 1.9
 const VIEW_ZOOM_STEP := 1.12
+
+# ---- 3D 相机驱动（Phase 1）：缩放/平移动 City Builder 的 3D 相机 ----
+# board 空间 [CANVAS_X0..X1]×[MID_Y0..MID_Y1] 线性映射到白板世界矩形（中心在世界原点）
+const BOARD_CX := (CANVAS_X0 + CANVAS_X1) * 0.5   # 960
+const BOARD_CY := (MID_Y0 + MID_Y1) * 0.5         # 580
+const CARD_PLANE_Y := 0.07                         # 卡牌所在平面高度（白板面 0.05 之上）
+var cam_dist: float = 13.0                         # 相机距离（缩放）：默认让白板占据较大画面
+var cam_target: Vector3 = Vector3.ZERO             # 相机注视点（平移，沿白板/城市平面）
+const CAM_DIST_MIN := 7.0
+const CAM_DIST_MAX := 70.0
+const CAM_DIST_STEP := 1.12
 
 var departments: Array = []          # [{card, specialty, headcount, capacity, timer, interval}]
 var research_panel: Control
@@ -157,11 +170,14 @@ var val_timer: float = 0.0
 const SCHOOL_INSIGHT_NEED := 25.0
 
 var canvas_bg_tex: Texture2D = null
+var street_bg_tex: Texture2D = null
 var ui_icon_cache: Dictionary = {}
 
 func _ready() -> void:
 	GameState.reset()
 	canvas_bg_tex = _load_canvas_bg()
+	street_bg_tex = _load_image_tex("res://assets/bg_street.png")
+	_setup_city_background()
 	_load_cursors()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
@@ -184,54 +200,70 @@ func _ready() -> void:
 	rival_timer.timeout.connect(_rival_hop_tick)
 
 # ---------------------------------------------------------------- perspective
-func _row_scale(y: float) -> float:
-	var t := clampf((y - MID_Y0) / maxf(1.0, MID_Y1 - MID_Y0), 0.0, 1.0)
-	return lerpf(TOP_SCALE, 1.0, t)
+func _row_scale(_y: float) -> float:
+	return 1.0   # 透视交给 3D 相机，行缩放退役
+
+# board 坐标 → 白板世界坐标（XZ 平面，y=卡面高）。白板中心在世界原点。
+func board_to_world(p: Vector2) -> Vector3:
+	return Vector3((p.x - BOARD_CX) / CITY_CELL, CARD_PLANE_Y, (p.y - BOARD_CY) / CITY_CELL)
+
+func world_to_board(w: Vector3) -> Vector2:
+	return Vector2(w.x * CITY_CELL + BOARD_CX, w.z * CITY_CELL + BOARD_CY)
+
+func _cam() -> Camera3D:
+	return city_bg.cam if (city_bg != null and city_bg.cam != null) else null
 
 func _project(p: Vector2) -> Vector2:
-	var s := _row_scale(p.y)
-	var flat := Vector2(BASE_W * 0.5 + (p.x - BASE_W * 0.5) * s, p.y)
-	return flat * view_zoom + view_offset
+	var c := _cam()
+	if c == null:
+		return p
+	return c.unproject_position(board_to_world(p))
+
+# 屏幕点 → 白板平面世界点
+func _unproject_world(d: Vector2) -> Vector3:
+	var c := _cam()
+	if c == null:
+		return Vector3(d.x, CARD_PLANE_Y, d.y)
+	var o := c.project_ray_origin(d)
+	var n := c.project_ray_normal(d)
+	var denom := n.y
+	if absf(denom) < 1e-6:
+		return o
+	var t := (CARD_PLANE_Y - o.y) / denom
+	return o + n * t
 
 func _unproject(d: Vector2) -> Vector2:
-	var flat := (d - view_offset) / view_zoom
-	var s := _row_scale(flat.y)         # y is unchanged by the projection
-	return Vector2(BASE_W * 0.5 + (flat.x - BASE_W * 0.5) / s, flat.y)
+	return world_to_board(_unproject_world(d))
 
 func _screen_to_view(p: Vector2) -> Vector2:
-	return (p - view_offset) / view_zoom
+	return p
 
-func _zoom_view_at(screen_pos: Vector2, factor: float) -> void:
-	var before := _screen_to_view(screen_pos)
-	view_zoom = clampf(view_zoom * factor, VIEW_ZOOM_MIN, VIEW_ZOOM_MAX)
-	view_offset = screen_pos - before * view_zoom
-	_clamp_view_offset()
+# 缩放：推拉 3D 相机距离（factor>1 = 拉近放大）。屏幕锚点暂忽略，绕注视点缩放。
+func _zoom_view_at(_screen_pos: Vector2, factor: float) -> void:
+	cam_dist = clampf(cam_dist / factor, CAM_DIST_MIN, CAM_DIST_MAX)
+	_apply_camera()
+
+func _apply_camera() -> void:
+	if city_bg == null:
+		return
+	city_bg.aim(cam_target, cam_dist)
+	_recompute_view_zoom()
 	_relayout_all()
 	_relayout_loose_packs()
 	queue_redraw()
 
+# 把 view_zoom 同步为「屏幕每 board 单位像素数」，让所有 *view_zoom 的特效继续合理缩放
+func _recompute_view_zoom() -> void:
+	var a := _project(Vector2(BOARD_CX, BOARD_CY))
+	var b := _project(Vector2(BOARD_CX + 100.0, BOARD_CY))
+	view_zoom = clampf(a.distance_to(b) / 100.0, 0.05, 8.0)
+
 func _reset_view_default() -> void:
-	# 水平居中：让画布中线（=屏幕中线 BASE_W*0.5）投影后仍落在屏幕中线
-	view_offset.x = BASE_W * 0.5 * (1.0 - view_zoom)
-	# 顶边锚定：画布上边 MID_Y0 紧贴 UI 区下方（即 _clamp 的 max_y）
-	view_offset.y = MID_Y0 * (1.0 - view_zoom)
-	_clamp_view_offset()
+	cam_target = Vector3.ZERO
+	_apply_camera()
 
 func _clamp_view_offset() -> void:
-	var min_x := BASE_W - (CANVAS_X1 + VIEW_PAD) * view_zoom
-	var max_x := -(CANVAS_X0 - VIEW_PAD) * view_zoom
-	var min_y := BASE_H - (MID_Y1 + VIEW_PAD) * view_zoom
-	var max_y := MID_Y0 * (1.0 - view_zoom)   # 画布顶边锚定在框顶（UI 区下方），不再向下漂移
-	# 画布比视口小时（缩到最小）夹取范围反转，改为居中而非贴边
-	if min_x <= max_x:
-		view_offset.x = clampf(view_offset.x, min_x, max_x)
-	else:
-		view_offset.x = BASE_W * 0.5 * (1.0 - view_zoom)   # 画布水平居中
-	if min_y <= max_y:
-		view_offset.y = clampf(view_offset.y, min_y, max_y)
-	else:
-		# 画布在 UI 之间的播放区垂直居中
-		view_offset.y = (HUD_H + INFO_Y) * 0.5 - (MID_Y0 + MID_Y1) * 0.5 * view_zoom
+	pass   # 平移夹取交给相机逻辑（Phase 1 暂不夹）
 
 func _band(x0: float, x1: float, y0: float, y1: float) -> PackedVector2Array:
 	return PackedVector2Array([
@@ -280,13 +312,77 @@ func _bank_rect() -> Rect2:
 	return BANK_RECT
 
 # 运行时加载画布背景图（res:// 无需导入也能读）
+# 3D 城市背景：在独立 SubViewport 渲染 Kenney 低多边形城市，作为画布外的背景层
+var city_bg: SubViewport = null
+const CityBackgroundScript = preload("res://scripts/CityBackground.gd")
+func _setup_city_background() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "CityBackground"
+	layer.layer = -10                       # 在所有 2D 棋盘内容之后（最底）
+	add_child(layer)
+	city_bg = CityBackgroundScript.new()
+	layer.add_child(city_bg)
+	var tr := TextureRect.new()
+	tr.name = "CityView"
+	tr.texture = city_bg.get_texture()
+	tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_SCALE   # 1:1 铺满，保证 unproject 屏幕坐标对齐
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(tr)
+	# 初始化 3D 相机（city_bg._ready 已建好 cam）
+	_apply_camera()
+
 func _load_canvas_bg() -> Texture2D:
 	for path in ["res://assets/bg_office.png", "res://assets/bg_canvas.png"]:
-		if FileAccess.file_exists(path):
-			var img := Image.new()
-			if img.load(path) == OK:
-				return ImageTexture.create_from_image(img)
+		var t := _load_image_tex(path)
+		if t != null:
+			return t
 	return null
+
+func _load_image_tex(path: String) -> Texture2D:
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(path) == OK:
+			return ImageTexture.create_from_image(img)
+	return null
+
+# 画布外的俯视街道：在围绕画布的大世界矩形内平铺街景图，随透视投影/缩放一起平移
+const STREET_TILE_W := 2600.0   # 单张街景图覆盖的世界宽
+const STREET_TILE_H := 1900.0   # 单张街景图覆盖的世界高
+const STREET_EDGE := Color("8f968f")   # 画布圆角缺口填充色（街道中性灰，融入城市）
+func _draw_street() -> void:
+	if street_bg_tex == null:
+		return
+	var cx := (CANVAS_X0 + CANVAS_X1) * 0.5
+	var cy := (MID_Y0 + MID_Y1) * 0.5
+	# 足够大，缩到最小（居中）时也铺满屏幕
+	var half_w := 6200.0
+	var half_h := 4600.0
+	var sx0 := cx - half_w
+	var sy0 := cy - half_h
+	var tiles_x := int(ceil(half_w * 2.0 / STREET_TILE_W))
+	var tiles_y := int(ceil(half_h * 2.0 / STREET_TILE_H))
+	var sub := 3
+	for ti in range(tiles_x):
+		for tj in range(tiles_y):
+			var ox := sx0 + ti * STREET_TILE_W
+			var oy := sy0 + tj * STREET_TILE_H
+			for r in range(sub):
+				var v0 := float(r) / sub
+				var v1 := float(r + 1) / sub
+				for c in range(sub):
+					var u0 := float(c) / sub
+					var u1 := float(c + 1) / sub
+					var w_tl := Vector2(ox + u0 * STREET_TILE_W, oy + v0 * STREET_TILE_H)
+					var w_tr := Vector2(ox + u1 * STREET_TILE_W, oy + v0 * STREET_TILE_H)
+					var w_br := Vector2(ox + u1 * STREET_TILE_W, oy + v1 * STREET_TILE_H)
+					var w_bl := Vector2(ox + u0 * STREET_TILE_W, oy + v1 * STREET_TILE_H)
+					var quad := PackedVector2Array([
+						_project(w_tl), _project(w_tr), _project(w_br), _project(w_bl)])
+					var uvs := PackedVector2Array([
+						Vector2(u0, v0), Vector2(u1, v0), Vector2(u1, v1), Vector2(u0, v1)])
+					draw_colored_polygon(quad, Color.WHITE, uvs, street_bg_tex)
 
 # 角点双线性插值：a=左上 b=右上 c=右下 d=左下
 func _bilerp(a: Vector2, b: Vector2, c: Vector2, d: Vector2, u: float, v: float) -> Vector2:
@@ -623,12 +719,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_deselect()
 	elif event is InputEventMouseMotion and panning_canvas:
 		var wp := _to_world(event)
-		view_offset += wp - pan_last
-		_clamp_view_offset()
+		# 抓取式平移：让光标下的世界点跟手 → 反向移动相机注视点
+		var w_last := _unproject_world(pan_last)
+		var w_now := _unproject_world(wp)
+		cam_target += Vector3(w_last.x - w_now.x, 0.0, w_last.z - w_now.z)
 		pan_last = wp
-		_relayout_all()
-		_relayout_loose_packs()
-		queue_redraw()
+		_apply_camera()
 	elif event is InputEventMouseMotion and drag_pack != null:
 		var wp := _to_world(event)
 		if is_instance_valid(drag_pack):
@@ -4268,32 +4364,8 @@ func _update_hud() -> void:
 
 # ---------------------------------------------------------------- background
 func _draw() -> void:
-	draw_rect(Rect2(0, 0, BASE_W, BASE_H), BG_OUT, true)   # 画布外·压暗，衬托白框
-	# 画布纸面（跟随透视斜边的圆角梯形奶白底）
-	var cf_quad := [
-		_project(Vector2(CANVAS_X0, MID_Y0)), _project(Vector2(CANVAS_X1, MID_Y0)),
-		_project(Vector2(CANVAS_X1, MID_Y1)), _project(Vector2(CANVAS_X0, MID_Y1))]
-	var cf_r := 28.0 * view_zoom
-	var cf_poly := _round_corners(cf_quad, cf_r)
-	if canvas_bg_tex != null:
-		_draw_canvas_image()                                  # 背景图：铺满画布矩形 + 随透视投影
-		for cutout in _round_corner_cutouts(cf_quad, cf_r):
-			draw_colored_polygon(cutout, BG_OUT)
-		draw_colored_polygon(cf_poly, Color(1, 1, 1, 0.62))   # 半透明白覆盖，压淡背景衬托卡片
-	else:
-		draw_colored_polygon(cf_poly, BG)
-	# 顶/底硬墨线（无抗锯齿）
-	draw_line(_project(Vector2(CANVAS_X0, DRAW_Y1)), _project(Vector2(CANVAS_X1, DRAW_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
-	draw_line(_project(Vector2(CANVAS_X0, MID_Y1)), _project(Vector2(CANVAS_X1, MID_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
-	_draw_battle_decoration()   # 战斗中：中心 VS 装饰（画在画布上、卡牌之下）
-
-	# 画布外框（厚像素框，跟随透视斜边）：白色外框 + 黑色内框
-	var cf_outer := cf_poly.duplicate()
-	cf_outer.append(cf_outer[0])
-	draw_polyline(cf_outer, Color.WHITE, maxf(3.0, 16.0 * view_zoom), true)
-	var cf_inner := _round_corners(_inset_quad(cf_quad, 12.0 * view_zoom), maxf(2.0, cf_r - 6.0 * view_zoom))
-	cf_inner.append(cf_inner[0])
-	draw_polyline(cf_inner, Color("141414"), maxf(3.0, 12.0 * view_zoom), true)
+	# 地面 = 3D 城市里的白板（在 CityBackground 渲染），这里不再画 2D 办公室地板/边框/街道。
+	_draw_battle_decoration()   # 战斗中：中心 VS 装饰（画在卡牌之下）
 
 	var f := _ui_font()
 	# fixed bank slot, outside the zoomable canvas

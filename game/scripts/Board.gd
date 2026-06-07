@@ -555,7 +555,7 @@ func _ensure_face3d(c) -> void:
 	var qm := QuadMesh.new()
 	qm.size = Vector2(CARD3D_W, CARD3D_H)
 	m.mesh = qm
-	m.rotation = Vector3(deg_to_rad(-80.0), 0.0, 0.0)       # 平铺微仰 10°：顶边略抬向相机（Stacklands 感）
+	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 完全平躺在白板上（面朝上、顶边朝北）
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -593,28 +593,12 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 		return
 	var w := board_to_world(bp + Vector2(CW * 0.5, CH * 0.5))
 	var lift := float(idx) * CARD3D_STACK_DY
-	if c.carried:
-		lift += 0.25
+	if c.carried or dragging:
+		lift += 0.32          # 拿起：抬得更高（阴影随之拉开）
 	elif c.hovered:
-		lift += 0.07
-	if dragging:
-		lift += 0.18
+		lift += 0.06          # hover：轻轻上抬（不变色，仅靠抬升+阴影反馈）
 	w.y = CARD_PLANE_Y + lift
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
-	# hover/选中：暖色自发光高亮（不动 scale，避免和出现 pop 抢）
-	var mesh := _face3d_mesh(c)
-	if mesh != null:
-		var mat := mesh.material_override as StandardMaterial3D
-		if mat != null:
-			var glow := 0.0
-			if c.selected:
-				glow = 0.32
-			elif c.hovered:
-				glow = 0.18
-			mat.emission_enabled = glow > 0.0
-			if glow > 0.0:
-				mat.emission = Color(1.0, 0.86, 0.5)
-				mat.emission_energy_multiplier = glow
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():

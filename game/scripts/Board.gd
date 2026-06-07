@@ -113,6 +113,9 @@ var battle_hp_icon_right: TextureRect = null
 var battle_running: bool = false            # 回合循环进行中
 var battle_bubble_tex: Texture2D = null
 var battle_versus_tex: Texture2D = null     # 战斗区域中心 VS 装饰
+var battle3d: Node3D = null                  # 战斗装饰的 3D 表现（边框/VS/HP 数字躺白板）
+var battle_hp3d_left: Label3D = null
+var battle_hp3d_right: Label3D = null
 var battle_saved_zoom: float = 0.0          # 进战斗前的视角，结束后恢复
 var battle_saved_offset: Vector2 = Vector2.ZERO
 var battle_view_changed: bool = false
@@ -1349,6 +1352,7 @@ func _update_battle(delta: float) -> void:
 		var k := clampf(delta * 10.0, 0.0, 1.0)
 		battle_hp_shown_left = lerpf(battle_hp_shown_left, battle_hp_left, k)
 		battle_hp_shown_right = lerpf(battle_hp_shown_right, battle_hp_right, k)
+		_update_battle3d()
 		var rect := _battle_screen_rect()
 		var isz := 39.0   # 资金图标放大 30%
 		var mx := 30.0    # 左右边距（呼吸感）
@@ -1433,7 +1437,7 @@ func _start_battle(rival, employee, rival_first: bool = true) -> void:
 	battle_hp_shown_left = battle_hp_left
 	battle_hp_shown_right = battle_hp_right
 	battle_dmg_to_player = 0.0
-	_ensure_battle_hp_labels()
+	_build_battle3d()
 	# 开始回合循环
 	_run_battle()
 
@@ -1468,6 +1472,7 @@ func _end_battle() -> void:
 	if battle_view_changed:
 		_battle_restore_view()
 		battle_view_changed = false
+	_clear_battle3d()
 	if is_instance_valid(battle_border):
 		battle_border.visible = false
 		battle_border.queue_redraw()
@@ -1600,6 +1605,7 @@ func _draw_dashed_polyline(canvas: CanvasItem, pts: PackedVector2Array, dash: fl
 		phase = fposmod(phase + L, period)
 
 func _draw_battle_border() -> void:
+	return   # 战斗框已改 3D（_build_battle3d），不再 2D 绘制
 	if not battle_active:
 		return
 	var rect := _battle_screen_rect()
@@ -1716,14 +1722,82 @@ func _battle_damage_popup(defender, amount: float) -> void:
 
 # 战斗区域中心的 VS 背景装饰（画在画布层，位于双方卡牌之下）
 func _draw_battle_decoration() -> void:
-	if not battle_active:
+	return   # VS 装饰已改 3D（_build_battle3d），不再 2D 绘制
+
+# ---- 战斗装饰 3D：边框 / VS / HP 数字都躺在白板上 ----
+func _build_battle3d() -> void:
+	_clear_battle3d()
+	if city_bg == null or city_bg.world_card_root() == null:
 		return
+	battle3d = Node3D.new()
+	city_bg.world_card_root().add_child(battle3d)
+	var cw := board_to_world(battle_center)
+	var y := CARD_PLANE_Y + 0.03
+	var hw := 2.0 * CW / CITY_CELL
+	var hd := CH / CITY_CELL
+	var t := 0.06
+	var red := Color("ef6a6a")
+	_battle_box(Vector3(cw.x, y, cw.z - hd), Vector3(2.0 * hw + t, 0.05, t), red)
+	_battle_box(Vector3(cw.x, y, cw.z + hd), Vector3(2.0 * hw + t, 0.05, t), red)
+	_battle_box(Vector3(cw.x - hw, y, cw.z), Vector3(t, 0.05, 2.0 * hd), red)
+	_battle_box(Vector3(cw.x + hw, y, cw.z), Vector3(t, 0.05, 2.0 * hd), red)
 	var tex := _versus_texture()
-	if tex == null:
+	if tex != null:
+		var m := MeshInstance3D.new()
+		var qm := QuadMesh.new()
+		qm.size = Vector2(1.5, 1.5)
+		m.mesh = qm
+		m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+		m.position = Vector3(cw.x, y + 0.02, cw.z)
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mat.albedo_texture = tex
+		mat.albedo_color = Color(1, 1, 1, 0.7)
+		m.material_override = mat
+		battle3d.add_child(m)
+	battle_hp3d_left = _battle_label3d(board_to_world(Vector2(battle_center.x - 1.6 * CW, battle_center.y - CH * 0.7)))
+	battle_hp3d_right = _battle_label3d(board_to_world(Vector2(battle_center.x + 0.6 * CW, battle_center.y - CH * 0.7)))
+
+func _battle_box(pos: Vector3, size: Vector3, col: Color) -> void:
+	var m := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	m.mesh = bm
+	m.position = pos
+	m.material_override = _unshaded_mat(col)
+	battle3d.add_child(m)
+
+func _battle_label3d(pos: Vector3) -> Label3D:
+	var l := Label3D.new()
+	l.font = _ui_font()
+	l.font_size = 64
+	l.pixel_size = 0.006
+	l.modulate = Color("2b2926")
+	l.outline_modulate = Color(1, 1, 1, 0.9)
+	l.outline_size = 12
+	l.double_sided = true
+	l.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	pos.y = CARD_PLANE_Y + 0.06
+	l.position = pos
+	battle3d.add_child(l)
+	return l
+
+func _update_battle3d() -> void:
+	if battle3d == null or not is_instance_valid(battle3d):
 		return
-	var c := _project(battle_center)
-	var s := 1.19 * CW * view_zoom   # 再缩小 30%
-	draw_texture_rect(tex, Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s)), false, Color(1, 1, 1, 0.55))
+	if battle_hp3d_left != null:
+		battle_hp3d_left.text = "$%.0f" % maxf(battle_hp_shown_left, 0.0)
+	if battle_hp3d_right != null:
+		battle_hp3d_right.text = "$%.0f" % maxf(battle_hp_shown_right, 0.0)
+
+func _clear_battle3d() -> void:
+	if battle3d != null and is_instance_valid(battle3d):
+		battle3d.queue_free()
+	battle3d = null
+	battle_hp3d_left = null
+	battle_hp3d_right = null
 
 func _versus_texture() -> Texture2D:
 	if battle_versus_tex != null:

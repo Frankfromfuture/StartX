@@ -133,7 +133,7 @@ var view_zoom: float = 0.6             # 初始拉远：视野更大、卡片更
 var view_offset: Vector2 = Vector2.ZERO
 var panning_canvas: bool = false
 var pan_last: Vector2 = Vector2.ZERO
-const VIEW_ZOOM_MIN := 0.45
+const VIEW_ZOOM_MIN := 0.286   # 再降两级，可缩到纵览整个画面
 const VIEW_ZOOM_MAX := 1.9
 const VIEW_ZOOM_STEP := 1.12
 
@@ -222,8 +222,16 @@ func _clamp_view_offset() -> void:
 	var max_x := -(CANVAS_X0 - VIEW_PAD) * view_zoom
 	var min_y := BASE_H - (MID_Y1 + VIEW_PAD) * view_zoom
 	var max_y := MID_Y0 * (1.0 - view_zoom)   # 画布顶边锚定在框顶（UI 区下方），不再向下漂移
-	view_offset.x = clampf(view_offset.x, min_x, max_x)
-	view_offset.y = clampf(view_offset.y, min_y, max_y)
+	# 画布比视口小时（缩到最小）夹取范围反转，改为居中而非贴边
+	if min_x <= max_x:
+		view_offset.x = clampf(view_offset.x, min_x, max_x)
+	else:
+		view_offset.x = BASE_W * 0.5 * (1.0 - view_zoom)   # 画布水平居中
+	if min_y <= max_y:
+		view_offset.y = clampf(view_offset.y, min_y, max_y)
+	else:
+		# 画布在 UI 之间的播放区垂直居中
+		view_offset.y = (HUD_H + INFO_Y) * 0.5 - (MID_Y0 + MID_Y1) * 0.5 * view_zoom
 
 func _band(x0: float, x1: float, y0: float, y1: float) -> PackedVector2Array:
 	return PackedVector2Array([
@@ -3273,6 +3281,95 @@ func _build_hud() -> void:
 	_build_settings_panel()
 	_build_gear_menu()
 	_build_hover_panel()
+	_build_zoom_buttons()
+
+# ---------------------------------------------------------------- zoom buttons
+func _build_zoom_buttons() -> void:
+	# 屏幕右下角：柔软白色立体 + / - 键（+ 在上放大、- 在下缩小）
+	var bs := 52.8                          # 比原 66 缩小 20%
+	var gap := 20.0                         # 间距拉大一倍（原 10）
+	var right_x := BASE_W - 18.0 - bs
+	var minus_y := INFO_Y - 16.0 - bs
+	var plus_y := minus_y - gap - bs
+	var plus_btn := hud.get_node_or_null("ZoomIn") as Button
+	if plus_btn == null:
+		plus_btn = Button.new()
+		plus_btn.name = "ZoomIn"
+		hud.add_child(plus_btn)
+		plus_btn.pressed.connect(_zoom_view_center.bind(VIEW_ZOOM_STEP * VIEW_ZOOM_STEP))
+	plus_btn.position = Vector2(right_x, plus_y)
+	plus_btn.size = Vector2(bs, bs)
+	_style_zoom_button(plus_btn, "res://assets/ui/zoom_in.svg")
+
+	var minus_btn := hud.get_node_or_null("ZoomOut") as Button
+	if minus_btn == null:
+		minus_btn = Button.new()
+		minus_btn.name = "ZoomOut"
+		hud.add_child(minus_btn)
+		minus_btn.pressed.connect(_zoom_view_center.bind(1.0 / (VIEW_ZOOM_STEP * VIEW_ZOOM_STEP)))
+	minus_btn.position = Vector2(right_x, minus_y)
+	minus_btn.size = Vector2(bs, bs)
+	_style_zoom_button(minus_btn, "res://assets/ui/zoom_out.svg")
+
+func _zoom_view_center(factor: float) -> void:
+	# 以播放区中心为锚点缩放视角
+	_zoom_view_at(Vector2(BASE_W * 0.5, (HUD_H + INFO_Y) * 0.5), factor)
+
+func _style_zoom_button(b: Button, icon_path: String = "") -> void:
+	# 柔软白色立体：圆角、柔和投影、淡边；图标为灰黑色 svg
+	b.text = ""
+	for state in ["normal", "hover", "pressed"]:
+		var sb := StyleBoxFlat.new()
+		var c := Color("fbf9f4")
+		if state == "hover":
+			c = Color("ffffff")
+		elif state == "pressed":
+			c = Color("eee9e0")
+		sb.bg_color = c
+		sb.set_corner_radius_all(20)
+		sb.corner_detail = 8
+		sb.border_color = Color(1, 1, 1, 0.9)
+		sb.set_border_width_all(2)
+		sb.shadow_color = Color(0, 0, 0, 0.28)
+		sb.shadow_size = 4
+		sb.shadow_offset = Vector2(4, 5)
+		b.add_theme_stylebox_override(state, sb)
+
+	# 顶部柔光高光，增强立体感
+	var gloss := b.get_node_or_null("ZoomGloss") as ColorRect
+	if gloss == null:
+		gloss = ColorRect.new()
+		gloss.name = "ZoomGloss"
+		gloss.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(gloss)
+	gloss.position = Vector2(16, 6)
+	gloss.size = Vector2(maxf(0, b.size.x - 32), maxf(0, b.size.y * 0.34))
+	gloss.color = Color(1, 1, 1, 0.5)
+
+	# 居中的灰黑 svg 图标
+	if icon_path != "":
+		var icon := b.get_node_or_null("ZoomIcon") as TextureRect
+		if icon == null:
+			icon = TextureRect.new()
+			icon.name = "ZoomIcon"
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(icon)
+		icon.texture = _zoom_icon_texture(icon_path)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var pad := b.size.x * 0.212   # 图标比原来放大 20%
+		icon.position = Vector2(pad, pad)
+		icon.size = Vector2(b.size.x - pad * 2.0, b.size.y - pad * 2.0)
+
+func _zoom_icon_texture(path: String) -> Texture2D:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return null
+	var txt := f.get_as_text()
+	var img := Image.new()
+	if img.load_svg_from_string(txt, 8.0) != OK:
+		return null
+	return ImageTexture.create_from_image(img)
 
 # ---------------------------------------------------------------- hover tooltip
 func _build_hover_panel() -> void:

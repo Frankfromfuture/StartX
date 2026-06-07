@@ -178,6 +178,8 @@ func _ready() -> void:
 	canvas_bg_tex = _load_canvas_bg()
 	street_bg_tex = _load_image_tex("res://assets/bg_street.png")
 	_setup_city_background()
+	face_baker = CardFaceBakerScript.new()
+	add_child(face_baker)
 	_load_cursors()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
@@ -315,6 +317,12 @@ func _bank_rect() -> Rect2:
 # 3D 城市背景：在独立 SubViewport 渲染 Kenney 低多边形城市，作为画布外的背景层
 var city_bg: SubViewport = null
 const CityBackgroundScript = preload("res://scripts/CityBackground.gd")
+const CardFaceBakerScript = preload("res://scripts/CardFaceBaker.gd")
+var face_baker = null
+# 3D 卡牌网格尺寸（世界单位）：board 120×180 / CITY_CELL(168)
+const CARD3D_W := 120.0 / CITY_CELL
+const CARD3D_H := 180.0 / CITY_CELL
+const CARD3D_STACK_DY := 0.012     # 同栈每张抬高，避免共面闪烁
 func _setup_city_background() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "CityBackground"
@@ -526,10 +534,56 @@ func relayout(sid: int) -> void:
 		var c = arr[i]
 		c.stack_pos = i
 		var bp := base + Vector2(0, i * CARD_OFFSET)        # board space
-		_apply_card_projection(c, bp, sid == drag_sid)
-		# 拖拽中：位置由 _update_drag_spring 弹簧驱动（滞后 + 摆动）
+		_apply_card_projection(c, bp, sid == drag_sid)      # 仍设 c.transform 供旧 2D 代码读位置
 		c.z_index = zbase + i
-		# 工作条现绑定在【被工作对象】卡上、按 work_ratio 自管，relayout 不再干预
+		_place_face3d(c, bp, i, sid == drag_sid)            # 真 3D 卡牌网格
+
+# ---- Phase 2：3D 卡牌网格 ----
+func _ensure_face3d(c) -> void:
+	if c.face3d != null and is_instance_valid(c.face3d):
+		return
+	if city_bg == null or city_bg.world_card_root() == null:
+		return
+	c.visible = false                                       # 2D 卡面隐藏，仅留作逻辑/烘焙源
+	var m := MeshInstance3D.new()
+	var qm := QuadMesh.new()
+	qm.size = Vector2(CARD3D_W, CARD3D_H)
+	m.mesh = qm
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
+	m.material_override = mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	city_bg.world_card_root().add_child(m)
+	c.face3d = m
+	c.tree_exited.connect(func():
+		if is_instance_valid(m):
+			m.queue_free())
+	_bake_face_async(c, mat)
+
+func _bake_face_async(c, mat) -> void:
+	if face_baker == null:
+		return
+	var tex = await face_baker.bake(c)
+	if tex != null and is_instance_valid(mat):
+		mat.albedo_texture = tex
+
+func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
+	_ensure_face3d(c)
+	var m = c.face3d
+	if m == null or not is_instance_valid(m):
+		return
+	var w := board_to_world(bp + Vector2(CW * 0.5, CH * 0.5))
+	var lift := float(idx) * CARD3D_STACK_DY
+	if c.carried:
+		lift += 0.25
+	elif c.hovered:
+		lift += 0.07
+	if dragging:
+		lift += 0.18
+	w.y = CARD_PLANE_Y + lift
+	m.transform = Transform3D(Basis.from_euler(Vector3(deg_to_rad(-90.0), 0.0, 0.0)), w)
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():
@@ -740,14 +794,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			press_moved = true
 
 func _topmost_at(display_pt: Vector2, include_rivals: bool = false) -> Node2D:
+	# 3D：把屏幕点投到白板平面得 board 点，再测哪张卡的 board 矩形命中；
+	# 取最靠近相机（board y 最大 = 栈内最上/最靠前）的一张。
+	var bpt := _unproject(display_pt)
 	var best: Node2D = null
+	var best_key := -INF
 	for c in all_cards:
 		if c.ctype == "department":
-			continue        # departments are fixtures, not pickable (minimal)
+			continue
 		if c.ctype == "rival" and not include_rivals:
-			continue        # 对手卡不可拾取（不能拖动 / 选取），但悬停仍可读信息
-		if c.contains_point(display_pt):
-			if best == null or c.z_index > best.z_index:
+			continue
+		var tl := _board_topleft(c)
+		if bpt.x >= tl.x and bpt.x <= tl.x + CW and bpt.y >= tl.y and bpt.y <= tl.y + CH:
+			if tl.y > best_key:
+				best_key = tl.y
 				best = c
 	return best
 

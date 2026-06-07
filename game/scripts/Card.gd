@@ -34,6 +34,7 @@ var stack_hint: bool = false
 var dash_phase: float = 0.0
 var is_cash: bool = false            # 现金卡：金色玻璃质感 + hover 扫光
 var shimmer_t: float = 0.0           # hover 扫光相位
+var face3d: Node = null          # 3D 卡牌网格（Phase 2：本卡的真立体表现，挂在城市世界里）
 var ui_font: Font
 var capacity_icon_tex: Texture2D
 var cost_icon_tex: Texture2D

@@ -55,6 +55,10 @@ const MODELS := [
 var cam: Camera3D
 var _root3d: Node3D
 var _gridmap: GridMap
+var card_root: Node3D    # 卡牌 3D 网格挂在这里（与城市同一世界，共用相机/光照/阴影）
+
+func world_card_root() -> Node3D:
+	return card_root
 
 func _ready() -> void:
 	size = Vector2i(VIEW_W, VIEW_H)
@@ -69,6 +73,9 @@ func _ready() -> void:
 	_build_gridmap()
 	var center := _load_map()
 	_build_camera(center)
+	card_root = Node3D.new()
+	card_root.name = "CardRoot"
+	_root3d.add_child(card_root)
 
 func _build_environment() -> void:
 	var env := Environment.new()
@@ -137,8 +144,8 @@ func _office_plot_mesh() -> Mesh:
 	pm.size = Vector2(9, 5)
 	pm.center_offset = Vector3(4.0, 0.05, 2.0)
 	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1, 1, 1)
+	mat.albedo_color = Color(1, 1, 1)   # 受光着色 → 能接收卡牌投影（Stacklands 式立体感）
+	mat.roughness = 0.95
 	pm.material = mat
 	return pm
 

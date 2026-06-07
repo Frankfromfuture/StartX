@@ -539,28 +539,42 @@ func relayout(sid: int) -> void:
 		_place_face3d(c, bp, i, sid == drag_sid)            # 真 3D 卡牌网格
 
 # ---- Phase 2：3D 卡牌网格 ----
+# c.face3d = pivot(Node3D)，pivot 下挂 MeshInstance3D(卡面)。relayout 只动 pivot 的
+# transform；pop/hover 等动画改 mesh 的 scale/emission，互不覆盖。
 func _ensure_face3d(c) -> void:
 	if c.face3d != null and is_instance_valid(c.face3d):
 		return
 	if city_bg == null or city_bg.world_card_root() == null:
 		return
 	c.visible = false                                       # 2D 卡面隐藏，仅留作逻辑/烘焙源
+	var pivot := Node3D.new()
 	var m := MeshInstance3D.new()
 	var qm := QuadMesh.new()
 	qm.size = Vector2(CARD3D_W, CARD3D_H)
 	m.mesh = qm
+	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 平铺：面朝上、顶边朝北(-Z)
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
 	m.material_override = mat
 	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	city_bg.world_card_root().add_child(m)
-	c.face3d = m
+	pivot.add_child(m)
+	city_bg.world_card_root().add_child(pivot)
+	c.face3d = pivot
 	c.tree_exited.connect(func():
-		if is_instance_valid(m):
-			m.queue_free())
+		if is_instance_valid(pivot):
+			pivot.queue_free())
 	_bake_face_async(c, mat)
+	# 出现时弹一下（scale 0→1，BACK 缓动）
+	m.scale = Vector3.ZERO
+	var tw := create_tween()
+	tw.tween_property(m, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _face3d_mesh(c) -> MeshInstance3D:
+	if c.face3d != null and is_instance_valid(c.face3d) and c.face3d.get_child_count() > 0:
+		return c.face3d.get_child(0) as MeshInstance3D
+	return null
 
 func _bake_face_async(c, mat) -> void:
 	if face_baker == null:
@@ -571,8 +585,8 @@ func _bake_face_async(c, mat) -> void:
 
 func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	_ensure_face3d(c)
-	var m = c.face3d
-	if m == null or not is_instance_valid(m):
+	var pivot = c.face3d
+	if pivot == null or not is_instance_valid(pivot):
 		return
 	var w := board_to_world(bp + Vector2(CW * 0.5, CH * 0.5))
 	var lift := float(idx) * CARD3D_STACK_DY
@@ -583,7 +597,21 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	if dragging:
 		lift += 0.18
 	w.y = CARD_PLANE_Y + lift
-	m.transform = Transform3D(Basis.from_euler(Vector3(deg_to_rad(-90.0), 0.0, 0.0)), w)
+	pivot.transform = Transform3D(Basis.IDENTITY, w)
+	# hover/选中：暖色自发光高亮（不动 scale，避免和出现 pop 抢）
+	var mesh := _face3d_mesh(c)
+	if mesh != null:
+		var mat := mesh.material_override as StandardMaterial3D
+		if mat != null:
+			var glow := 0.0
+			if c.selected:
+				glow = 0.32
+			elif c.hovered:
+				glow = 0.18
+			mat.emission_enabled = glow > 0.0
+			if glow > 0.0:
+				mat.emission = Color(1.0, 0.86, 0.5)
+				mat.emission_energy_multiplier = glow
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():

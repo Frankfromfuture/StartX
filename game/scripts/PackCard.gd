@@ -25,6 +25,7 @@ var contents: Array = []
 var opened := false
 var ready_to_open := false
 var board_pos: Vector2 = Vector2.ZERO
+var face3d: Node = null          # 3D 卡包网格（Phase 2）
 var pixel_font: Font
 
 func _ready() -> void:

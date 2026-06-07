@@ -759,7 +759,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if pack != null:
 					# 按住卡包：先记为待拖动；松开时没移动=拆一张，移动了=只是挪位置
 					drag_pack = pack
-					pack_drag_offset = wp - pack.position
+					pack_drag_offset = _unproject(wp) - pack.board_pos
 					press_pos = wp
 					press_moved = false
 					pack.z_index = 2300
@@ -810,8 +810,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and drag_pack != null:
 		var wp := _to_world(event)
 		if is_instance_valid(drag_pack):
-			drag_pack.position = wp - pack_drag_offset
-			drag_pack.board_pos = _unproject(drag_pack.position)
+			drag_pack.board_pos = _unproject(wp) - pack_drag_offset
+			drag_pack.position = _project(drag_pack.board_pos)
+			_place_pack3d(drag_pack)
 			if wp.distance_to(press_pos) > DRAG_TAP_PX:
 				press_moved = true
 	elif event is InputEventMouseMotion and not drag_cards.is_empty():
@@ -2604,16 +2605,69 @@ func _relayout_loose_packs() -> void:
 	for p in loose_packs:
 		if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 			continue
-		p.position = _project(p.board_pos)
+		p.position = _project(p.board_pos)        # 旧 2D 位置仍设（开包原点等读它）
 		p.scale = Vector2.ONE * view_zoom
+		p.visible = false                          # 2D 隐藏，改用 3D 网格
+		_place_pack3d(p)
+
+# ---- 卡包 3D 网格（与卡牌同套：pivot + mesh，躺在白板上）----
+func _ensure_pack3d(p) -> void:
+	if p.face3d != null and is_instance_valid(p.face3d):
+		return
+	if city_bg == null or city_bg.world_card_root() == null:
+		return
+	var pivot := Node3D.new()
+	var m := MeshInstance3D.new()
+	var qm := QuadMesh.new()
+	qm.size = Vector2(PackCardScript.W / CITY_CELL, PackCardScript.H / CITY_CELL)
+	m.mesh = qm
+	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = Color(0.1, 0.1, 0.1)
+	m.material_override = mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	pivot.add_child(m)
+	city_bg.world_card_root().add_child(pivot)
+	p.face3d = pivot
+	p.tree_exited.connect(func():
+		if is_instance_valid(pivot):
+			pivot.queue_free())
+	_bake_pack_async(p, mat)
+	m.scale = Vector3.ZERO
+	var tw := create_tween()
+	tw.tween_property(m, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _bake_pack_async(p, mat) -> void:
+	if face_baker == null:
+		return
+	var tex = await face_baker.bake_pack(p.pack_id, p.pack_name, p.contents)
+	if tex != null and is_instance_valid(mat):
+		mat.albedo_texture = tex
+
+func _place_pack3d(p) -> void:
+	_ensure_pack3d(p)
+	var pivot = p.face3d
+	if pivot == null or not is_instance_valid(pivot):
+		return
+	var w := board_to_world(p.board_pos + Vector2(PackCardScript.W * 0.5, PackCardScript.H * 0.5))
+	w.y = CARD_PLANE_Y + 0.02
+	if p == drag_pack:
+		w.y += 0.2
+	pivot.transform = Transform3D(Basis.IDENTITY, w)
 
 func _topmost_pack_at(display_pt: Vector2):
+	var bpt := _unproject(display_pt)
 	var best = null
+	var best_key := -INF
 	for p in loose_packs:
 		if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 			continue
-		if p.contains_point(display_pt):
-			if best == null or p.z_index > best.z_index:
+		var bp: Vector2 = p.board_pos
+		if bpt.x >= bp.x and bpt.x <= bp.x + PackCardScript.W and bpt.y >= bp.y and bpt.y <= bp.y + PackCardScript.H:
+			if bp.y > best_key:
+				best_key = bp.y
 				best = p
 	return best
 

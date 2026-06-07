@@ -19,6 +19,8 @@ var stack_pos: int = 0
 var zone: String = ""
 var uses_left: int = -1       # -1 = unlimited; >=0 = remaining uses (nodes)
 var cap_cur: int = 0          # 当前产能（类 HP；battle 拼产能会消耗后缓慢恢复，现在 == capacity）
+var funds_max: int = 0        # 资金（战斗 HP）上限。对手卡自带，默认 = 产能 × 3
+var funds_cur: int = 0        # 当前资金（战斗 HP）
 var idle_t: float = 0.0       # idle time (for market auto-convert)
 
 var work_ratio: float = 0.0       # 工作进度比例(0..1)，>0 即在本卡上方显示工作条
@@ -65,6 +67,7 @@ func _header_color() -> Color:
 			return Color("aeccb0")                 # 资源 / 客户 / 产品：绿色
 		"facility":      return Color("e6b8c2")   # 建筑：粉红
 		"risk":          return Color("d99a90")   # 怪物 / 风险：红
+		"rival":         return Color("75383a")   # 对手：深红（略加饱和、整体加深）
 		"idea":          return Color("2a2622")   # 想法 / 卡包：黑
 		"department":    return Color("c2b6d6")   # 部门：雾紫
 		_:               return Color("d8d2c4")
@@ -85,13 +88,17 @@ func setup(id: String) -> void:
 	else:
 		uses_left = int(cdef.get("maxUses", -1))
 	cap_cur = int(cdef.get("capacity", 0))
+	# 资金作为战斗 HP：对手卡自带资金，默认 = 产能 × 3（可由数据的 funds 字段覆盖）
+	if ctype == "rival":
+		funds_max = int(cdef.get("funds", cap_cur * 3))
+		funds_cur = funds_max
 	is_cash = (id == "cash")
 	set_process(false)                  # 仅现金卡 hover 时才逐帧动
 	queue_redraw()
 
 func _draw() -> void:
 	var head := _header_color()
-	var dark_head := (ctype == "idea") or ctype == "business_model" or _is_black_series_card()   # 深色底卡用反白文字
+	var dark_head := (ctype == "idea") or ctype == "business_model" or ctype == "rival" or _is_black_series_card()   # 深色底卡用反白文字
 	var title_fg := Color("f7f2e8") if dark_head else INK   # 深色标题栏用浅字
 	var bg := head.lightened(0.28)                          # 卡身 = header 浅一号，但整体更沉
 	var ring := head.lightened(0.48)                        # 中间圆圈 = 更浅一号

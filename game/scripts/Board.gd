@@ -11,6 +11,7 @@ const CW := 180.0                     # square card, keeping the old long side
 const CH := 180.0
 const CARD_OFFSET := 34.0             # 叠放时每张上面的牌再往下一点
 const DRAG_Z := 4000
+const BATTLE_Z := 3000              # 战斗中攻击方置顶
 
 # ---- Layout (board space 1920x1080) ----
 const BASE_W := 1920.0
@@ -77,6 +78,10 @@ const DEFAULT_HINT := "「公司的地板光亮如新，有可能是创始人晚
 
 var hud: CanvasLayer
 var top_bar: Control
+var bottom_info: Node2D     # 底部信息栏（HUD 层绘制，始终盖在卡牌之上）
+var book_tab_seam: Node2D   # 商业模式弹窗与按钮的「文件夹标签」融合缝盖
+var book_btn: Button        # 商业模式按钮（作为弹窗的文件夹标签）
+const PANEL_CREAM := Color(0.98, 0.95, 0.89, 0.97)   # 弹窗/标签共用奶白底
 var lbl_status: Label
 var lbl_top_rp: Label
 var lbl_finance: Label
@@ -86,6 +91,32 @@ var lbl_business: Label
 var hover_panel: Panel
 var hover_label: Label
 var founder_bubble: Control = null
+var founder_bubble_anchor: Vector2 = Vector2.ZERO   # board-space topleft when bubble appeared; bubble dies if the card moves
+
+# 战斗：对手卡触碰员工（含创始人）时进入
+var battle_active: bool = false
+var battle_rival = null
+var battle_employee = null
+var battle_center: Vector2 = Vector2.ZERO   # 战斗框中心（board）
+var battle_border: Node2D = null
+var battle_hp_left: float = 0.0             # 对手（左）资金 HP
+var battle_hp_right: float = 0.0            # 我方（右）现金 HP
+var battle_hp_shown_left: float = 0.0       # 显示用（计数动画）
+var battle_hp_shown_right: float = 0.0
+var battle_dmg_to_player: float = 0.0       # 我方累计受伤（战斗结束按整数扣现金卡）
+var battle_hp_label_left: Label = null
+var battle_hp_label_right: Label = null
+var battle_hp_icon_left: TextureRect = null
+var battle_hp_icon_right: TextureRect = null
+var battle_running: bool = false            # 回合循环进行中
+var battle_bubble_tex: Texture2D = null
+var battle_versus_tex: Texture2D = null     # 战斗区域中心 VS 装饰
+var battle_saved_zoom: float = 0.0          # 进战斗前的视角，结束后恢复
+var battle_saved_offset: Vector2 = Vector2.ZERO
+var battle_view_changed: bool = false
+var battle_dash_phase: float = 0.0          # 战斗边框虚线行进相位（转圈动画）
+var battle_rival_first: bool = true         # 谁先碰到谁先攻击
+var battle_attacker_sid: int = -1           # 当前攻击方栈：relayout 时置顶
 var month_progress: Panel
 var month_progress_full_width: float = 320.0
 var bank_button: Button
@@ -143,6 +174,14 @@ func _ready() -> void:
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
 	GameState.business_model_unlocked.connect(_on_business_model_unlocked)
+
+	# 对手卡每 3 秒朝创始人方向跳动半张卡（随机折线）
+	var rival_timer := Timer.new()
+	rival_timer.name = "RivalHopTimer"
+	rival_timer.wait_time = 3.0
+	rival_timer.autostart = true
+	add_child(rival_timer)
+	rival_timer.timeout.connect(_rival_hop_tick)
 
 # ---------------------------------------------------------------- perspective
 func _row_scale(y: float) -> float:
@@ -312,9 +351,10 @@ func _spawn_start_cards() -> void:
 	# 开局只有一个车库包（5 张牌，含创始人）；点一下跳一张，点完消失
 	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
 	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
-	var p = _spawn_loose_pack("garage_pack", pack, contents)
-	if is_instance_valid(p):
-		p.board_pos = Vector2(BASE_W * 0.5, 560.0)   # 居中靠上
+	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
+	var center_tl := _unproject(Vector2(BASE_W, BASE_H) * 0.5 \
+		- Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * view_zoom)
+	_spawn_loose_pack("garage_pack", pack, contents, center_tl)
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	var c := spawn_card(id, pos)
@@ -377,7 +417,7 @@ func relayout(sid: int) -> void:
 		return
 	var arr: Array = stacks[sid]
 	var base: Vector2 = stack_base[sid]
-	var zbase := DRAG_Z if sid == drag_sid else 0
+	var zbase := DRAG_Z if sid == drag_sid else (BATTLE_Z if sid == battle_attacker_sid else 0)
 	for i in arr.size():
 		var c = arr[i]
 		c.stack_pos = i
@@ -539,6 +579,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					pack.z_index = 2300
 					return
 				var picked := _topmost_at(wp)
+				if battle_active:
+					picked = null            # 战斗中卡牌不可拖动
 				if picked != null:
 					_begin_drag(wp, picked)          # 点击即拿起并跟随光标（sticky）
 					press_pos = wp
@@ -593,17 +635,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		if wp.distance_to(press_pos) > DRAG_TAP_PX:
 			press_moved = true
 
-func _topmost_at(display_pt: Vector2) -> Node2D:
+func _topmost_at(display_pt: Vector2, include_rivals: bool = false) -> Node2D:
 	var best: Node2D = null
 	for c in all_cards:
 		if c.ctype == "department":
 			continue        # departments are fixtures, not pickable (minimal)
+		if c.ctype == "rival" and not include_rivals:
+			continue        # 对手卡不可拾取（不能拖动 / 选取），但悬停仍可读信息
 		if c.contains_point(display_pt):
 			if best == null or c.z_index > best.z_index:
 				best = c
 	return best
 
 func _begin_drag(wp: Vector2, picked: Node2D = null) -> void:
+	if battle_active:
+		return                       # 战斗中卡牌不可拖动
 	if picked == null:
 		picked = _topmost_at(wp)
 		if picked == null:
@@ -675,6 +721,16 @@ func _end_drag(_wp: Vector2) -> void:
 	stack_base[sid] = clamp_to_zone(stack_base[sid], target_zone)
 	relayout(sid)
 
+	# 释放后：员工压在对手卡上 → 员工主动发起战斗（员工先手），需在躲闪发生前触发
+	if not battle_active and stacks.has(sid):
+		var mover = stacks[sid][0]
+		if is_instance_valid(mover) and mover.ctype == "employee":
+			var r = _overlapping_rival(sid)
+			if r != null:
+				_clear_drag()
+				_start_battle(r, mover, false)
+				return
+
 	sid = _resolve_overlap(sid)   # 有互动→并入；无互动→对方平滑躲开
 
 	if stacks.has(sid):
@@ -684,6 +740,20 @@ func _end_drag(_wp: Vector2) -> void:
 	_clear_drag()
 	if stacks.has(sid):
 		relayout(sid)
+
+# 与指定员工栈重叠的独立对手卡（无则 null）
+func _overlapping_rival(esid: int):
+	var ec: Vector2 = stack_base[esid] + Vector2(CW, CH) * 0.5
+	for c in all_cards:
+		if not is_instance_valid(c) or c.ctype != "rival":
+			continue
+		var rsid: int = c.stack_id
+		if not stacks.has(rsid) or stacks[rsid].size() != 1:
+			continue
+		var rc: Vector2 = stack_base[rsid] + Vector2(CW, CH) * 0.5
+		if absf(rc.x - ec.x) < CW * 0.92 and absf(rc.y - ec.y) < CH * 0.92:
+			return c
+	return null
 
 # 拖拽中：每张牌用减衰調和振動朝目标位置逼近。
 # 顶牌频率高→几乎跟手（轻微滞后）；越往下频率越低→滞后更大、回摆更明显（甩动感）。
@@ -813,10 +883,8 @@ func _card_func_text(c) -> String:
 			parts.append("产能 %d/%d" % [c.cap_cur, int(d.get("capacity", 0))])
 			parts.append("工资 $%d" % int(d.get("salary", 0)))
 		"rival":
-			var hp := int(d.get("hp", 0))
-			parts.append("产能 %d/%d" % [hp, hp])
-			if d.has("attack"):
-				parts.append("攻击 %d" % int(d["attack"]))
+			parts.append("产能 %d" % int(d.get("capacity", 0)))
+			parts.append("资金 %d/%d" % [c.funds_cur, c.funds_max])   # 资金 = 战斗 HP
 		"resource", "customer", "product":
 			parts.append("价值 $%d" % int(d.get("value", 0)))
 			if int(d.get("cost", 0)) > 0:
@@ -855,7 +923,7 @@ func _stack_info_parts(sid: int) -> Array:
 	]
 
 # 混排绘制一行信息（整体水平居中）：加粗=偏移重描，斜体=切变
-func _draw_info_line(f: Font, baseline_y: float, parts: Array, col: Color, size: int) -> void:
+func _draw_info_line(canvas: CanvasItem, f: Font, baseline_y: float, parts: Array, col: Color, size: int) -> void:
 	var total := 0.0
 	for p in parts:
 		var w: float = f.get_string_size(p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
@@ -867,13 +935,13 @@ func _draw_info_line(f: Font, baseline_y: float, parts: Array, col: Color, size:
 	for p in parts:
 		if p["i"]:
 			var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), Vector2(x, baseline_y))
-			draw_set_transform_matrix(t)
-			draw_string(f, Vector2.ZERO, p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			canvas.draw_set_transform_matrix(t)
+			canvas.draw_string(f, Vector2.ZERO, p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+			canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 		else:
-			draw_string(f, Vector2(x, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+			canvas.draw_string(f, Vector2(x, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 			if p["b"]:
-				draw_string(f, Vector2(x + 1, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+				canvas.draw_string(f, Vector2(x + 1, baseline_y), p["t"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 		x += p["_w"]
 
 func _clear_drag() -> void:
@@ -1039,6 +1107,462 @@ func _dodge_apply(p: Vector2, sid: int) -> void:
 	if stacks.has(sid) and sid != drag_sid:
 		stack_base[sid] = p
 		relayout(sid)
+
+# 对手卡每秒朝创始人跳动半张卡，路线随机（非直线）。
+func _rival_hop_tick() -> void:
+	if game_over or battle_active:
+		return
+	var founder = _founder_on_board()
+	if not is_instance_valid(founder):
+		return
+	var target_center: Vector2 = stack_base[founder.stack_id] + Vector2(CW, CH) * 0.5
+	var hop := CW * 0.5     # 半张卡的距离
+	for c in all_cards:
+		if not is_instance_valid(c) or c.ctype != "rival":
+			continue
+		var sid: int = c.stack_id
+		# 只让独立、未被拖动的对手卡跳动
+		if sid == drag_sid or not stacks.has(sid) or stacks[sid].size() != 1:
+			continue
+		var base: Vector2 = stack_base[sid]
+		var center := base + Vector2(CW, CH) * 0.5
+		var to_founder := target_center - center
+		if to_founder.length() < hop:
+			continue   # 已贴近创始人
+		# 朝创始人方向 ± 大幅随机偏角，折线更曲折（约 ±90°，偶尔几乎横向）
+		var dir := to_founder.normalized().rotated(GameState.rng.randf_range(-1.6, 1.6))
+		var zone: String = c.zone if c.zone != "" else _zone_for_center(center)
+		var new_base := clamp_to_zone(base + dir * hop, zone)
+		var tw := create_tween()
+		tw.tween_method(_dodge_apply.bind(sid), base, new_base, 0.32) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+# ---------------------------------------------------------------- battle
+# 每帧：战斗中刷新边框 / 检测结束；未战斗时检测对手卡是否触碰员工（含创始人）。
+func _update_battle(delta: float) -> void:
+	if battle_active:
+		battle_dash_phase += delta * 90.0   # 虚线转圈速度（px/s）
+		queue_redraw()                      # 刷新中心 VS 装饰
+		if is_instance_valid(battle_border):
+			battle_border.queue_redraw()   # 跟随缩放/平移刷新（中心固定在 employee 处）
+		# HP 计数动画 + 顶角标签定位
+		var k := clampf(delta * 10.0, 0.0, 1.0)
+		battle_hp_shown_left = lerpf(battle_hp_shown_left, battle_hp_left, k)
+		battle_hp_shown_right = lerpf(battle_hp_shown_right, battle_hp_right, k)
+		var rect := _battle_screen_rect()
+		var isz := 39.0   # 资金图标放大 30%
+		var mx := 30.0    # 左右边距（呼吸感）
+		var my := 22.0    # 上边距（呼吸感）
+		# 左上：图标 + 数字
+		if battle_hp_label_left != null:
+			battle_hp_label_left.text = "%.1f" % maxf(battle_hp_shown_left, 0.0)
+			if battle_hp_icon_left != null:
+				battle_hp_icon_left.size = Vector2(isz, isz)
+				battle_hp_icon_left.position = rect.position + Vector2(mx, my + 2)
+			battle_hp_label_left.position = rect.position + Vector2(mx + isz + 4, my)
+		# 右上：图标 + 数字（整组右对齐到框右上角）
+		if battle_hp_label_right != null:
+			var txt := "%.1f" % maxf(battle_hp_shown_right, 0.0)
+			battle_hp_label_right.text = txt
+			var fnt := battle_hp_label_right.get_theme_font("font")
+			var tw := 80.0
+			if fnt != null:
+				tw = fnt.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
+			var gx := rect.end.x - mx - (isz + 4.0 + tw)
+			if battle_hp_icon_right != null:
+				battle_hp_icon_right.size = Vector2(isz, isz)
+				battle_hp_icon_right.position = Vector2(gx, rect.position.y + my + 2)
+			battle_hp_label_right.position = Vector2(gx + isz + 4.0, rect.position.y + my)
+		return
+	# 拖动中不激活战斗（释放后才检测）；玩家拖员工撞对手的情形在 _end_drag 里触发
+	if drag_sid != -1:
+		return
+	for c in all_cards:
+		if not is_instance_valid(c) or c.ctype != "rival":
+			continue
+		var rsid: int = c.stack_id
+		if not stacks.has(rsid) or stacks[rsid].size() != 1:
+			continue
+		var rc: Vector2 = stack_base[rsid] + Vector2(CW, CH) * 0.5
+		for e in all_cards:
+			if not is_instance_valid(e) or e.ctype != "employee" or not stacks.has(e.stack_id):
+				continue
+			var eb: Vector2 = stack_base[e.stack_id] + Vector2(0, e.stack_pos * CARD_OFFSET)
+			var ec := eb + Vector2(CW, CH) * 0.5
+			if absf(rc.x - ec.x) < CW * 0.92 and absf(rc.y - ec.y) < CH * 0.92:
+				_start_battle(c, e, true)   # 对手跳过来撞上 → 对手先手
+				return
+
+func _stack_center(sid: int) -> Vector2:
+	return stack_base[sid] + Vector2(CW, CH) * 0.5
+
+func _start_battle(rival, employee, rival_first: bool = true) -> void:
+	battle_active = true
+	battle_rival = rival
+	battle_employee = employee
+	battle_rival_first = rival_first
+	# 若是玩家拖着卡触发的战斗，先松开拖拽，否则被拖的卡（drag_sid）无法被移到阵位
+	if drag_sid != -1:
+		_clear_drag()
+	var rsid: int = rival.stack_id
+	var esid: int = employee.stack_id
+	# 战斗框中心选在 employee 牌的中心点
+	var center := _stack_center(esid)
+	# 夹住中心，使战斗框（宽 4CW、高 2CH）留在画布内
+	center.x = clampf(center.x, CANVAS_X0 + GAP + 2.0 * CW, CANVAS_X1 - GAP - 2.0 * CW)
+	center.y = clampf(center.y, MID_Y0 + CH, MID_Y1 - CH)
+	battle_center = center
+	# rival 往左、employee 往右，平行对齐，之间留一张牌的距离
+	_battle_move_stack(rsid, Vector2(center.x - 1.5 * CW, center.y - 0.5 * CH))
+	_battle_move_stack(esid, Vector2(center.x + 0.5 * CW, center.y - 0.5 * CH))
+	# 战斗框节点
+	if battle_border == null or not is_instance_valid(battle_border):
+		battle_border = Node2D.new()
+		battle_border.name = "BattleBorder"
+		battle_border.z_index = 2700
+		add_child(battle_border)
+		battle_border.draw.connect(_draw_battle_border)
+	battle_border.visible = true
+	battle_border.queue_redraw()
+	# 其它牌随机方向跳出战斗框
+	_scatter_cards_out_of_battle(center, rsid, esid)
+	# HP：对手=资金（产能×3），我方=现金储备
+	_sync_cash_state()
+	battle_hp_left = float(rival.funds_cur)
+	battle_hp_right = float(GameState.cash)
+	battle_hp_shown_left = battle_hp_left
+	battle_hp_shown_right = battle_hp_right
+	battle_dmg_to_player = 0.0
+	_ensure_battle_hp_labels()
+	# 开始回合循环
+	_run_battle()
+
+func _battle_move_stack(sid: int, target_base: Vector2) -> void:
+	if not stacks.has(sid):
+		return
+	var tw := create_tween()
+	tw.tween_method(_dodge_apply.bind(sid), stack_base[sid], target_base, 0.30) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _scatter_cards_out_of_battle(center: Vector2, rsid: int, esid: int) -> void:
+	var half := Vector2(2.0 * CW, CH)   # 战斗框 board 半尺寸
+	for k in stacks.keys():
+		var sid := int(k)
+		if sid == rsid or sid == esid:
+			continue
+		var sc := _stack_center(sid)
+		# 中心落在战斗框内（含一张牌容差）则踢出
+		if absf(sc.x - center.x) < half.x + CW * 0.5 and absf(sc.y - center.y) < half.y + CH * 0.5:
+			var ang := GameState.rng.randf_range(0.0, TAU)
+			var dir := Vector2(cos(ang), sin(ang))
+			var dist := half.length() + CW + GameState.rng.randf_range(0.0, CW)
+			var new_base := clamp_to_zone(center + dir * dist - Vector2(CW, CH) * 0.5, "")
+			_battle_move_stack(sid, new_base)
+
+func _end_battle() -> void:
+	battle_active = false
+	battle_running = false
+	battle_attacker_sid = -1
+	battle_rival = null
+	battle_employee = null
+	if battle_view_changed:
+		_battle_restore_view()
+		battle_view_changed = false
+	if is_instance_valid(battle_border):
+		battle_border.visible = false
+		battle_border.queue_redraw()
+	for n in [battle_hp_label_left, battle_hp_label_right, battle_hp_icon_left, battle_hp_icon_right]:
+		if is_instance_valid(n):
+			n.queue_free()
+	battle_hp_label_left = null
+	battle_hp_label_right = null
+	battle_hp_icon_left = null
+	battle_hp_icon_right = null
+
+# 视角平滑移到战斗框中心并放大 1.5 倍（结束后可恢复）
+func _battle_focus_view() -> void:
+	battle_saved_zoom = view_zoom
+	battle_saved_offset = view_offset
+	battle_view_changed = true
+	var focus := Vector2(BASE_W * 0.5, (HUD_H + INFO_Y) * 0.5)   # 屏幕上聚焦点（play 区中部）
+	var target_zoom := clampf(view_zoom * 1.5, VIEW_ZOOM_MIN, VIEW_ZOOM_MAX)
+	var s := _row_scale(battle_center.y)
+	var flat := Vector2(BASE_W * 0.5 + (battle_center.x - BASE_W * 0.5) * s, battle_center.y)
+	var from_zoom := view_zoom
+	var tw := create_tween()
+	tw.tween_method(func(t: float):
+		var z: float = lerpf(from_zoom, target_zoom, t)
+		view_zoom = z
+		view_offset = focus - flat * z   # 让战斗框中心始终落在 focus
+		_clamp_view_offset()
+		_relayout_all()
+		_relayout_loose_packs()
+		queue_redraw()
+	, 0.0, 1.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _battle_restore_view() -> void:
+	var from_zoom := view_zoom
+	var from_off := view_offset
+	var to_zoom := battle_saved_zoom
+	var to_off := battle_saved_offset
+	var tw := create_tween()
+	tw.tween_method(func(t: float):
+		view_zoom = lerpf(from_zoom, to_zoom, t)
+		view_offset = from_off.lerp(to_off, t)
+		_clamp_view_offset()
+		_relayout_all()
+		_relayout_loose_packs()
+		queue_redraw()
+	, 0.0, 1.0, 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+# 战斗框在屏幕空间的 AABB（board 矩形宽 4CW、高 2CH，四角投影后取包围盒）
+func _battle_screen_rect() -> Rect2:
+	var bx0 := battle_center.x - 2.0 * CW
+	var bx1 := battle_center.x + 2.0 * CW
+	var by0 := battle_center.y - CH
+	var by1 := battle_center.y + CH
+	var corners := [
+		_project(Vector2(bx0, by0)), _project(Vector2(bx1, by0)),
+		_project(Vector2(bx1, by1)), _project(Vector2(bx0, by1))]
+	var mn: Vector2 = corners[0]
+	var mx: Vector2 = corners[0]
+	for p in corners:
+		mn = Vector2(minf(mn.x, p.x), minf(mn.y, p.y))
+		mx = Vector2(maxf(mx.x, p.x), maxf(mx.y, p.y))
+	return Rect2(mn, mx - mn)
+
+func _ensure_battle_hp_labels() -> void:
+	for side in ["L", "R"]:
+		var lbl := Label.new()
+		lbl.name = "BattleHP" + side
+		lbl.z_index = 4095
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lbl.size = Vector2(190, 46)
+		_apply_bold_pixel_font(lbl, 34)   # 放大 30% + 加粗
+		lbl.add_theme_color_override("font_color", Color("2b2926"))
+		lbl.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.85))
+		lbl.add_theme_constant_override("outline_size", 7)
+		hud.add_child(lbl)
+		# HP 数字前的资金图标（与顶部 UI 栏一致）
+		var icon := TextureRect.new()
+		icon.name = "BattleHPIcon" + side
+		icon.texture = _ui_icon("streamline/icon_cash")
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.z_index = 4095
+		hud.add_child(icon)
+		if side == "L":
+			battle_hp_label_left = lbl
+			battle_hp_icon_left = icon
+		else:
+			battle_hp_label_right = lbl
+			battle_hp_icon_right = icon
+
+# 圆角矩形（屏幕空间）轮廓点，顺时针：TR→BR→BL→TL 角弧 + 直边
+func _round_rect_points(rect: Rect2, r: float, steps: int) -> PackedVector2Array:
+	var x := rect.position.x
+	var y := rect.position.y
+	var w := rect.size.x
+	var h := rect.size.y
+	r = minf(r, minf(w, h) * 0.5)
+	var centers := [
+		Vector2(x + w - r, y + r), Vector2(x + w - r, y + h - r),
+		Vector2(x + r, y + h - r), Vector2(x + r, y + r)]
+	var a0 := [-PI * 0.5, 0.0, PI * 0.5, PI]
+	var pts := PackedVector2Array()
+	for i in 4:
+		for s in steps + 1:
+			var a: float = a0[i] + (PI * 0.5) * float(s) / float(steps)
+			pts.append((centers[i] as Vector2) + Vector2(cos(a), sin(a)) * r)
+	pts.append(pts[0])
+	return pts
+
+# 沿折线连续画虚线（跨段相位连贯）
+func _draw_dashed_polyline(canvas: CanvasItem, pts: PackedVector2Array, dash: float, gap: float, col: Color, width: float, phase0: float = 0.0) -> void:
+	var period := dash + gap
+	var phase := fposmod(phase0, period)
+	for i in range(pts.size() - 1):
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[i + 1]
+		var seg := b - a
+		var L := seg.length()
+		if L < 0.001:
+			continue
+		var dir := seg / L
+		var pos := -phase
+		while pos < L:
+			var f := maxf(pos, 0.0)
+			var t := minf(pos + dash, L)
+			if t > f:
+				canvas.draw_line(a + dir * f, a + dir * t, col, width)
+			pos += period
+		phase = fposmod(phase + L, period)
+
+func _draw_battle_border() -> void:
+	if not battle_active:
+		return
+	var rect := _battle_screen_rect()
+	var pts := _round_rect_points(rect, 28.0 * view_zoom, 6)
+	# 很粗的浅红色虚线，沿边框转圈行进
+	_draw_dashed_polyline(battle_border, pts, 26.0 * view_zoom, 18.0 * view_zoom, Color("ef9a9a"), 9.0 * view_zoom, battle_dash_phase * view_zoom)
+
+# ---------------------------------------------------------------- battle turns
+func _run_battle() -> void:
+	if battle_running:
+		return
+	battle_running = true
+	_battle_focus_view()                          # 视角移到战斗框并放大
+	await get_tree().create_timer(1.5).timeout    # 攻击前暂停 1.5 秒（等入场 + 视角到位）
+	var rival_turn := battle_rival_first            # 谁先碰到谁先手
+	while battle_active:
+		if not (is_instance_valid(battle_rival) and is_instance_valid(battle_employee)):
+			break
+		await _battle_attack(rival_turn)
+		if not battle_active:
+			return
+		if battle_hp_left <= 0.0 or battle_hp_right <= 0.0:
+			break
+		await get_tree().create_timer(1.0).timeout   # 间隔 1 秒
+		rival_turn = not rival_turn
+	_finish_battle()
+
+# 一次攻击全过程约 3 秒：移上去(1s) → 扣血+跳数字(1s) → 移回(1s)
+func _battle_attack(rival_attacking: bool) -> void:
+	var attacker = battle_rival if rival_attacking else battle_employee
+	var defender = battle_employee if rival_attacking else battle_rival
+	if not (is_instance_valid(attacker) and is_instance_valid(defender)):
+		return
+	var asid: int = attacker.stack_id
+	var dsid: int = defender.stack_id
+	if not (stacks.has(asid) and stacks.has(dsid)):
+		return
+	var orig: Vector2 = stack_base[asid]
+	var dest: Vector2 = stack_base[dsid]
+	# 不完全重叠：随机重叠 30%~50%（两卡相隔一张卡，故 lerp 系数 = 0.5 + 0.5×重叠比）
+	var overlap := GameState.rng.randf_range(0.3, 0.5)
+	var hit_pos := orig.lerp(dest, 0.5 + 0.5 * overlap)
+	# 攻击力 = 攻击方产能 ±30%
+	var cap := float(int(attacker.cdef.get("capacity", 0)))
+	var power: float = maxf(0.1, cap * GameState.rng.randf_range(0.7, 1.3))
+	# 攻击方置顶
+	battle_attacker_sid = asid
+	relayout(asid)
+	# 移到被攻击卡上（0.7s）
+	var t1 := create_tween()
+	t1.tween_method(_dodge_apply.bind(asid), orig, hit_pos, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await t1.finished
+	if not battle_active:
+		return
+	# 扣血 + 伤害数字跳出（1.2s）
+	_battle_apply_damage(rival_attacking, power)
+	if is_instance_valid(defender):
+		_battle_damage_popup(defender, power)
+	await get_tree().create_timer(1.2).timeout
+	if not battle_active:
+		return
+	# 移回原位（0.7s）
+	if stacks.has(asid):
+		var t2 := create_tween()
+		t2.tween_method(_dodge_apply.bind(asid), stack_base[asid], orig, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		await t2.finished
+	# 取消置顶
+	battle_attacker_sid = -1
+	if stacks.has(asid):
+		relayout(asid)
+
+func _battle_apply_damage(rival_attacking: bool, power: float) -> void:
+	if rival_attacking:
+		battle_hp_right = maxf(0.0, battle_hp_right - power)   # 扣我方现金
+		battle_dmg_to_player += power
+	else:
+		battle_hp_left = maxf(0.0, battle_hp_left - power)     # 扣对手资金
+		if is_instance_valid(battle_rival):
+			battle_rival.funds_cur = int(ceil(battle_hp_left))
+
+# 伤害数字（保留一位小数）从被攻击卡上跳出，背景为 battle-bubble.svg
+func _battle_damage_popup(defender, amount: float) -> void:
+	var scr := _project(stack_base[defender.stack_id] + Vector2(CW * 0.5, CH * 0.3))
+	var holder := Control.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.z_index = 4096
+	hud.add_child(holder)
+	holder.position = scr
+	var sz := 96.0
+	var bg := TextureRect.new()
+	bg.texture = _battle_bubble_texture()
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.size = Vector2(sz, sz)
+	bg.position = -Vector2(sz, sz) * 0.5
+	holder.add_child(bg)
+	var lbl := Label.new()
+	lbl.text = "-%.1f" % amount
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.size = Vector2(sz, sz)
+	lbl.position = -Vector2(sz, sz) * 0.5
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_bold_pixel_font(lbl, 26)
+	lbl.add_theme_color_override("font_color", Color("8a1f1f"))
+	holder.add_child(lbl)
+	holder.scale = Vector2.ZERO
+	var tw := create_tween()
+	tw.tween_property(holder, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(holder, "position:y", scr.y - 70.0, 1.1).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(holder, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(holder.queue_free)
+
+# 战斗区域中心的 VS 背景装饰（画在画布层，位于双方卡牌之下）
+func _draw_battle_decoration() -> void:
+	if not battle_active:
+		return
+	var tex := _versus_texture()
+	if tex == null:
+		return
+	var c := _project(battle_center)
+	var s := 1.19 * CW * view_zoom   # 再缩小 30%
+	draw_texture_rect(tex, Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s)), false, Color(1, 1, 1, 0.55))
+
+func _versus_texture() -> Texture2D:
+	if battle_versus_tex != null:
+		return battle_versus_tex
+	var path := "res://assets/versus.svg"
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 4.0) == OK:
+			battle_versus_tex = ImageTexture.create_from_image(img)
+	return battle_versus_tex
+
+func _battle_bubble_texture() -> Texture2D:
+	if battle_bubble_tex != null:
+		return battle_bubble_tex
+	var path := "res://assets/battle-bubble.svg"
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 4.0) == OK:
+			battle_bubble_tex = ImageTexture.create_from_image(img)
+	return battle_bubble_tex
+
+func _finish_battle() -> void:
+	# 我方累计受伤，按整数从现金卡扣除
+	var lost := int(floor(battle_dmg_to_player))
+	if lost > 0:
+		_spend_cash_cards(mini(lost, _cash_card_count()))
+		_sync_cash_state()
+	var rival_dead := battle_hp_left <= 0.0
+	var player_dead := battle_hp_right <= 0.0
+	var rival_ref = battle_rival
+	var emp_ref = battle_employee
+	_end_battle()
+	# 败者消失（对手优先）
+	if rival_dead and is_instance_valid(rival_ref):
+		_dissolve_node(rival_ref)
+		_show_toast("击退了 %s！" % String(rival_ref.cdef.get("name", "对手")))
+	elif player_dead and is_instance_valid(emp_ref):
+		_dissolve_node(emp_ref)
+		_show_toast("%s 被击败了…" % String(emp_ref.cdef.get("name", "员工")))
 
 func _sell_stack(sid: int, sale_origin: Vector2, sale_display: Vector2) -> bool:
 	var arr: Array = stacks[sid].duplicate()
@@ -1650,10 +2174,17 @@ func _department_output(d: Dictionary) -> void:
 
 # ---------------------------------------------------------------- process
 func _process(delta: float) -> void:
+	if is_instance_valid(bottom_info):
+		bottom_info.queue_redraw()   # 底部信息栏随 hover/hint 实时刷新
+	_update_battle(delta)
 	if is_instance_valid(founder_bubble):
 		var founder = _founder_on_board()
 		if is_instance_valid(founder):
-			_reposition_founder_bubble(founder_bubble, founder)
+			# Pop the bubble the moment the founder card is moved.
+			if _board_topleft(founder).distance_to(founder_bubble_anchor) > 2.0:
+				founder_bubble.queue_free()
+			else:
+				_reposition_founder_bubble(founder_bubble, founder)
 		else:
 			founder_bubble.queue_free()
 	if game_over:
@@ -1711,7 +2242,7 @@ func _update_card_visual_states(delta: float) -> void:
 	var mouse_pos := get_viewport().get_mouse_position()
 	var next_hover = null
 	if drag_cards.is_empty() and not panning_canvas:
-		next_hover = _topmost_at(mouse_pos)
+		next_hover = _topmost_at(mouse_pos, true)   # 对手卡虽不可拾取，悬停仍显示信息
 	if next_hover != hover_card:
 		if is_instance_valid(hover_card):
 			hover_card.set_hovered(false)
@@ -1806,7 +2337,7 @@ func _sanitize_pack_contents(pack_id: String, contents: Array) -> Array:
 		out.append(id)
 	return out
 
-func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> Node2D:
+func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landing_override = null) -> Node2D:
 	var p = PackCardScript.new()
 	add_child(p)
 	p.setup(pack_id, String(pack.get("name", "卡包")), contents)
@@ -1815,7 +2346,7 @@ func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> No
 	p.position = start
 	p.scale = Vector2(0.35, 0.35) * view_zoom
 	loose_packs.append(p)
-	p.board_pos = _random_pack_landing()
+	p.board_pos = (landing_override as Vector2) if landing_override != null else _pack_landing_below(pack_id)
 	var landing := _project(p.board_pos)
 
 	# 甩出方向：朝落点行进方向旋转
@@ -1840,10 +2371,15 @@ func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array) -> No
 	return p
 
 func _pack_button_start(pack_id: String) -> Vector2:
+	# Spawn the loose pack centered on its UI button. The card is created at
+	# 0.35 * view_zoom scale and draws from its top-left origin, so offset by
+	# the *scaled* half-size (not the full size) to keep it on the button.
+	var spawn_scale := 0.35 * view_zoom
 	for row in pack_buttons:
 		if String(row["id"]) == pack_id:
 			var btn: Button = row["btn"]
-			return btn.position + btn.size * 0.5 - Vector2(PackCardScript.W, PackCardScript.H) * 0.5
+			return btn.global_position + btn.size * 0.5 \
+				- Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * spawn_scale
 	return Vector2(520, 80)
 
 func _random_pack_landing() -> Vector2:
@@ -1851,6 +2387,26 @@ func _random_pack_landing() -> Vector2:
 		GameState.rng.randf_range(190.0, 760.0),
 		GameState.rng.randf_range(198.0, 350.0)
 	)
+
+# Landing point (board space) directly below the pack's UI button, so the
+# thrown pack settles under the button it came from. Small jitter avoids
+# perfect overlap when several packs are opened in a row.
+func _pack_landing_below(pack_id: String) -> Vector2:
+	for row in pack_buttons:
+		if String(row["id"]) == pack_id:
+			var btn: Button = row["btn"]
+			var bcx: float = btn.global_position.x + btn.size.x * 0.5
+			var drop: float = GameState.rng.randf_range(150.0, 240.0)
+			var jitter: float = GameState.rng.randf_range(-36.0, 36.0)
+			# Screen-space top-left target that centers the full-size card under the button.
+			var target := Vector2(
+				bcx + jitter - PackCardScript.W * 0.5 * view_zoom,
+				btn.global_position.y + btn.size.y + drop
+			)
+			var bp := _unproject(target)
+			bp.y = clampf(bp.y, MID_Y0 + 8.0, MID_Y1 - PackCardScript.H)
+			return bp
+	return _random_pack_landing()
 
 func _relayout_loose_packs() -> void:
 	for p in loose_packs:
@@ -1917,13 +2473,13 @@ func _skip_pack_card(id: String) -> bool:
 	return false
 
 # 从 origin_board 朝四周随机撒一张牌的落点，尽量不与已有牌堆重叠（多次试探取最空的）
-func _scatter_landing(origin_board: Vector2, zone: String) -> Vector2:
+func _scatter_landing(origin_board: Vector2, zone: String, dist_mult: float = 1.0) -> Vector2:
 	var clear := Vector2(CW * 0.92, CH * 0.7)   # 认为"不重叠"所需的最小间距
 	var best := Vector2.ZERO
 	var best_gap := -INF
 	for attempt in range(14):
 		var ang := GameState.rng.randf_range(-0.25 * PI, 1.15 * PI)
-		var dist := GameState.rng.randf_range(170.0, 430.0)
+		var dist := GameState.rng.randf_range(170.0, 430.0) * dist_mult
 		var cand := clamp_to_zone(origin_board + Vector2(cos(ang), sin(ang)) * dist, zone)
 		var nearest := INF
 		for sb in stack_base.values():
@@ -1944,7 +2500,9 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 		GameState.unlock_business_model(DataLoader.business_model_recipe_id(id))
 		_refresh_recipe_book()
 	var origin_board := _unproject(origin_display) - Vector2(CW, CH) * 0.5
-	var landing := _scatter_landing(origin_board, zone)
+	# 对手卡跳出距离翻倍
+	var is_rival := String(DataLoader.cards.get(id, {}).get("type", "")) == "rival"
+	var landing := _scatter_landing(origin_board, zone, 2.0 if is_rival else 1.0)
 	var c := spawn_card(id, landing)
 	if c == null:
 		return
@@ -2335,7 +2893,7 @@ func _clear_legacy_top_nodes() -> void:
 		if node != null:
 			node.queue_free()
 
-func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) -> Label:
+func _top_stat_label(group_name: String, icon_name: String, x: float, w: float, icon_size: float = TOP_ICON_SIZE) -> Label:
 	var group := top_bar.get_node_or_null(group_name) as Control
 	if group == null:
 		group = Control.new()
@@ -2349,10 +2907,10 @@ func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) 
 	if icon == null:
 		icon = TextureRect.new()
 		icon.name = "Icon"
-		icon.size = Vector2(TOP_ICON_SIZE, TOP_ICON_SIZE)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		group.add_child(icon)
-	icon.position = Vector2(0, _top_icon_y())
+	icon.size = Vector2(icon_size, icon_size)
+	icon.position = Vector2(0, (HUD_H - icon_size) * 0.5)
 	icon.texture = _ui_icon(icon_name)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -2361,10 +2919,10 @@ func _top_stat_label(group_name: String, icon_name: String, x: float, w: float) 
 	if label == null:
 		label = Label.new()
 		label.name = "Label"
-		label.size = Vector2(w - TOP_ICON_SIZE - 12, 40)
+		label.size = Vector2(w - icon_size - 12, 40)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		group.add_child(label)
-	label.position = Vector2(TOP_ICON_SIZE + 12, _top_label_y())
+	label.position = Vector2(icon_size + 12, _top_label_y())
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(label, TOP_LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", INK)
@@ -2441,6 +2999,7 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 	var content_h := 58.0
 	var offset_y := (size.y - content_h) * 0.5
 	var icon_w := 30.6
+	icon.visible = not locked
 	icon.texture = _ui_icon("cost")
 	icon.position = Vector2((size.x - icon_w) * 0.5, offset_y)
 	icon.size = Vector2(icon_w, icon_w)
@@ -2460,6 +3019,7 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		cost.name = "PackCost"
 		cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(cost)
+	cost.visible = not locked
 	cost.text = str(price)
 	cost.position = Vector2((size.x - icon_w) * 0.5, offset_y + 6.3)
 	cost.size = Vector2(icon_w, 18)
@@ -2474,6 +3034,7 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		label.name = "PackLabel"
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pb.add_child(label)
+	label.visible = not locked
 	label.text = pack_name
 	label.position = Vector2(7, offset_y + 40.0)
 	label.size = Vector2(size.x - 14, 18)
@@ -2483,6 +3044,22 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(label, 13)
 	label.add_theme_color_override("font_color", Color("f7f2e8") if not locked else Color("9b978f"))
+
+	# Locked pack: hide icon/cost/name, show a centered "？？" instead.
+	var qmark := pb.get_node_or_null("PackLocked") as Label
+	if qmark == null:
+		qmark = Label.new()
+		qmark.name = "PackLocked"
+		qmark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pb.add_child(qmark)
+	qmark.visible = locked
+	qmark.text = "？？"
+	qmark.position = Vector2(0, 0)
+	qmark.size = size
+	qmark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	qmark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_bold_pixel_font(qmark, 24)
+	qmark.add_theme_color_override("font_color", Color("9b978f"))
 
 func _build_hud() -> void:
 	hud = get_node_or_null("HUD") as CanvasLayer
@@ -2544,8 +3121,8 @@ func _build_hud() -> void:
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	lbl_business = _top_stat_label("BusinessGroup", "streamline/icon_business", 1280, 170)
-	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 1450, 170)
-	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 960, 190)
+	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 1450, 170, TOP_ICON_SIZE * 1.4)
+	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 960, 190, TOP_ICON_SIZE * 1.4)
 	lbl_expense.mouse_filter = Control.MOUSE_FILTER_STOP
 	lbl_expense.mouse_entered.connect(_on_expense_hover)
 	lbl_expense.mouse_exited.connect(_hide_hover)
@@ -2579,7 +3156,7 @@ func _build_hud() -> void:
 		rbtn_icon.queue_free()
 	rbtn.pressed.connect(_toggle_research)
 
-	var book_btn := hud.get_node_or_null("Buttons/RecipeBookButton") as Button
+	book_btn = hud.get_node_or_null("Buttons/RecipeBookButton") as Button
 	if book_btn == null:
 		book_btn = Button.new()
 		book_btn.name = "RecipeBookButton"
@@ -2588,8 +3165,43 @@ func _build_hud() -> void:
 		hud.add_child(book_btn)
 	book_btn.text = "商业模式"
 	_apply_pixel_font(book_btn, 20)
-	_style_button(book_btn, Color("c2b6d6"))
-	book_btn.pressed.connect(_toggle_recipe_book)
+	# 按钮底色与弹窗一致，作为文件夹标签
+	_style_button(book_btn, PANEL_CREAM)
+	if not book_btn.pressed.is_connected(_toggle_recipe_book):
+		book_btn.pressed.connect(_toggle_recipe_book)
+
+	# 公司任务：同款样式，深蓝色；按钮大小不变，右边界对齐「商业模式」弹窗右边界
+	var book_panel_right := 30.0 + 310.0   # recipe_panel: position.x 30 + size.x 310
+	var task_w := 130.0
+	var task_btn := hud.get_node_or_null("Buttons/CompanyTaskButton") as Button
+	if task_btn == null:
+		task_btn = Button.new()
+		task_btn.name = "CompanyTaskButton"
+		task_btn.size = Vector2(task_w, 64)
+		hud.add_child(task_btn)
+	task_btn.position = Vector2(book_panel_right - task_w, INFO_Y - 88)
+	task_btn.text = "公司任务"
+	_apply_pixel_font(task_btn, 20)
+	_style_button(task_btn, Color("2c3e63"))
+	# 深蓝底配浅色字，保证可读
+	var task_fg := Color("f3ead7")
+	task_btn.add_theme_color_override("font_color", task_fg)
+	task_btn.add_theme_color_override("font_hover_color", task_fg)
+	task_btn.add_theme_color_override("font_pressed_color", task_fg)
+	task_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.5))
+	if not task_btn.pressed.is_connected(_toggle_company_tasks):
+		task_btn.pressed.connect(_toggle_company_tasks)
+
+	# 底部信息栏：放在 HUD 层（在所有卡牌之上），z 低于底部按钮但高于卡牌
+	bottom_info = hud.get_node_or_null("BottomInfo") as Node2D
+	if bottom_info == null:
+		bottom_info = Node2D.new()
+		bottom_info.name = "BottomInfo"
+		hud.add_child(bottom_info)
+	bottom_info.z_index = -1
+	if not bottom_info.draw.is_connected(_draw_bottom_info):
+		bottom_info.draw.connect(_draw_bottom_info)
+	bottom_info.queue_redraw()
 
 	bank_button = hud.get_node_or_null("BankButton") as Button
 	if bank_button != null and bank_button.get_parent() == hud:
@@ -2688,15 +3300,24 @@ func _build_hover_panel() -> void:
 	hover_label.add_theme_color_override("font_color", INK)
 	hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-func _show_hover(text: String, anchor: Control) -> void:
+func _show_hover(text: String, anchor: Control, centered: bool = false) -> void:
 	if hover_panel == null:
 		return
 	hover_label.text = text
 	var rows := text.split("\n").size()
-	var w := 460.0
+	var w := 230.0
 	var h := rows * 26.0 + 16.0
 	hover_panel.size = Vector2(w, h)
-	hover_label.size = Vector2(w - 24, h - 16)
+	if centered:
+		hover_label.position = Vector2(12, 8)
+		hover_label.size = Vector2(w - 24, h - 16)
+		hover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hover_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	else:
+		hover_label.position = Vector2(12, 8)
+		hover_label.size = Vector2(w - 24, h - 16)
+		hover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var x := clampf(anchor.position.x, 8.0, BASE_W - w - 8.0)
 	var y := anchor.position.y + anchor.size.y + 6.0
 	if y + h > BASE_H:
@@ -2715,7 +3336,13 @@ func _on_pack_hover(pid: String) -> void:
 			btn = e.get("btn")
 			break
 	if btn != null:
-		_show_hover(_pack_hover_text(pid), btn)
+		var pack: Dictionary = DataLoader.packs.get(pid, {})
+		var locked := GameState.stage < int(pack.get("stage", 0))
+		if locked:
+			# Locked pack: hide its real contents, just show a left-aligned "？？".
+			_show_hover("？？", btn)
+		else:
+			_show_hover(_pack_hover_text(pid), btn)
 
 func _pack_hover_text(pid: String) -> String:
 	var pack: Dictionary = DataLoader.packs.get(pid, {})
@@ -2743,7 +3370,8 @@ func _pack_hover_text(pid: String) -> String:
 			
 	var lines: Array = []
 	lines.append("%s（$%d）包含：" % [pack_name, price])
-	lines.append("剩余 %d 张卡片未抽到" % undrawn_count)
+	if undrawn_count > 0:
+		lines.append("剩余 %d 张卡片未抽到" % undrawn_count)
 	for nm in drawn_names:
 		lines.append("- %s" % nm)
 		
@@ -2785,7 +3413,7 @@ func _expense_hover_text() -> String:
 			by_name[nm][0] += 1
 		else:
 			by_name[nm] = [1, s]
-	var lines: Array = ["月支出构成（薪资）："]
+	var lines: Array = ["月运营支出构成（薪资）："]
 	var total := 0
 	for nm in by_name:
 		var cnt: int = by_name[nm][0]
@@ -2806,20 +3434,40 @@ func _show_toast(txt: String) -> void:
 # ---------------------------------------------------------------- recipe book
 func _build_recipe_book_panel() -> void:
 	recipe_panel = PanelContainer.new()
-	recipe_panel.position = Vector2(30, 210)
-	recipe_panel.size = Vector2(310, 700)
+	# 弹窗坐落在「商业模式」按钮上方、左对齐；底边内缩（recessed）到按钮顶边之上，
+	# 由 book_tab_seam 用圆弧把内缩的底边自然下接到按钮（文件夹标签效果）。
+	var panel_h := 700.0
+	var y_recess := (INFO_Y - 88.0) - 22.0   # 弹窗底边：按钮顶边再往上缩 22px
+	recipe_panel.position = Vector2(30, y_recess - panel_h)
+	recipe_panel.size = Vector2(310, panel_h)
 	recipe_panel.visible = false
 	var psb := StyleBoxFlat.new()
-	psb.bg_color = Color(0.98, 0.95, 0.89, 0.97)
-	psb.set_corner_radius_all(8)
+	psb.bg_color = PANEL_CREAM
+	# 顶部圆角，底部直角；底边线交给 seam 画（这里关掉），与按钮无缝拼接
+	psb.corner_radius_top_left = 8
+	psb.corner_radius_top_right = 8
+	psb.corner_radius_bottom_left = 0
+	psb.corner_radius_bottom_right = 0
 	psb.border_color = INK
-	psb.set_border_width_all(3)
+	psb.set_border_width_all(4)        # 与按钮边框同粗
+	psb.border_width_bottom = 0        # 底边交给 seam 画
+	# 与按钮一致的投影
+	psb.shadow_color = Color(0, 0, 0, 0.28)
+	psb.shadow_size = 4
+	psb.shadow_offset = Vector2(4, 5)
 	psb.content_margin_left = 18
 	psb.content_margin_right = 18
 	psb.content_margin_top = 16
 	psb.content_margin_bottom = 16
 	recipe_panel.add_theme_stylebox_override("panel", psb)
 	hud.add_child(recipe_panel)
+
+	# 缝盖：用按钮色抹掉「面板底边 + 按钮顶边」之间的墨线，使两者融合成文件夹标签
+	book_tab_seam = Node2D.new()
+	book_tab_seam.name = "BookTabSeam"
+	book_tab_seam.visible = false
+	hud.add_child(book_tab_seam)
+	book_tab_seam.draw.connect(_draw_book_tab_seam)
 
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2859,12 +3507,83 @@ func _build_recipe_book_panel() -> void:
 	box.add_child(recipe_list)
 	_refresh_recipe_book()
 
+# 弹窗（文件夹）+ 按钮（标签）整体只画一条连续墨线：
+# 弹窗内缩底边 → 圆弧下接 → 标签右/底/左边 → 接回弹窗左边框。线段一体化，无接缝。
+func _draw_book_tab_seam() -> void:
+	if book_tab_seam == null or recipe_panel == null or not recipe_panel.visible:
+		return
+	var w := 4.0                     # 与按钮/弹窗边框同粗
+	var ins := w * 0.5               # 边框画在矩形内侧，线中心内移半个线宽
+	var pl := 30.0                   # 弹窗/标签矩形左边
+	var pr := 340.0                  # 弹窗矩形右边
+	var tr := 160.0                  # 标签（按钮）矩形右边
+	var pl_line := pl + ins          # 左框线中心（= 按钮左框线，对齐）
+	var pr_line := pr - ins          # 右框线中心
+	var tr_line := tr - ins          # 标签右框线中心
+	var tab_top := INFO_Y - 88.0     # 按钮顶边
+	var tab_bot := INFO_Y - 24.0     # 按钮底边（position.y 928 + 高 64）
+	var y_recess := tab_top - 22.0   # 弹窗内缩后的底边（与 _build_recipe_book_panel 一致）
+	var r := 16.0                    # 连接圆弧半径
+	var up := 8.0                    # 向上叠进弹窗左右边框，消除接缝缺口
+
+	# 凹角连接圆弧：内缩底边 (tr_line+r, y_recess) → 标签右框线 (tr_line, y_recess+r)，两端相切
+	var arc := PackedVector2Array()
+	var cx := tr_line + r
+	var cy := y_recess + r
+	var steps := 12
+	for i in steps + 1:
+		var ang := deg_to_rad(270.0 - 90.0 * float(i) / float(steps))   # 270° → 180°
+		arc.append(Vector2(cx + r * cos(ang), cy + r * sin(ang)))
+
+	# 奶白填充：桥接区（弹窗底 ↔ 按钮顶），随圆弧收口，不溢进缺口、不盖按钮文字
+	var fill := PackedVector2Array()
+	fill.append(Vector2(pl, y_recess - up))
+	fill.append(Vector2(tr_line + r, y_recess - up))
+	for p in arc:
+		fill.append(p)
+	fill.append(Vector2(tr, tab_top + 6.0))
+	fill.append(Vector2(pl, tab_top + 6.0))
+	book_tab_seam.draw_colored_polygon(fill, PANEL_CREAM)
+
+	# 一条连续墨线，串起整个底部 + 标签轮廓；两端叠进弹窗左右边框，无缝衔接
+	var path := PackedVector2Array()
+	path.append(Vector2(pr_line, y_recess - up))   # 叠进弹窗右边框
+	path.append(Vector2(pr_line, y_recess))        # 转角
+	path.append(Vector2(tr_line + r, y_recess))    # 内缩底边
+	for p in arc:                                  # 圆弧下接
+		path.append(p)
+	path.append(Vector2(tr_line, tab_bot))         # 标签右边
+	path.append(Vector2(pl_line, tab_bot))         # 标签底边
+	path.append(Vector2(pl_line, y_recess - up))   # 标签/弹窗左边，叠进弹窗左边框
+	book_tab_seam.draw_polyline(path, INK, w, true)
+
+# 打开/合上「商业模式」按钮自身边框：打开时整框关闭，轮廓交由 seam 一体绘制
+func _set_book_tab_open(open: bool) -> void:
+	if book_btn == null:
+		return
+	var bw := 0 if open else 4
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var sb := book_btn.get_theme_stylebox(state) as StyleBoxFlat
+		if sb != null:
+			sb.border_width_left = bw
+			sb.border_width_right = bw
+			sb.border_width_top = bw
+			sb.border_width_bottom = bw
+
 func _toggle_recipe_book() -> void:
 	if recipe_panel == null:
 		return
 	recipe_panel.visible = not recipe_panel.visible
+	_set_book_tab_open(recipe_panel.visible)
+	if book_tab_seam != null:
+		book_tab_seam.visible = recipe_panel.visible
+		book_tab_seam.queue_redraw()
 	if recipe_panel.visible:
 		_refresh_recipe_book()
+
+func _toggle_company_tasks() -> void:
+	# TODO: 公司任务面板待实现
+	pass
 
 # ---------------------------------------------------------------- gear menu
 func _panel_stylebox() -> StyleBoxFlat:
@@ -3444,7 +4163,7 @@ func _update_hud() -> void:
 	if lbl_finance:
 		lbl_finance.text = "资金 $%d" % GameState.cash
 	if lbl_expense:
-		lbl_expense.text = "月支出 $%d" % _current_expense()
+		lbl_expense.text = "月运营支出 $%d" % _current_expense()
 	if lbl_val:
 		lbl_val.text = "估值 $%d" % GameState.valuation
 	if research_panel and research_panel.visible:
@@ -3469,6 +4188,7 @@ func _draw() -> void:
 	# 顶/底硬墨线（无抗锯齿）
 	draw_line(_project(Vector2(CANVAS_X0, DRAW_Y1)), _project(Vector2(CANVAS_X1, DRAW_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
 	draw_line(_project(Vector2(CANVAS_X0, MID_Y1)), _project(Vector2(CANVAS_X1, MID_Y1)), Color("3a352f"), maxf(2.0, 3.0 * view_zoom))
+	_draw_battle_decoration()   # 战斗中：中心 VS 装饰（画在画布上、卡牌之下）
 
 	# 画布外框（厚像素框，跟随透视斜边）：白色外框 + 黑色内框
 	var cf_outer := cf_poly.duplicate()
@@ -3485,18 +4205,7 @@ func _draw() -> void:
 		draw_rect(BANK_RECT, Color("d9a552"), false, 3.0)
 		draw_string(f, BANK_RECT.position + Vector2(86, 54), "在市场上出售", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("3a352f"))
 
-	# 底部信息栏：所有解说/hint，斜体「」呈现
-	draw_rect(Rect2(0, INFO_Y, BASE_W, BASE_H - INFO_Y), ORG_BG, true)
-	draw_line(Vector2(0, INFO_Y), Vector2(BASE_W, INFO_Y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
-	var info_y := INFO_Y
-	# 悬停优先：鼠标移到卡上即出该卡（或堆叠）信息；移开则恢复选中/默认 hint
-	var info_parts := _hover_info_parts()
-	if not info_parts.is_empty():
-		_draw_info_line(f, info_y + 30, info_parts, Color(0.30, 0.27, 0.23, 0.95), 22)
-	else:
-		var fresh := toast_t > 0.0
-		var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
-		_draw_italic(f, Vector2(0, info_y + 30), hint_text, 22, hint_col)
+	# 底部信息栏现绘制在 bottom_info（HUD 层）上，始终置顶，见 _draw_bottom_info()
 
 # 伪斜体：对画布做切变后绘制（fallback 字体无真斜体）
 func _round_corners(q: Array, r: float) -> PackedVector2Array:
@@ -3544,15 +4253,38 @@ func _inset_quad(q: Array, d: float) -> Array:
 		out.append(p + dir * d)
 	return out
 
-func _draw_italic(f: Font, pos: Vector2, text: String, size: int, col: Color) -> void:
+func _draw_italic(canvas: CanvasItem, f: Font, pos: Vector2, text: String, size: int, col: Color) -> void:
 	var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), pos)
-	draw_set_transform_matrix(t)
-	draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, BASE_W, size, col)
-	draw_set_transform_matrix(Transform2D.IDENTITY)
+	canvas.draw_set_transform_matrix(t)
+	canvas.draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, BASE_W, size, col)
+	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+
+# 底部信息栏：画在 HUD 层的 bottom_info 节点上，z 高于所有卡牌，始终置顶。
+func _draw_bottom_info() -> void:
+	if bottom_info == null:
+		return
+	var f := _ui_font()
+	bottom_info.draw_rect(Rect2(0, INFO_Y, BASE_W, BASE_H - INFO_Y), ORG_BG, true)
+	bottom_info.draw_line(Vector2(0, INFO_Y), Vector2(BASE_W, INFO_Y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
+	var info_y := INFO_Y
+	# 悬停优先：鼠标移到卡上即出该卡（或堆叠）信息；移开则恢复选中/默认 hint
+	var info_parts := _hover_info_parts()
+	if not info_parts.is_empty():
+		_draw_info_line(bottom_info, f, info_y + 30, info_parts, Color(0.30, 0.27, 0.23, 0.95), 22)
+	else:
+		var fresh := toast_t > 0.0
+		var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
+		_draw_italic(bottom_info, f, Vector2(0, info_y + 30), hint_text, 22, hint_col)
 
 func _on_business_model_unlocked(recipe_id: String) -> void:
 	var bm_name := DataLoader.card_name(DataLoader.business_model_card_id(recipe_id))
 	_show_founder_bubble("发现了 %s！" % bm_name)
+
+# Anchor where the speech tail originates: the founder's "mouth",
+# upper-right inside the card. Mapped through the card's own transform so it
+# tracks the live, projected card position (NOT re-projected from screen space).
+func _founder_mouth_screen(founder: Node2D) -> Vector2:
+	return founder.to_global(Vector2(CW * 0.70, CH * 0.34))
 
 func _show_founder_bubble(text: String) -> void:
 	var founder = _founder_on_board()
@@ -3592,8 +4324,8 @@ func _show_founder_bubble(text: String) -> void:
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_font_override("font", _ui_regular_font())
-	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_font_override("font", _ui_font())
+	label.add_theme_font_size_override("font_size", 20)
 	bubble.add_child(label)
 	
 	# Connect draw signal to draw the comic speech balloon pointing tail
@@ -3601,69 +4333,80 @@ func _show_founder_bubble(text: String) -> void:
 		var f = _founder_on_board()
 		if not is_instance_valid(f):
 			return
-		var f_pos = _project(f.position + Vector2(CW * 0.5, 0.0))
-		var local_pivot = f_pos - bubble.position
+		var mouth = _founder_mouth_screen(f)
+		var local_pivot = mouth - bubble.position
 		var w = bubble.size.x
 		var h = bubble.size.y
-		
-		# Base of triangle on bubble's bottom edge (or top edge), clamped within bubble width bounds
-		var bx = clampf(local_pivot.x - 10.0, 16.0, w - 16.0)
-		var cx = clampf(local_pivot.x + 10.0, 16.0, w - 16.0)
-		
+
+		# Tail tip points at the mouth.
 		var pt_a = local_pivot
-		var pt_b = Vector2.ZERO
-		var pt_c = Vector2.ZERO
-		
-		if local_pivot.y > h:
-			# Card is below bubble, point down
-			pt_b = Vector2(bx, h - 3.0)
-			pt_c = Vector2(cx, h - 3.0)
-		else:
-			# Card is above bubble, point up
-			pt_b = Vector2(bx, 3.0)
-			pt_c = Vector2(cx, 3.0)
-			
-		# Draw solid white polygon first to merge seamlessly into bubble background
-		bubble.draw_polygon(
-			PackedVector2Array([pt_b, pt_a, pt_c]),
-			PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE])
+
+		# Tail base sits on whichever edge faces the mouth. The base is offset
+		# to the RIGHT of the tip so the tail leans left → classic speech-bubble look.
+		var base_w := 26.0
+		var lean := 20.0   # how far the base center is pushed right of the tip
+		var on_bottom: bool = local_pivot.y > h * 0.5
+		var edge_y: float = (h - 2.0) if on_bottom else 2.0
+		var base_cx: float = clampf(local_pivot.x + lean, 18.0 + base_w * 0.5, w - 18.0 - base_w * 0.5)
+		var pt_b := Vector2(base_cx - base_w * 0.5, edge_y)
+		var pt_c := Vector2(base_cx + base_w * 0.5, edge_y)
+
+		# Fill the tail (extend the base a few px into the body so it merges seamlessly).
+		var inset: float = 6.0 if on_bottom else -6.0
+		bubble.draw_colored_polygon(
+			PackedVector2Array([
+				Vector2(pt_b.x, pt_b.y - inset),
+				pt_a,
+				Vector2(pt_c.x, pt_c.y - inset),
+			]),
+			Color.WHITE
 		)
-		# Draw the comic black outline lines
+		# Erase the bubble's border segment where the tail attaches (no seam line).
+		bubble.draw_line(
+			Vector2(pt_b.x - 1.0, edge_y),
+			Vector2(pt_c.x + 1.0, edge_y),
+			Color.WHITE, 5.0
+		)
+		# Comic black outline on the two free edges of the tail only.
 		bubble.draw_line(pt_b, pt_a, Color.BLACK, 3.0)
 		bubble.draw_line(pt_c, pt_a, Color.BLACK, 3.0)
 	)
 	
 	founder_bubble = bubble
+	founder_bubble_anchor = _board_topleft(founder)
 	_reposition_founder_bubble(bubble, founder)
-	
+
 	bubble.scale = Vector2.ZERO
 	var tw := create_tween()
 	tw.tween_property(bubble, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(2.0)
+	tw.tween_interval(3.0)
 	tw.tween_property(bubble, "scale", Vector2.ZERO, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tw.tween_callback(bubble.queue_free)
 
 func _reposition_founder_bubble(bubble: Control, founder: Node2D) -> void:
-	var founder_screen_pos = _project(founder.position + Vector2(CW * 0.5, 0.0))
-	
+	var mouth = _founder_mouth_screen(founder)
+
 	if bubble.size == Vector2.ZERO:
 		bubble.reset_size()
-		
+
 	var w = bubble.size.x
 	var h = bubble.size.y
-	
+
+	# Sit the bubble up-and-to-one-side of the mouth so the tail angles back
+	# toward the face. Bias toward the open space horizontally.
 	var x = 0.0
-	if founder_screen_pos.x > BASE_W * 0.5:
-		x = founder_screen_pos.x - w
+	if mouth.x > BASE_W * 0.5:
+		x = mouth.x - w * 0.78
 	else:
-		x = founder_screen_pos.x
-		
+		x = mouth.x - w * 0.22
+
 	x = clampf(x, 16.0, BASE_W - w - 16.0)
-	var y = founder_screen_pos.y - h - 16.0
+	var y = mouth.y - h - 22.0
 	y = clampf(y, HUD_H + 8.0, BASE_H - h - 8.0)
-	
+
 	bubble.position = Vector2(x, y)
-	
-	var local_pivot = founder_screen_pos - bubble.position
+
+	# Pivot the pop-in animation from the mouth side for a "spoken" feel.
+	var local_pivot = mouth - bubble.position
 	bubble.pivot_offset = Vector2(clampf(local_pivot.x, 0.0, w), clampf(local_pivot.y, 0.0, h))
 	bubble.queue_redraw()

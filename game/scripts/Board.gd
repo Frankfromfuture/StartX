@@ -552,7 +552,7 @@ func _ensure_face3d(c) -> void:
 	var qm := QuadMesh.new()
 	qm.size = Vector2(CARD3D_W, CARD3D_H)
 	m.mesh = qm
-	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 平铺：面朝上、顶边朝北(-Z)
+	m.rotation = Vector3(deg_to_rad(-80.0), 0.0, 0.0)       # 平铺微仰 10°：顶边略抬向相机（Stacklands 感）
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -717,6 +717,13 @@ func _dissolve_node(c) -> void:
 	tw.tween_property(c, "rotation", 0.5, 0.45)
 	tw.tween_property(c, "position:y", c.position.y - 30, 0.45)
 	tw.chain().tween_callback(c.queue_free)
+	# 3D 网格同步：缩没 + 上飘
+	var mesh := _face3d_mesh(c)
+	if mesh != null and is_instance_valid(c.face3d):
+		var tw3 := create_tween()
+		tw3.set_parallel(true)
+		tw3.tween_property(mesh, "scale", Vector3.ZERO, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw3.tween_property(c.face3d, "position:y", c.face3d.position.y + 0.3, 0.4)
 
 func _ash_burst(pos: Vector2) -> void:
 	var p := CPUParticles2D.new()
@@ -2345,6 +2352,15 @@ func _fly_sell(c) -> void:
 	tw.set_parallel(true)
 	tw.tween_property(c, "position", dest, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(c, "scale", c.scale * 0.4, 0.45)
+	# 3D 网格同步：飞向出售栏方向 + 缩小
+	var mesh := _face3d_mesh(c)
+	if mesh != null and is_instance_valid(c.face3d):
+		var dest_world := _unproject_world(_bank_rect().position + _bank_rect().size * 0.5)
+		dest_world.y += 0.4
+		var tw3 := create_tween()
+		tw3.set_parallel(true)
+		tw3.tween_property(c.face3d, "global_position", dest_world, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw3.tween_property(mesh, "scale", Vector3.ONE * 0.3, 0.45)
 	tw.chain().tween_callback(func():
 		_spawn_cash_cards(value, _unproject(_bank_rect().position), "office")
 		_float_text_screen("+$" + str(value), _bank_rect().position + Vector2(60, -10), Color("ffe66d"))
@@ -2369,6 +2385,7 @@ func _department_output(d: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if is_instance_valid(bottom_info):
 		bottom_info.queue_redraw()   # 底部信息栏随 hover/hint 实时刷新
+	_update_workbars()
 	_update_battle(delta)
 	if is_instance_valid(founder_bubble):
 		var founder = _founder_on_board()
@@ -2427,6 +2444,55 @@ func _process(delta: float) -> void:
 	_update_cursor()
 	_update_hud()
 	queue_redraw()
+
+# 生产进度条（3D）：在持有 work_ratio 的卡上方画一条 bg+fill 小条
+func _update_workbars() -> void:
+	for c in all_cards:
+		if not is_instance_valid(c):
+			continue
+		var active: bool = c.work_ratio > 0.0 and is_instance_valid(c.face3d)
+		if not active:
+			if c.workbar3d != null and is_instance_valid(c.workbar3d):
+				c.workbar3d.visible = false
+			continue
+		if c.workbar3d == null or not is_instance_valid(c.workbar3d):
+			c.workbar3d = _make_workbar3d(c)
+		if c.workbar3d == null:
+			continue
+		c.workbar3d.visible = true
+		var fill = c.workbar3d.get_child(1)
+		var r := clampf(c.work_ratio, 0.02, 1.0)
+		fill.scale.x = r
+		fill.position.x = -CARD3D_W * 0.5 + CARD3D_W * r * 0.5   # 左对齐生长
+
+func _make_workbar3d(c) -> Node3D:
+	if not is_instance_valid(c.face3d):
+		return null
+	var bar := Node3D.new()
+	bar.position = Vector3(0, 0.03, -(CARD3D_H * 0.5 + 0.06))   # 卡顶（北）外侧
+	var flat := Basis.from_euler(Vector3(deg_to_rad(-90.0), 0, 0))
+	var bg := MeshInstance3D.new()
+	var bgm := QuadMesh.new()
+	bgm.size = Vector2(CARD3D_W, 0.085)
+	bg.mesh = bgm
+	bg.transform = Transform3D(flat, Vector3.ZERO)
+	bg.material_override = _unshaded_mat(Color("2a2824"))
+	bar.add_child(bg)
+	var fill := MeshInstance3D.new()
+	var fm := QuadMesh.new()
+	fm.size = Vector2(CARD3D_W, 0.06)
+	fill.mesh = fm
+	fill.transform = Transform3D(flat, Vector3(0, 0.001, 0))
+	fill.material_override = _unshaded_mat(Color("8fcf6e"))
+	bar.add_child(fill)
+	c.face3d.add_child(bar)
+	return bar
+
+func _unshaded_mat(col: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = col
+	return m
 
 func _update_card_visual_states(delta: float) -> void:
 	dash_phase += delta * 35.0

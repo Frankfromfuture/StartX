@@ -635,13 +635,13 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
 	# 右下方柔和投影：hover 浅、拿起稍厚；offset 越大越"浮"
 	if c.shadow3d != null and is_instance_valid(c.shadow3d):
-		var a := 0.05
+		var a := 0.14
 		var off := 0.02
 		if c.carried or dragging:
-			a = 0.20
+			a = 0.42
 			off = 0.06
 		elif c.hovered:
-			a = 0.12
+			a = 0.28
 			off = 0.04
 		(c.shadow3d.material_override as StandardMaterial3D).albedo_color = Color(0, 0, 0, a)
 		# 贴在白板上（抵消 pivot 抬升），向右下(+x,+z)偏移

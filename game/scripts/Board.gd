@@ -146,7 +146,8 @@ const VIEW_ZOOM_STEP := 1.12
 # board 空间 [CANVAS_X0..X1]×[MID_Y0..MID_Y1] 线性映射到白板世界矩形（中心在世界原点）
 const BOARD_CX := (CANVAS_X0 + CANVAS_X1) * 0.5   # 960
 const BOARD_CY := (MID_Y0 + MID_Y1) * 0.5         # 580
-const CARD_PLANE_Y := 0.07                         # 卡牌所在平面高度（白板面 0.05 之上）
+const CARD3D_THICK := 0.05                          # 卡牌厚度（薄盒子，用来投射真阴影）
+const CARD_PLANE_Y := 0.10                          # 卡顶高度（盒底 0.10-厚度=0.05 正好贴白板）
 var cam_dist: float = 13.0                         # 相机距离（缩放）：默认让白板占据较大画面
 var cam_target: Vector3 = Vector3.ZERO             # 相机注视点（平移，沿白板/城市平面）
 const CAM_DIST_MIN := 7.0
@@ -551,30 +552,58 @@ func _ensure_face3d(c) -> void:
 		return
 	c.visible = false                                       # 2D 卡面隐藏，仅留作逻辑/烘焙源
 	var pivot := Node3D.new()
+	var cardroot := Node3D.new()                            # 可缩放节点（pop/dissolve），relayout 不动它
+	pivot.add_child(cardroot)
+	# 卡身边框（黑，与牌面黑框线一致）：满尺寸薄盒 → 投射阴影 + 厚度上下黑边线
+	var frame := MeshInstance3D.new()
+	var fbm := BoxMesh.new()
+	fbm.size = Vector3(CARD3D_W, CARD3D_THICK, CARD3D_H)
+	frame.mesh = fbm
+	frame.position = Vector3(0, -CARD3D_THICK * 0.5, 0)     # 顶面在 cardroot 原点、底面贴白板
+	var fmat := StandardMaterial3D.new()
+	fmat.albedo_color = Color("141414")
+	frame.material_override = fmat
+	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	cardroot.add_child(frame)
+	# 厚度涂色（奶白）：X/Z 略大盖住侧面中段、Y 内缩露出上下黑框线
+	var eb := 0.013
+	var body := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(CARD3D_W * 1.004, CARD3D_THICK - eb * 2.0, CARD3D_H * 1.004)
+	body.mesh = bm
+	body.position = Vector3(0, -CARD3D_THICK * 0.5, 0)
+	var bmat := StandardMaterial3D.new()
+	bmat.albedo_color = Color("faf5ec")                     # 卡身奶白
+	bmat.roughness = 0.9
+	body.material_override = bmat
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cardroot.add_child(body)
+	# 卡面：贴在盒子顶面的图（unshaded，光不影响卡面）
 	var m := MeshInstance3D.new()
 	var qm := QuadMesh.new()
 	qm.size = Vector2(CARD3D_W, CARD3D_H)
 	m.mesh = qm
-	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 完全平躺在白板上（面朝上、顶边朝北）
+	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	m.position = Vector3(0, 0.002, 0)                       # 略高于盒顶
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	mat.alpha_scissor_threshold = 0.5
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED   # 光不影响卡面（只用来投射阴影）
-	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.86, 0.84, 0.78)
 	m.material_override = mat
-	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON    # 投射动态阴影（顶光）
-	pivot.add_child(m)
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # 盒子已负责投影
+	cardroot.add_child(m)
 	city_bg.world_card_root().add_child(pivot)
 	c.face3d = pivot
 	c.tree_exited.connect(func():
 		if is_instance_valid(pivot):
 			pivot.queue_free())
 	_bake_face_async(c, mat)
-	# 出现时弹一下（scale 0→1，BACK 缓动）
-	m.scale = Vector3.ZERO
+	# 出现时弹一下（整张卡 scale 0→1）
+	cardroot.scale = Vector3.ZERO
 	var tw := create_tween()
-	tw.tween_property(m, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(cardroot, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 var _blob_tex: Texture2D = null
 func _blob_shadow_tex() -> Texture2D:

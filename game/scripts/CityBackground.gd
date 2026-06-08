@@ -89,26 +89,18 @@ func _build_environment() -> void:
 	sky.sky_material = sky_mat
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.35     # 压低环境光 → 顶光阴影区更暗、更明显
+	env.ambient_light_energy = 0.4     # 压低 → 卡牌盒子在白板上的投影更明显
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	var we := WorldEnvironment.new()
 	we.environment = env
 	_root3d.add_child(we)
 
-	# 太阳：给城市补色，不投阴影（避免与顶光产生双重卡牌阴影）
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-SUN_PITCH_DEG, SUN_YAW_DEG, 0.0)
-	sun.light_energy = 0.45
-	sun.shadow_enabled = false
+	sun.light_energy = SUN_ENERGY
+	sun.shadow_enabled = SHADOWS
+	sun.directional_shadow_max_distance = 160.0
 	_root3d.add_child(sun)
-	# 顶光：白板正上方略偏，专门给卡牌投射动态阴影（卡面 unshaded 不受其影响）
-	var top := DirectionalLight3D.new()
-	top.rotation_degrees = Vector3(-72.0, 18.0, 0.0)   # 接近正上方、略向右下投影
-	top.light_energy = 1.15
-	top.shadow_enabled = true
-	top.directional_shadow_max_distance = 80.0
-	top.shadow_bias = 0.03
-	_root3d.add_child(top)
 
 func _build_gridmap() -> void:
 	_gridmap = GridMap.new()

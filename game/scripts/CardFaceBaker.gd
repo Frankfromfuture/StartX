@@ -1,11 +1,10 @@
 extends Node
 class_name CardFaceBaker
-## 把现有 Card 的 _draw（2D 像素美术）烘焙成贴图，供 3D 卡牌网格做 albedo。
-## 复用 Card.gd 全部美术，按视觉态缓存，每种卡面只烘一次。
+## 把现有 Card/PackCard 的 _draw（2D 像素美术）烘焙成贴图，供 3D 网格做 albedo。
 
 const CardScript = preload("res://scripts/Card.gd")
 const PackCardScript = preload("res://scripts/PackCard.gd")
-const FACE := 256                 # 烘焙分辨率（卡面 180×180 → 放大到 256）
+const FACE := 1024                # 烘焙分辨率（卡面 180×180 → 放大到 1024）
 
 var _cache: Dictionary = {}       # key -> Texture2D
 var _vp: SubViewport

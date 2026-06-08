@@ -27,8 +27,15 @@ const SHADOWS := true
 const SKY_TOP := Color("8fb6d8")
 const SKY_HORIZON := Color("d7e3ea")
 const GROUND := Color("9fae9b")
+const BOARD_GRID_COLS := 36
+const BOARD_GRID_ROWS := 20
+const BOARD_GRID_TEX_CELL := 32
+const BOARD_GRID_CARAMEL := Color("bba895")
+const BOARD_GRID_GRAY := Color("c8c6bf")
 
-const MAP_PATH := "res://assets/city/city_map.res"
+const BUNDLED_MAP_PATH := "res://assets/city/city_map.res"
+const LIVE_MAP_COPY_PATH := "user://startx_live_city_map.res"
+const MAP_POLL_INTERVAL := 0.5
 const OFFICE_PLOT_INDEX := 15    # 白色标记板在结构列表中的序号（City-Builder 里放在最后）
 
 # 结构列表 —— 顺序必须与 City-Builder/scenes/main.tscn 的 structures 数组完全一致，
@@ -56,6 +63,9 @@ var cam: Camera3D
 var _root3d: Node3D
 var _gridmap: GridMap
 var card_root: Node3D    # 卡牌 3D 网格挂在这里（与城市同一世界，共用相机/光照/阴影）
+var _map_check_timer := 0.0
+var _loaded_map_path := ""
+var _loaded_map_signature := ""
 
 func world_card_root() -> Node3D:
 	return card_root
@@ -71,11 +81,22 @@ func _ready() -> void:
 	add_child(_root3d)
 	_build_environment()
 	_build_gridmap()
-	var center := _load_map()
+	var center := _reload_map()
 	_build_camera(center)
 	card_root = Node3D.new()
 	card_root.name = "CardRoot"
 	_root3d.add_child(card_root)
+
+func _process(delta: float) -> void:
+	_map_check_timer -= delta
+	if _map_check_timer > 0.0:
+		return
+	_map_check_timer = MAP_POLL_INTERVAL
+	var path := _map_source_path()
+	var signature := _file_signature(path)
+	if path == _loaded_map_path and signature == _loaded_map_signature:
+		return
+	_reload_map()
 
 func _build_environment() -> void:
 	var env := Environment.new()
@@ -138,22 +159,39 @@ func _find_mesh(node: Node) -> Mesh:
 			return m
 	return null
 
-# office-plot 白板：9×5 平面，贴地，白色无光照（与 City-Builder 的 office_plot.tscn 一致）
+# office-plot 白板：9×5 平面，贴地，画成 18×10 的淡色棋盘格
 func _office_plot_mesh() -> Mesh:
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(9, 5)
 	pm.center_offset = Vector3(4.0, 0.05, 2.0)
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1, 1, 1)   # 受光着色 → 能接收卡牌投影（Stacklands 式立体感）
+	mat.albedo_color = Color.WHITE
+	mat.albedo_texture = _office_plot_checker_texture()
 	mat.roughness = 0.95
 	pm.material = mat
 	return pm
 
+func _office_plot_checker_texture() -> Texture2D:
+	var w := BOARD_GRID_COLS * BOARD_GRID_TEX_CELL
+	var h := BOARD_GRID_ROWS * BOARD_GRID_TEX_CELL
+	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
+	for y in h:
+		var row := y / BOARD_GRID_TEX_CELL
+		for x in w:
+			var col := x / BOARD_GRID_TEX_CELL
+			var c := BOARD_GRID_CARAMEL if ((row + col) % 2 == 0) else BOARD_GRID_GRAY
+			img.set_pixel(x, y, c)
+	return ImageTexture.create_from_image(img)
+
 # 读档摆放，返回白板中心（用于相机对准）。无存档则返回 Vector3.ZERO。
-func _load_map() -> Vector3:
-	var dm = ResourceLoader.load(MAP_PATH)
+func _reload_map() -> Vector3:
+	var path := _map_source_path()
+	_gridmap.clear()
+	_loaded_map_path = path
+	_loaded_map_signature = _file_signature(path)
+	var dm = _load_data_map(path)
 	if dm == null or not ("structures" in dm):
-		push_warning("CityBackground: 读取不到城市存档 %s" % MAP_PATH)
+		push_warning("CityBackground: 读取不到城市存档 %s" % path)
 		return Vector3.ZERO
 	var plot_sum := Vector2.ZERO
 	var plot_n := 0
@@ -178,6 +216,38 @@ func _load_map() -> Vector3:
 	_gridmap.position = Vector3(-c.x, 0, -c.y)
 	return Vector3.ZERO
 
+func _map_source_path() -> String:
+	var city_builder_map := (ProjectSettings.globalize_path("res://") + "../City-Builder/maps/city_map.res").simplify_path()
+	if FileAccess.file_exists(city_builder_map):
+		return city_builder_map
+	return BUNDLED_MAP_PATH
+
+func _load_data_map(path: String):
+	var dm = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE)
+	if dm != null:
+		return dm
+	if not path.is_absolute_path():
+		return null
+	var copy_target := ProjectSettings.globalize_path(LIVE_MAP_COPY_PATH)
+	var copy_err := DirAccess.copy_absolute(path, copy_target)
+	if copy_err != OK:
+		push_warning("CityBackground: 无法同步城市存档 %s -> %s (err=%d)" % [path, LIVE_MAP_COPY_PATH, copy_err])
+		return null
+	return ResourceLoader.load(LIVE_MAP_COPY_PATH, "", ResourceLoader.CACHE_MODE_REPLACE)
+
+func _file_signature(path: String) -> String:
+	var file_path := path
+	if not file_path.is_absolute_path():
+		file_path = ProjectSettings.globalize_path(file_path)
+	if not FileAccess.file_exists(file_path):
+		return ""
+	var size := 0
+	var f := FileAccess.open(file_path, FileAccess.READ)
+	if f != null:
+		size = f.get_length()
+		f.close()
+	return "%d:%d" % [FileAccess.get_modified_time(file_path), size]
+
 func _build_camera(_target: Vector3) -> void:
 	cam = Camera3D.new()
 	cam.fov = CAM_FOV
@@ -185,12 +255,14 @@ func _build_camera(_target: Vector3) -> void:
 	_root3d.add_child(cam)
 	aim(Vector3.ZERO, CAM_DIST)
 
+var pitch_deg: float = CAM_PITCH_DEG    # 可调俯角（向前下/向后下按钮）
+
 # 正南上方俯视：注视 center、距离 dist（YAW=0，相机在 +Z 抬高看向 center）
 func aim(center: Vector3, dist: float) -> void:
 	if cam == null:
 		return
 	var look := center + Vector3(0, CAM_TARGET_Y, 0)
-	var pitch := deg_to_rad(CAM_PITCH_DEG)
+	var pitch := deg_to_rad(pitch_deg)
 	var dir := Vector3(0, sin(pitch), cos(pitch))
 	cam.position = look + dir * dist
 	cam.look_at(look, Vector3.UP)

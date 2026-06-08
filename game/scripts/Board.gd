@@ -6,10 +6,13 @@ extends Node2D
 const CardScript = preload("res://scripts/Card.gd")
 const PackCardScript = preload("res://scripts/PackCard.gd")
 const FloatingCostScript = preload("res://scripts/FloatingCost.gd")
-const CARD_SCALE := 1.0               # 卡按 120×180 设计，节点不再额外缩放
-const CW := 180.0                     # square card, keeping the old long side
-const CH := 180.0
-const CARD_OFFSET := 34.0             # 叠放时每张上面的牌再往下一点
+const CARD_SCALE := 1.0 / 3.0         # 卡面源图仍按 180×180 烘焙，显示/交互为 60×60
+const CW := 60.0
+const CH := 60.0
+const CARD_OFFSET := 34.0 / 3.0       # 叠放时每张上面的牌再往下一点
+const PACK_SCALE := 1.0 / 3.0
+const PACK_W := PackCardScript.W * PACK_SCALE
+const PACK_H := PackCardScript.H * PACK_SCALE
 const DRAG_Z := 4000
 const BATTLE_Z := 3000              # 战斗中攻击方置顶
 
@@ -41,8 +44,8 @@ const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
 
 # ---- 拖拽弹簧（滞后 + 摆动）----  减衰調和振動：顶牌跟手、越往下越软越晃
 const DRAG_OMEGA_TOP := 26.0       # 顶牌角频率（越大越跟手）
-const DRAG_OMEGA_FALLOFF := 0.74   # 每往下一张，频率×此值 → 滞后/摆动递增
-const DRAG_ZETA := 0.62            # 阻尼比 <1 → 欠阻尼，产生回摆/甩动感
+const DRAG_OMEGA_FALLOFF := 0.50   # 每往上一张，频率×此值 → 滞后/摆动递增
+const DRAG_ZETA := 0.55            # 阻尼比 <1 → 欠阻尼，产生回摆/甩动感
 
 # 莫兰迪淡色 + 奶白底
 const BG := Color("efe7d8")          # 画布纸面（画布内底色）
@@ -139,20 +142,29 @@ var view_offset: Vector2 = Vector2.ZERO   # 弃用（保留以兼容旧引用）
 var panning_canvas: bool = false
 var pan_last: Vector2 = Vector2.ZERO
 const VIEW_ZOOM_MIN := 0.286
-const VIEW_ZOOM_MAX := 1.9
+const VIEW_ZOOM_MAX := 6.0
 const VIEW_ZOOM_STEP := 1.12
 
 # ---- 3D 相机驱动（Phase 1）：缩放/平移动 City Builder 的 3D 相机 ----
 # board 空间 [CANVAS_X0..X1]×[MID_Y0..MID_Y1] 线性映射到白板世界矩形（中心在世界原点）
 const BOARD_CX := (CANVAS_X0 + CANVAS_X1) * 0.5   # 960
 const BOARD_CY := (MID_Y0 + MID_Y1) * 0.5         # 580
-const CARD3D_THICK := 0.05                          # 卡牌厚度（薄盒子，用来投射真阴影）
-const CARD_PLANE_Y := 0.10                          # 卡顶高度（盒底 0.10-厚度=0.05 正好贴白板）
-var cam_dist: float = 13.0                         # 相机距离（缩放）：默认让白板占据较大画面
+const CARD3D_THICK := 0.05 / 3.0                    # 卡牌厚度（薄盒子，用来投射真阴影）
+const CARD_PLANE_Y := 0.05 + CARD3D_THICK           # 卡顶高度（盒底正好贴白板）
+const DEFAULT_CAM_PITCH_DEG := 86.0
+const DEFAULT_CAM_DIST := 2.31
+const VIEW_PREF_PATH := "user://startx_view.cfg"
+var cam_dist: float = DEFAULT_CAM_DIST             # 相机距离（缩放）：默认聚焦起始车库创业包
 var cam_target: Vector3 = Vector3.ZERO             # 相机注视点（平移，沿白板/城市平面）
-const CAM_DIST_MIN := 7.0
-const CAM_DIST_MAX := 70.0
+var cam_pitch_deg: float = DEFAULT_CAM_PITCH_DEG   # 俯角（向前下/向后下按钮调节；越大越俯视）
+const CAM_PITCH_MIN := 59.0
+const CAM_PITCH_MAX := 86.0
+const CAM_PITCH_STEP := 9.0
+const CAM_DIST_MIN := 1.6
+const CAM_DIST_MAX := 9.0
 const CAM_DIST_STEP := 1.12
+const FLY_OUT_TIME := 0.43
+const FLY_OUT_ROT_TIME := 0.37
 
 var departments: Array = []          # [{card, specialty, headcount, capacity, timer, interval}]
 var research_panel: Control
@@ -186,6 +198,7 @@ func _ready() -> void:
 	add_child(face_baker)
 	_load_cursors()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
+	cam_pitch_deg = _load_default_camera_pitch()
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
 	_build_hud()
 	_spawn_start_cards()
@@ -252,11 +265,20 @@ func _zoom_view_at(_screen_pos: Vector2, factor: float) -> void:
 func _apply_camera() -> void:
 	if city_bg == null:
 		return
+	city_bg.pitch_deg = cam_pitch_deg
+	city_bg.aim(cam_target, cam_dist)
+	_clamp_view_offset()
 	city_bg.aim(cam_target, cam_dist)
 	_recompute_view_zoom()
 	_relayout_all()
 	_relayout_loose_packs()
 	queue_redraw()
+
+# 视角俯仰：向前下（更平视/前倾）/ 向后下（更俯视）
+func _tilt_view(delta: float) -> void:
+	cam_pitch_deg = clampf(cam_pitch_deg + delta, CAM_PITCH_MIN, CAM_PITCH_MAX)
+	_save_default_camera_pitch(cam_pitch_deg)
+	_apply_camera()
 
 # 把 view_zoom 同步为「屏幕每 board 单位像素数」，让所有 *view_zoom 的特效继续合理缩放
 func _recompute_view_zoom() -> void:
@@ -265,11 +287,52 @@ func _recompute_view_zoom() -> void:
 	view_zoom = clampf(a.distance_to(b) / 100.0, 0.05, 8.0)
 
 func _reset_view_default() -> void:
+	cam_pitch_deg = _load_default_camera_pitch()
+	cam_dist = DEFAULT_CAM_DIST
 	cam_target = Vector3.ZERO
 	_apply_camera()
 
+func _load_default_camera_pitch() -> float:
+	var cfg := ConfigFile.new()
+	if cfg.load(VIEW_PREF_PATH) != OK:
+		return DEFAULT_CAM_PITCH_DEG
+	return clampf(float(cfg.get_value("view", "cam_pitch_deg", DEFAULT_CAM_PITCH_DEG)), CAM_PITCH_MIN, CAM_PITCH_MAX)
+
+func _save_default_camera_pitch(value: float) -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("view", "cam_pitch_deg", clampf(value, CAM_PITCH_MIN, CAM_PITCH_MAX))
+	var err := cfg.save(VIEW_PREF_PATH)
+	if err != OK:
+		push_warning("保存默认视角角度失败：%s (err=%d)" % [VIEW_PREF_PATH, err])
+
 func _clamp_view_offset() -> void:
-	pass   # 平移夹取交给相机逻辑（Phase 1 暂不夹）
+	var canvas_half_w := (CANVAS_X1 - CANVAS_X0) / CITY_CELL * 0.5
+	var canvas_half_d := (MID_Y1 - MID_Y0) / CITY_CELL * 0.5
+	var visible_half := _visible_world_half_extents()
+	var half_w := canvas_half_w * 0.25 + maxf(0.0, canvas_half_w - visible_half.x)
+	var half_d := canvas_half_d + maxf(0.0, canvas_half_d - visible_half.y)
+	cam_target.x = clampf(cam_target.x, -half_w, half_w)
+	cam_target.z = clampf(cam_target.z, -half_d, half_d)
+
+func _visible_world_half_extents() -> Vector2:
+	if _cam() == null:
+		return Vector2(INF, INF)
+	var pts := [
+		_unproject_world(Vector2.ZERO),
+		_unproject_world(Vector2(BASE_W, 0.0)),
+		_unproject_world(Vector2(BASE_W, BASE_H)),
+		_unproject_world(Vector2(0.0, BASE_H)),
+	]
+	var min_x: float = pts[0].x
+	var max_x: float = pts[0].x
+	var min_z: float = pts[0].z
+	var max_z: float = pts[0].z
+	for p in pts:
+		min_x = minf(min_x, p.x)
+		max_x = maxf(max_x, p.x)
+		min_z = minf(min_z, p.z)
+		max_z = maxf(max_z, p.z)
+	return Vector2((max_x - min_x) * 0.5, (max_z - min_z) * 0.5)
 
 func _band(x0: float, x1: float, y0: float, y1: float) -> PackedVector2Array:
 	return PackedVector2Array([
@@ -324,9 +387,10 @@ const CityBackgroundScript = preload("res://scripts/CityBackground.gd")
 const CardFaceBakerScript = preload("res://scripts/CardFaceBaker.gd")
 var face_baker = null
 # 3D 卡牌网格尺寸（世界单位）：board 120×180 / CITY_CELL(168)
-const CARD3D_W := 120.0 / CITY_CELL
-const CARD3D_H := 180.0 / CITY_CELL
-const CARD3D_STACK_DY := 0.012     # 同栈每张抬高，避免共面闪烁
+const CARD3D_W := CW / CITY_CELL    # = 180/CELL，与卡牌实际尺寸一致（正方形）
+const CARD3D_H := CH / CITY_CELL
+const CARD3D_STACK_DY := 0.004     # 同栈每张抬高，避免共面闪烁
+const CARD3D_ORDER_DY := 0.00002   # 不同栈完全重叠时，后出现的卡略高一点
 func _setup_city_background() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "CityBackground"
@@ -469,7 +533,7 @@ func _spawn_start_cards() -> void:
 	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
 	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
 	var center_tl := _unproject(Vector2(BASE_W, BASE_H) * 0.5 \
-		- Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * view_zoom)
+		- Vector2(PACK_W, PACK_H) * 0.5 * view_zoom)
 	_spawn_loose_pack("garage_pack", pack, contents, center_tl, true)   # 直接 3D 出现在白板上
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
@@ -540,7 +604,10 @@ func relayout(sid: int) -> void:
 		var bp := base + Vector2(0, i * CARD_OFFSET)        # board space
 		_apply_card_projection(c, bp, sid == drag_sid)      # 仍设 c.transform 供旧 2D 代码读位置
 		c.z_index = zbase + i
-		_place_face3d(c, bp, i, sid == drag_sid)            # 真 3D 卡牌网格
+		if sid == drag_sid:
+			_place_face3d_from_display(c, c.position, bp, i, true)
+		else:
+			_place_face3d(c, bp, i, false)                  # 真 3D 卡牌网格
 
 # ---- Phase 2：3D 卡牌网格 ----
 # c.face3d = pivot(Node3D)，pivot 下挂 MeshInstance3D(卡面)。relayout 只动 pivot 的
@@ -566,25 +633,25 @@ func _ensure_face3d(c) -> void:
 	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	cardroot.add_child(frame)
 	# 厚度涂色（奶白）：X/Z 略大盖住侧面中段、Y 内缩露出上下黑框线
-	var eb := 0.013
+	var eb := 0.00867
 	var body := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(CARD3D_W * 1.004, CARD3D_THICK - eb * 2.0, CARD3D_H * 1.004)
 	body.mesh = bm
 	body.position = Vector3(0, -CARD3D_THICK * 0.5, 0)
 	var bmat := StandardMaterial3D.new()
-	bmat.albedo_color = Color("faf5ec")                     # 卡身奶白
+	bmat.albedo_color = c.body_color()                     # 厚度=卡牌本身的颜色
 	bmat.roughness = 0.9
 	body.material_override = bmat
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cardroot.add_child(body)
-	# 卡面：贴在盒子顶面的图（unshaded，光不影响卡面）
+	# 卡面：整张 2D 卡面以 1024 烘焙后贴在盒子顶面
 	var m := MeshInstance3D.new()
 	var qm := QuadMesh.new()
 	qm.size = Vector2(CARD3D_W, CARD3D_H)
 	m.mesh = qm
 	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
-	m.position = Vector3(0, 0.002, 0)                       # 略高于盒顶
+	m.position = Vector3(0, 0.002, 0)
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	mat.alpha_scissor_threshold = 0.5
@@ -592,7 +659,7 @@ func _ensure_face3d(c) -> void:
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color = Color(0.86, 0.84, 0.78)
 	m.material_override = mat
-	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # 盒子已负责投影
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cardroot.add_child(m)
 	city_bg.world_card_root().add_child(pivot)
 	c.face3d = pivot
@@ -630,7 +697,9 @@ func _blob_shadow_tex() -> Texture2D:
 
 func _face3d_mesh(c) -> MeshInstance3D:
 	if c.face3d != null and is_instance_valid(c.face3d) and c.face3d.get_child_count() > 0:
-		return c.face3d.get_child(0) as MeshInstance3D
+		var root: Node = c.face3d.get_child(0)
+		if root != null and root.get_child_count() > 2:
+			return root.get_child(2) as MeshInstance3D
 	return null
 
 func _bake_face_async(c, mat) -> void:
@@ -639,7 +708,7 @@ func _bake_face_async(c, mat) -> void:
 	var tex = await face_baker.bake(c)
 	if tex != null and is_instance_valid(mat):
 		mat.albedo_texture = tex
-		mat.albedo_color = Color(1, 1, 1)   # 贴图就位后取消占位底色，否则会乘暗
+		mat.albedo_color = Color(1, 1, 1)
 
 func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	_ensure_face3d(c)
@@ -647,13 +716,27 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	if pivot == null or not is_instance_valid(pivot):
 		return
 	var w := board_to_world(bp + Vector2(CW * 0.5, CH * 0.5))
-	var lift := float(idx) * CARD3D_STACK_DY
-	if c.carried or dragging:
-		lift += 0.32          # 拿起：抬得更高（阴影随之拉开）
-	elif c.hovered:
-		lift += 0.06          # hover：轻轻上抬（不变色，仅靠抬升+阴影反馈）
-	w.y = CARD_PLANE_Y + lift
+	w.y = CARD_PLANE_Y + _face3d_lift(c, idx, dragging)
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
+
+func _place_face3d_from_display(c, display_topleft: Vector2, bp: Vector2, idx: int, dragging: bool) -> void:
+	_ensure_face3d(c)
+	var pivot = c.face3d
+	if pivot == null or not is_instance_valid(pivot):
+		return
+	var center_offset := _project(bp + Vector2(CW * 0.5, CH * 0.5)) - _project(bp)
+	var w := _unproject_world(display_topleft + center_offset)
+	w.y = CARD_PLANE_Y + _face3d_lift(c, idx, dragging)
+	pivot.transform = Transform3D(Basis.IDENTITY, w)
+
+func _face3d_lift(c, idx: int, dragging: bool) -> float:
+	var lift := float(idx) * CARD3D_STACK_DY
+	lift += float(maxi(c.stack_id, 0)) * CARD3D_ORDER_DY
+	if c.carried or dragging:
+		lift += 0.1067        # 拿起：抬得更高（阴影随之拉开）
+	elif c.hovered:
+		lift += 0.02          # hover 时轻轻上抬（单牌/整叠均适用）
+	return lift
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():
@@ -670,13 +753,15 @@ func _card_lift(c) -> float:
 	if c == null or not is_instance_valid(c):
 		return 0.0
 	if c.carried:
-		return 22.0
+		return 7.33
 	if c.hovered:
-		# 叠放中（栈里不止一张）不再有 hover 抬升
-		if stacks.has(c.stack_id) and stacks[c.stack_id].size() > 1:
-			return 0.0
-		return 10.0
+		return 3.33
 	return 0.0
+
+func _stack_size_for_card(c) -> int:
+	if c == null or not is_instance_valid(c) or not stacks.has(c.stack_id):
+		return 0
+	return stacks[c.stack_id].size()
 
 func _cash_card_count() -> int:
 	var n := 0
@@ -1014,6 +1099,7 @@ func _update_drag_spring(delta: float) -> void:
 		var accel: Vector2 = (target - c.position) * (omega * omega) - c.drag_vel * (2.0 * DRAG_ZETA * omega)
 		c.drag_vel += accel * dt
 		c.position += c.drag_vel * dt
+		_place_face3d_from_display(c, c.position, bp, i, true)
 
 # 右键取消：把拖拽中的栈放到它“当前显示位置”（夹回合法区），不触发出售/折叠。
 func _cancel_drag() -> void:
@@ -1197,6 +1283,13 @@ func _set_drag_cards_carried(v: bool) -> void:
 	for c in drag_cards:
 		if is_instance_valid(c):
 			c.set_carried(v)
+
+func _set_stack_hovered(sid: int, v: bool) -> void:
+	if not stacks.has(sid):
+		return
+	for c in stacks[sid]:
+		if is_instance_valid(c):
+			c.set_hovered(v)
 
 func _merge(from_sid: int, to_sid: int) -> void:
 	var moving: Array = stacks[from_sid]
@@ -1393,16 +1486,16 @@ func _update_battle(delta: float) -> void:
 		battle_hp_shown_right = lerpf(battle_hp_shown_right, battle_hp_right, k)
 		_update_battle3d()
 		var rect := _battle_screen_rect()
-		var isz := 39.0   # 资金图标放大 30%
-		var mx := 30.0    # 左右边距（呼吸感）
-		var my := 22.0    # 上边距（呼吸感）
+		var isz := 26.0   # 资金图标与战斗框同比例
+		var mx := 20.0    # 左右边距（呼吸感）
+		var my := 14.67   # 上边距（呼吸感）
 		# 左上：图标 + 数字
 		if battle_hp_label_left != null:
 			battle_hp_label_left.text = "%.1f" % maxf(battle_hp_shown_left, 0.0)
 			if battle_hp_icon_left != null:
 				battle_hp_icon_left.size = Vector2(isz, isz)
-				battle_hp_icon_left.position = rect.position + Vector2(mx, my + 2)
-			battle_hp_label_left.position = rect.position + Vector2(mx + isz + 4, my)
+				battle_hp_icon_left.position = rect.position + Vector2(mx, my + 1.33)
+			battle_hp_label_left.position = rect.position + Vector2(mx + isz + 2.67, my)
 		# 右上：图标 + 数字（整组右对齐到框右上角）
 		if battle_hp_label_right != null:
 			var txt := "%.1f" % maxf(battle_hp_shown_right, 0.0)
@@ -1411,11 +1504,11 @@ func _update_battle(delta: float) -> void:
 			var tw := 80.0
 			if fnt != null:
 				tw = fnt.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
-			var gx := rect.end.x - mx - (isz + 4.0 + tw)
+			var gx := rect.end.x - mx - (isz + 2.67 + tw)
 			if battle_hp_icon_right != null:
 				battle_hp_icon_right.size = Vector2(isz, isz)
-				battle_hp_icon_right.position = Vector2(gx, rect.position.y + my + 2)
-			battle_hp_label_right.position = Vector2(gx + isz + 4.0, rect.position.y + my)
+				battle_hp_icon_right.position = Vector2(gx, rect.position.y + my + 1.33)
+			battle_hp_label_right.position = Vector2(gx + isz + 2.67, rect.position.y + my)
 		return
 	# 拖动中不激活战斗（释放后才检测）；玩家拖员工撞对手的情形在 _end_drag 里触发
 	if drag_sid != -1:
@@ -1581,11 +1674,11 @@ func _ensure_battle_hp_labels() -> void:
 		lbl.name = "BattleHP" + side
 		lbl.z_index = 4095
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lbl.size = Vector2(190, 46)
-		_apply_bold_pixel_font(lbl, 34)   # 放大 30% + 加粗
+		lbl.size = Vector2(126.67, 30.67)
+		_apply_bold_pixel_font(lbl, 23)
 		lbl.add_theme_color_override("font_color", Color("2b2926"))
 		lbl.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.85))
-		lbl.add_theme_constant_override("outline_size", 7)
+		lbl.add_theme_constant_override("outline_size", 5)
 		hud.add_child(lbl)
 		# HP 数字前的资金图标（与顶部 UI 栏一致）
 		var icon := TextureRect.new()
@@ -1771,23 +1864,23 @@ func _build_battle3d() -> void:
 	battle3d = Node3D.new()
 	city_bg.world_card_root().add_child(battle3d)
 	var cw := board_to_world(battle_center)
-	var y := CARD_PLANE_Y + 0.03
+	var y := CARD_PLANE_Y + 0.02
 	var hw := 2.0 * CW / CITY_CELL
 	var hd := CH / CITY_CELL
-	var t := 0.06
+	var t := 0.04
 	var red := Color("ef6a6a")
-	_battle_box(Vector3(cw.x, y, cw.z - hd), Vector3(2.0 * hw + t, 0.05, t), red)
-	_battle_box(Vector3(cw.x, y, cw.z + hd), Vector3(2.0 * hw + t, 0.05, t), red)
-	_battle_box(Vector3(cw.x - hw, y, cw.z), Vector3(t, 0.05, 2.0 * hd), red)
-	_battle_box(Vector3(cw.x + hw, y, cw.z), Vector3(t, 0.05, 2.0 * hd), red)
+	_battle_box(Vector3(cw.x, y, cw.z - hd), Vector3(2.0 * hw + t, 0.033, t), red)
+	_battle_box(Vector3(cw.x, y, cw.z + hd), Vector3(2.0 * hw + t, 0.033, t), red)
+	_battle_box(Vector3(cw.x - hw, y, cw.z), Vector3(t, 0.033, 2.0 * hd), red)
+	_battle_box(Vector3(cw.x + hw, y, cw.z), Vector3(t, 0.033, 2.0 * hd), red)
 	var tex := _versus_texture()
 	if tex != null:
 		var m := MeshInstance3D.new()
 		var qm := QuadMesh.new()
-		qm.size = Vector2(1.5, 1.5)
+		qm.size = Vector2(1.0, 1.0)
 		m.mesh = qm
 		m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
-		m.position = Vector3(cw.x, y + 0.02, cw.z)
+		m.position = Vector3(cw.x, y + 0.0133, cw.z)
 		var mat := StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -1811,14 +1904,14 @@ func _battle_box(pos: Vector3, size: Vector3, col: Color) -> void:
 func _battle_label3d(pos: Vector3) -> Label3D:
 	var l := Label3D.new()
 	l.font = _ui_font()
-	l.font_size = 64
-	l.pixel_size = 0.006
+	l.font_size = 43
+	l.pixel_size = 0.004
 	l.modulate = Color("2b2926")
 	l.outline_modulate = Color(1, 1, 1, 0.9)
-	l.outline_size = 12
+	l.outline_size = 8
 	l.double_sided = true
 	l.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
-	pos.y = CARD_PLANE_Y + 0.06
+	pos.y = CARD_PLANE_Y + 0.04
 	l.position = pos
 	battle3d.add_child(l)
 	return l
@@ -2149,13 +2242,8 @@ func _complete_production(sid: int) -> void:
 			else:
 				var forced := String(rec.get("output_zone", ""))
 				var zone := forced if forced != "" else _zone_for_center(base + Vector2(CW * 0.5, CH * 0.5))
-				var origin := base
-				if forced == "market":
-					origin = Vector2(1080, 360)
-				elif forced == "office":
-					origin = Vector2(240, 360)
 				for i in n:
-					_drop_output(oid, origin, zone)
+					_drop_output(oid, base, zone)
 				made_card = true
 	if made_card:
 		_wiggle_top_card(sid)            # 产出时生产堆顶卡轻微扭动
@@ -2208,14 +2296,11 @@ func _output_mult(cap: int) -> int:
 	return 1 + int(floor(maxf(0, cap - 3) / 4.0))
 
 func _drop_output(id: String, from_pos: Vector2, zone: String) -> void:
-	const DROP_MIN := 160.0
-	const DROP_MAX := 340.0
-	const GROUP_RANGE := 200.0
-	var ang := GameState.rng.randf() * TAU
-	var dist := GameState.rng.randf_range(DROP_MIN, DROP_MAX)
-	var landing := clamp_to_zone(from_pos + Vector2(cos(ang), sin(ang)) * dist, zone)
+	const GROUP_RANGE := 2.0
+	var origin_center := from_pos + Vector2(CW, CH) * 0.5
+	var landing := _nearby_output_landing(origin_center, zone)
 	var best = null
-	var best_d := GROUP_RANGE
+	var best_d := CW * GROUP_RANGE
 	for c in all_cards:
 		if c.card_id == id:
 			var d: float = _board_center(c).distance_to(landing + Vector2(CW, CH) * 0.5)
@@ -2226,7 +2311,7 @@ func _drop_output(id: String, from_pos: Vector2, zone: String) -> void:
 	nc.zone = zone
 	if best != null:
 		_merge(nc.stack_id, best.stack_id)
-	_fly_out_card(nc, _project(from_pos + Vector2(CW * 0.5, CH * 0.5)))
+	_fly_out_card(nc, _project(origin_center))
 
 # 产出卡顺滑飞出：从生产堆中心放大着滑到落点（无回弹，cubic 缓出）
 func _fly_out_card(c, from_display: Vector2) -> void:
@@ -2234,21 +2319,37 @@ func _fly_out_card(c, from_display: Vector2) -> void:
 		return
 	var final_pos: Vector2 = c.position
 	var final_scale: Vector2 = c.scale
-	c.position = from_display - Vector2(CW, CH) * 0.32 * maxf(view_zoom, 0.1)
-	c.scale = final_scale * 0.32
+	c.position = from_display - Vector2(CW, CH) * 0.5 * maxf(view_zoom, 0.1)
+	c.scale = final_scale * 0.18
 	c.rotation = GameState.rng.randf_range(-0.05, 0.05)
 	var old_z: int = c.z_index
 	c.z_index = max(old_z, 2300)
+	var final_face_pos := Vector3.ZERO
+	var has_face := c.face3d != null and is_instance_valid(c.face3d)
+	if has_face:
+		final_face_pos = c.face3d.position
+		var start_face_pos := _unproject_world(from_display)
+		start_face_pos.y = final_face_pos.y + 0.02
+		c.face3d.position = start_face_pos
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(c, "position", final_pos, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c, "scale", final_scale, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c, "rotation", 0.0, 0.40).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "position", final_pos, FLY_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "scale", final_scale, FLY_OUT_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "rotation", 0.0, FLY_OUT_ROT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if has_face:
+		tw.tween_property(c.face3d, "position", final_face_pos, FLY_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_callback(func():
 		if is_instance_valid(c):
 			c.z_index = old_z
 			relayout(c.stack_id)
 	)
+
+func _nearby_output_landing(origin_center: Vector2, zone: String) -> Vector2:
+	const DROP_MIN := 0.55
+	const DROP_MAX := 2.0
+	var ang := GameState.rng.randf() * TAU
+	var dist := GameState.rng.randf_range(CW * DROP_MIN, CW * DROP_MAX)
+	return clamp_to_zone(origin_center + Vector2(cos(ang), sin(ang)) * dist - Vector2(CW, CH) * 0.5, zone)
 
 # 生产堆顶卡轻微扭动一下（产出反馈）
 func _wiggle_top_card(sid: int) -> void:
@@ -2583,18 +2684,18 @@ func _make_workbar3d(c) -> Node3D:
 	if not is_instance_valid(c.face3d):
 		return null
 	var bar := Node3D.new()
-	bar.position = Vector3(0, 0.03, -(CARD3D_H * 0.5 + 0.06))   # 卡顶（北）外侧
+	bar.position = Vector3(0, 0.014, -(CARD3D_H * 0.5 + 0.026))   # 卡顶（北）外侧
 	var flat := Basis.from_euler(Vector3(deg_to_rad(-90.0), 0, 0))
 	var bg := MeshInstance3D.new()
 	var bgm := QuadMesh.new()
-	bgm.size = Vector2(CARD3D_W, 0.085)
+	bgm.size = Vector2(CARD3D_W, 0.05)
 	bg.mesh = bgm
 	bg.transform = Transform3D(flat, Vector3.ZERO)
 	bg.material_override = _unshaded_mat(Color("2a2824"))
 	bar.add_child(bg)
 	var fill := MeshInstance3D.new()
 	var fm := QuadMesh.new()
-	fm.size = Vector2(CARD3D_W, 0.06)
+	fm.size = Vector2(CARD3D_W, 0.036)
 	fill.mesh = fm
 	fill.transform = Transform3D(flat, Vector3(0, 0.001, 0))
 	fill.material_override = _unshaded_mat(Color("8fcf6e"))
@@ -2617,13 +2718,21 @@ func _update_card_visual_states(delta: float) -> void:
 	if drag_cards.is_empty() and not panning_canvas:
 		next_hover = _topmost_at(mouse_pos, true)   # 对手卡虽不可拾取，悬停仍显示信息
 	if next_hover != hover_card:
-		if is_instance_valid(hover_card):
-			hover_card.set_hovered(false)
-			relayout(hover_card.stack_id)
+		var old_sid: int = hover_card.stack_id if is_instance_valid(hover_card) else -1
+		var new_sid: int = next_hover.stack_id if is_instance_valid(next_hover) else -1
+		
+		# If the stack changed, unhover the old stack
+		if old_sid != -1 and old_sid != new_sid:
+			_set_stack_hovered(old_sid, false)
+			relayout(old_sid)
+			
 		hover_card = next_hover
-		if is_instance_valid(hover_card):
-			hover_card.set_hovered(true)
-			relayout(hover_card.stack_id)
+		
+		# If the stack changed, hover the new stack (single card stacks included)
+		if new_sid != -1 and old_sid != new_sid:
+			if stacks.has(new_sid):
+				_set_stack_hovered(new_sid, true)
+				relayout(new_sid)
 
 	var hint_sids: Dictionary = {}
 	if drag_sid != -1 and stacks.has(drag_sid):
@@ -2717,7 +2826,7 @@ func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landi
 	p.z_index = 2100
 	var start := _pack_button_start(pack_id)
 	p.position = start
-	p.scale = Vector2(0.35, 0.35) * view_zoom
+	p.scale = Vector2.ONE * PACK_SCALE * 0.35 * view_zoom
 	loose_packs.append(p)
 	p.board_pos = (landing_override as Vector2) if landing_override != null else _pack_landing_below(pack_id)
 	var landing := _project(p.board_pos)
@@ -2740,7 +2849,7 @@ func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landi
 	var tw := create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(p, "position", landing, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(p, "scale", Vector2.ONE * view_zoom, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(p, "scale", Vector2.ONE * PACK_SCALE * view_zoom, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_callback(func(): p.ready_to_open = true)
 
 	# 旋转独立并行：先向行进方向甩转过冲，再弹性回摆稳定（纺锤造型甩动感）
@@ -2756,7 +2865,7 @@ func _pack_button_start(pack_id: String) -> Vector2:
 	# Spawn the loose pack centered on its UI button. The card is created at
 	# 0.35 * view_zoom scale and draws from its top-left origin, so offset by
 	# the *scaled* half-size (not the full size) to keep it on the button.
-	var spawn_scale := 0.35 * view_zoom
+	var spawn_scale := PACK_SCALE * 0.35 * view_zoom
 	for row in pack_buttons:
 		if String(row["id"]) == pack_id:
 			var btn: Button = row["btn"]
@@ -2782,11 +2891,11 @@ func _pack_landing_below(pack_id: String) -> Vector2:
 			var jitter: float = GameState.rng.randf_range(-36.0, 36.0)
 			# Screen-space top-left target that centers the full-size card under the button.
 			var target := Vector2(
-				bcx + jitter - PackCardScript.W * 0.5 * view_zoom,
+				bcx + jitter - PACK_W * 0.5 * view_zoom,
 				btn.global_position.y + btn.size.y + drop
 			)
 			var bp := _unproject(target)
-			bp.y = clampf(bp.y, MID_Y0 + 8.0, MID_Y1 - PackCardScript.H)
+			bp.y = clampf(bp.y, MID_Y0 + 8.0, MID_Y1 - PACK_H)
 			return bp
 	return _random_pack_landing()
 
@@ -2795,7 +2904,7 @@ func _relayout_loose_packs() -> void:
 		if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 			continue
 		p.position = _project(p.board_pos)        # 旧 2D 位置仍设（开包原点等读它）
-		p.scale = Vector2.ONE * view_zoom
+		p.scale = Vector2.ONE * PACK_SCALE * view_zoom
 		p.visible = false                          # 2D 隐藏，改用 3D 网格
 		_place_pack3d(p)
 
@@ -2808,7 +2917,7 @@ func _ensure_pack3d(p) -> void:
 	var pivot := Node3D.new()
 	var m := MeshInstance3D.new()
 	var qm := QuadMesh.new()
-	qm.size = Vector2(PackCardScript.W / CITY_CELL, PackCardScript.H / CITY_CELL)
+	qm.size = Vector2(PACK_W / CITY_CELL, PACK_H / CITY_CELL)
 	m.mesh = qm
 	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
 	var mat := StandardMaterial3D.new()
@@ -2842,10 +2951,10 @@ func _place_pack3d(p) -> void:
 	var pivot = p.face3d
 	if pivot == null or not is_instance_valid(pivot):
 		return
-	var w := board_to_world(p.board_pos + Vector2(PackCardScript.W * 0.5, PackCardScript.H * 0.5))
-	w.y = CARD_PLANE_Y + 0.02
+	var w := board_to_world(p.board_pos + Vector2(PACK_W * 0.5, PACK_H * 0.5))
+	w.y = CARD_PLANE_Y + 0.0133
 	if p == drag_pack:
-		w.y += 0.2
+		w.y += 0.1333
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
 
 func _topmost_pack_at(display_pt: Vector2):
@@ -2856,7 +2965,7 @@ func _topmost_pack_at(display_pt: Vector2):
 		if not is_instance_valid(p) or p.opened or not p.ready_to_open:
 			continue
 		var bp: Vector2 = p.board_pos
-		if bpt.x >= bp.x and bpt.x <= bp.x + PackCardScript.W and bpt.y >= bp.y and bpt.y <= bp.y + PackCardScript.H:
+		if bpt.x >= bp.x and bpt.x <= bp.x + PACK_W and bpt.y >= bp.y and bpt.y <= bp.y + PACK_H:
 			if bp.y > best_key:
 				best_key = bp.y
 				best = p
@@ -2885,15 +2994,15 @@ func _open_loose_pack(p) -> void:
 		_dissolve_pack(p)
 	else:
 		var tw := create_tween()           # 弹一下反馈
-		tw.tween_property(p, "scale", Vector2(1.14, 0.86) * view_zoom, 0.08).set_trans(Tween.TRANS_QUAD)
-		tw.tween_property(p, "scale", Vector2.ONE * view_zoom, 0.14).set_trans(Tween.TRANS_BACK)
+		tw.tween_property(p, "scale", Vector2(1.14, 0.86) * PACK_SCALE * view_zoom, 0.08).set_trans(Tween.TRANS_QUAD)
+		tw.tween_property(p, "scale", Vector2.ONE * PACK_SCALE * view_zoom, 0.14).set_trans(Tween.TRANS_BACK)
 
 func _dissolve_pack(p) -> void:
 	if not is_instance_valid(p):
 		return
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(p, "scale", Vector2(1.1, 0.55) * view_zoom, 0.14).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(p, "scale", Vector2(1.1, 0.55) * PACK_SCALE * view_zoom, 0.14).set_trans(Tween.TRANS_QUAD)
 	tw.tween_property(p, "modulate:a", 0.0, 0.30).set_delay(0.06)
 	tw.chain().tween_callback(func():
 		loose_packs.erase(p)
@@ -2909,44 +3018,21 @@ func _skip_pack_card(id: String) -> bool:
 		return rid != "" and GameState.business_model_done(rid)
 	return false
 
-# 从 origin_board 朝四周随机撒一张牌的落点，尽量不与已有牌堆重叠（多次试探取最空的）
-func _scatter_landing(origin_board: Vector2, zone: String, dist_mult: float = 1.0) -> Vector2:
-	var clear := Vector2(CW * 0.92, CH * 0.7)   # 认为"不重叠"所需的最小间距
-	var best := Vector2.ZERO
-	var best_gap := -INF
-	for attempt in range(14):
-		var ang := GameState.rng.randf_range(-0.25 * PI, 1.15 * PI)
-		var dist := GameState.rng.randf_range(170.0, 430.0) * dist_mult
-		var cand := clamp_to_zone(origin_board + Vector2(cos(ang), sin(ang)) * dist, zone)
-		var nearest := INF
-		for sb in stack_base.values():
-			var dx: float = absf(sb.x - cand.x) / clear.x
-			var dy: float = absf(sb.y - cand.y) / clear.y
-			nearest = minf(nearest, maxf(dx, dy))   # <1 表示重叠
-		if nearest >= 1.0:
-			return cand                              # 找到不重叠的点，直接用
-		if nearest > best_gap:
-			best_gap = nearest
-			best = cand
-	return best                                       # 都挤，退而求其次取最空的
-
 func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) -> void:
 	if id == "founder" and _founder_on_board() != null:
 		return
 	if _is_business_model_card(id):
 		GameState.unlock_business_model(DataLoader.business_model_recipe_id(id))
 		_refresh_recipe_book()
-	var origin_board := _unproject(origin_display) - Vector2(CW, CH) * 0.5
-	# 对手卡跳出距离翻倍
-	var is_rival := String(DataLoader.cards.get(id, {}).get("type", "")) == "rival"
-	var landing := _scatter_landing(origin_board, zone, 2.0 if is_rival else 1.0)
+	var origin_center := _unproject(origin_display)
+	var landing := _nearby_output_landing(origin_center, zone)
 	var c := spawn_card(id, landing)
 	if c == null:
 		return
 	c.zone = zone
-	_play_card_pop(c, 0.0, origin_display)
+	_fly_out_card(c, origin_display)
 	var sid: int = c.stack_id
-	get_tree().create_timer(0.38).timeout.connect(func():
+	get_tree().create_timer(FLY_OUT_TIME).timeout.connect(func():
 		if stacks.has(sid):
 			evaluate_stack(sid)
 	)
@@ -3077,7 +3163,7 @@ func _ka_ching(board_pos: Vector2, amount: int) -> void:
 	p.scale_amount_max = 4.0
 	p.color = Color("ffe66d")
 	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
-	_float_text("+$" + str(amount), board_pos + Vector2(20, -10), Color("ffe66d"))
+	_float_text("+$" + str(amount), board_pos + Vector2(13.33, -6.67), Color("ffe66d"))
 
 func _float_text(txt: String, board_pos: Vector2, col: Color) -> void:
 	var pos := _project(board_pos)
@@ -3088,20 +3174,20 @@ func _float_text_screen(txt: String, pos: Vector2, col: Color) -> void:
 	l.text = txt
 	l.position = pos
 	l.z_index = 2001
-	_apply_pixel_font(l, 18)
+	_apply_pixel_font(l, 6)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
-	l.add_theme_constant_override("outline_size", 5)
+	l.add_theme_constant_override("outline_size", 2)
 	add_child(l)
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(l, "position", pos + Vector2(0, -46), 0.9)
+	tw.tween_property(l, "position", pos + Vector2(0, -15.33), 0.9)
 	tw.tween_property(l, "modulate:a", 0.0, 0.9)
 	tw.chain().tween_callback(l.queue_free)
 
 func _float_cost(amount: int, board_pos: Vector2) -> void:
-	const CARD_BADGE_SIZE := 36.0
-	const CARD_BADGE_FONT_SIZE := 17
+	const CARD_BADGE_SIZE := 12.0
+	const CARD_BADGE_FONT_SIZE := 6
 	var tl := _project(board_pos)
 	var tr := _project(board_pos + Vector2(CW, 0))
 	var bl := _project(board_pos + Vector2(0, CH))
@@ -3115,7 +3201,7 @@ func _float_cost(amount: int, board_pos: Vector2) -> void:
 
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(group, "position", group.position + Vector2(0, -34.0 * view_zoom), 0.95)
+	tw.tween_property(group, "position", group.position + Vector2(0, -11.33 * view_zoom), 0.95)
 	tw.tween_property(group, "modulate:a", 0.0, 0.95)
 	tw.chain().tween_callback(group.queue_free)
 
@@ -3525,33 +3611,33 @@ func _build_hud() -> void:
 
 	var month_progress_slot := progress_group.get_node_or_null("MonthProgressSlot") as Panel
 	if month_progress_slot != null:
-		month_progress_slot.position = Vector2(0, (HUD_H - 24.0) * 0.5)
-		month_progress_slot.size = Vector2(270, 24)
+		month_progress_slot.position = Vector2(0, (HUD_H - TOP_LABEL_FONT_SIZE) * 0.5)
+		month_progress_slot.size = Vector2(270, TOP_LABEL_FONT_SIZE)
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color("8d8d8d")
-		sb.corner_radius_top_left = 5
-		sb.corner_radius_top_right = 5
-		sb.corner_radius_bottom_left = 5
-		sb.corner_radius_bottom_right = 5
+		sb.corner_radius_top_left = 6
+		sb.corner_radius_top_right = 6
+		sb.corner_radius_bottom_left = 6
+		sb.corner_radius_bottom_right = 6
 		month_progress_slot.add_theme_stylebox_override("panel", sb)
 
 	month_progress = progress_group.get_node_or_null("MonthProgressFill") as Panel
 	if month_progress == null:
 		month_progress = Panel.new()
 		month_progress.name = "MonthProgressFill"
-		month_progress.position = Vector2(0, (HUD_H - 24.0) * 0.5)
-		month_progress.size = Vector2(270, 24)
+		month_progress.position = Vector2(0, (HUD_H - TOP_LABEL_FONT_SIZE) * 0.5)
+		month_progress.size = Vector2(270, TOP_LABEL_FONT_SIZE)
 		progress_group.add_child(month_progress)
 	else:
-		month_progress.position = Vector2(0, (HUD_H - 24.0) * 0.5)
-		month_progress.size = Vector2(270, 24)
+		month_progress.position = Vector2(0, (HUD_H - TOP_LABEL_FONT_SIZE) * 0.5)
+		month_progress.size = Vector2(270, TOP_LABEL_FONT_SIZE)
 
 	var sb_fill := StyleBoxFlat.new()
 	sb_fill.bg_color = Color("141414")
-	sb_fill.corner_radius_top_left = 5
-	sb_fill.corner_radius_top_right = 5
-	sb_fill.corner_radius_bottom_left = 5
-	sb_fill.corner_radius_bottom_right = 5
+	sb_fill.corner_radius_top_left = 6
+	sb_fill.corner_radius_top_right = 6
+	sb_fill.corner_radius_bottom_left = 6
+	sb_fill.corner_radius_bottom_right = 6
 	month_progress.add_theme_stylebox_override("panel", sb_fill)
 
 	month_progress_full_width = 270.0
@@ -3739,6 +3825,29 @@ func _build_zoom_buttons() -> void:
 	minus_btn.position = Vector2(right_x, minus_y)
 	minus_btn.size = Vector2(bs, bs)
 	_style_zoom_button(minus_btn, "res://assets/ui/zoom_out.svg")
+
+	# 两个视角键（在 + 之上，同样大小与间距）：向前下=更前倾、向后下=更俯视
+	var back_y := plus_y - gap - bs              # 紧挨 + 之上
+	var front_y := back_y - gap - bs             # 最上
+	var front_btn := hud.get_node_or_null("ViewFront") as Button
+	if front_btn == null:
+		front_btn = Button.new()
+		front_btn.name = "ViewFront"
+		hud.add_child(front_btn)
+		front_btn.pressed.connect(_tilt_view.bind(-CAM_PITCH_STEP))
+	front_btn.position = Vector2(right_x, front_y)
+	front_btn.size = Vector2(bs, bs)
+	_style_zoom_button(front_btn, "res://assets/ui/view_front.svg")
+
+	var back_btn := hud.get_node_or_null("ViewBack") as Button
+	if back_btn == null:
+		back_btn = Button.new()
+		back_btn.name = "ViewBack"
+		hud.add_child(back_btn)
+		back_btn.pressed.connect(_tilt_view.bind(CAM_PITCH_STEP))
+	back_btn.position = Vector2(right_x, back_y)
+	back_btn.size = Vector2(bs, bs)
+	_style_zoom_button(back_btn, "res://assets/ui/view_back.svg")
 
 func _zoom_view_center(factor: float) -> void:
 	# 以播放区中心为锚点缩放视角
@@ -4786,7 +4895,7 @@ func _on_business_model_unlocked(recipe_id: String) -> void:
 # upper-right inside the card. Mapped through the card's own transform so it
 # tracks the live, projected card position (NOT re-projected from screen space).
 func _founder_mouth_screen(founder: Node2D) -> Vector2:
-	return founder.to_global(Vector2(CW * 0.70, CH * 0.34))
+	return _project(_board_topleft(founder) + Vector2(CW * 0.70, CH * 0.34))
 
 func _show_founder_bubble(text: String) -> void:
 	var founder = _founder_on_board()
@@ -4805,10 +4914,10 @@ func _show_founder_bubble(text: String) -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color.WHITE
 	sb.set_corner_radius_all(16)
-	sb.border_width_left = 3
-	sb.border_width_right = 3
-	sb.border_width_top = 3
-	sb.border_width_bottom = 3
+	sb.border_width_left = 4
+	sb.border_width_right = 4
+	sb.border_width_top = 4
+	sb.border_width_bottom = 4
 	sb.border_color = Color.BLACK
 	sb.content_margin_left = 18
 	sb.content_margin_right = 18
@@ -4848,7 +4957,7 @@ func _show_founder_bubble(text: String) -> void:
 		var base_w := 26.0
 		var lean := 20.0   # how far the base center is pushed right of the tip
 		var on_bottom: bool = local_pivot.y > h * 0.5
-		var edge_y: float = (h - 2.0) if on_bottom else 2.0
+		var edge_y: float = (h - 4.0) if on_bottom else 4.0
 		var base_cx: float = clampf(local_pivot.x + lean, 18.0 + base_w * 0.5, w - 18.0 - base_w * 0.5)
 		var pt_b := Vector2(base_cx - base_w * 0.5, edge_y)
 		var pt_c := Vector2(base_cx + base_w * 0.5, edge_y)
@@ -4865,13 +4974,13 @@ func _show_founder_bubble(text: String) -> void:
 		)
 		# Erase the bubble's border segment where the tail attaches (no seam line).
 		bubble.draw_line(
-			Vector2(pt_b.x - 1.0, edge_y),
-			Vector2(pt_c.x + 1.0, edge_y),
-			Color.WHITE, 5.0
+			Vector2(pt_b.x - 3.0, edge_y),
+			Vector2(pt_c.x + 3.0, edge_y),
+			Color.WHITE, 6.0
 		)
 		# Comic black outline on the two free edges of the tail only.
-		bubble.draw_line(pt_b, pt_a, Color.BLACK, 3.0)
-		bubble.draw_line(pt_c, pt_a, Color.BLACK, 3.0)
+		bubble.draw_line(pt_b, pt_a, Color.BLACK, 4.0)
+		bubble.draw_line(pt_c, pt_a, Color.BLACK, 4.0)
 	)
 	
 	founder_bubble = bubble

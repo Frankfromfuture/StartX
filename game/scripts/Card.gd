@@ -75,6 +75,20 @@ func _header_color() -> Color:
 		"department":    return Color("c2b6d6")   # 部门：雾紫
 		_:               return Color("d8d2c4")
 
+# 卡身颜色（与 _draw 里的 bg 一致）—— 供 3D 卡牌厚度涂成卡牌本身的颜色
+func body_color() -> Color:
+	var head := _header_color()
+	var bg := head.lightened(0.28)
+	if card_id == "founder":
+		bg = Color("f4d7dd")
+	if _is_black_series_card():
+		bg = Color("d5d1c9")
+	if _is_blue_series_card():
+		bg = Color("d4e5f1")
+	if ctype == "business_model":
+		bg = Color("6b4ca0")
+	return bg
+
 func _is_black_series_card() -> bool:
 	return card_id in ["office", "p1_office", "university", "p1_university", "p1_wholesale"]
 

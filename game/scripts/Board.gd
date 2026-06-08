@@ -560,26 +560,11 @@ func _ensure_face3d(c) -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	mat.alpha_scissor_threshold = 0.5
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED   # 光不影响卡面（只用来投射阴影）
 	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
 	m.material_override = mat
-	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # 改用柔和 blob 阴影
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON    # 投射动态阴影（顶光）
 	pivot.add_child(m)
-	# 右下方柔和投影：贴白板的一张径向渐变暗片
-	var sh := MeshInstance3D.new()
-	var sqm := QuadMesh.new()
-	sqm.size = Vector2(CARD3D_W * 1.12, CARD3D_H * 1.12)
-	sh.mesh = sqm
-	sh.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
-	var smat := StandardMaterial3D.new()
-	smat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	smat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	smat.albedo_texture = _blob_shadow_tex()
-	smat.albedo_color = Color(0, 0, 0, 0)
-	sh.material_override = smat
-	sh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	pivot.add_child(sh)
-	c.shadow3d = sh
 	city_bg.world_card_root().add_child(pivot)
 	c.face3d = pivot
 	c.tree_exited.connect(func():
@@ -595,14 +580,21 @@ var _blob_tex: Texture2D = null
 func _blob_shadow_tex() -> Texture2D:
 	if _blob_tex != null:
 		return _blob_tex
-	var s := 64
-	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
-	var c := float(s - 1) * 0.5
-	for y in s:
-		for x in s:
-			var d := Vector2(float(x) - c, float(y) - c).length() / c
-			var a := clampf(1.0 - d, 0.0, 1.0)
-			a = a * a            # 边缘柔和衰减
+	# 与卡牌同形：圆角矩形（2:3），实心 + 柔边
+	var w := 96
+	var h := 144
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var edge := 11.0      # 柔边宽度（像素）
+	var rad := 14.0       # 圆角半径
+	var hx := w * 0.5
+	var hy := h * 0.5
+	for y in h:
+		for x in w:
+			# 到「内缩圆角矩形」外部的距离 → 柔边
+			var dx := maxf(absf(float(x) - hx + 0.5) - (hx - rad - edge), 0.0)
+			var dy := maxf(absf(float(y) - hy + 0.5) - (hy - rad - edge), 0.0)
+			var dist := sqrt(dx * dx + dy * dy)
+			var a := clampf(1.0 - dist / edge, 0.0, 1.0)
 			img.set_pixel(x, y, Color(0, 0, 0, a))
 	_blob_tex = ImageTexture.create_from_image(img)
 	return _blob_tex
@@ -633,19 +625,6 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 		lift += 0.06          # hover：轻轻上抬（不变色，仅靠抬升+阴影反馈）
 	w.y = CARD_PLANE_Y + lift
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
-	# 右下方柔和投影：hover 浅、拿起稍厚；offset 越大越"浮"
-	if c.shadow3d != null and is_instance_valid(c.shadow3d):
-		var a := 0.14
-		var off := 0.02
-		if c.carried or dragging:
-			a = 0.42
-			off = 0.06
-		elif c.hovered:
-			a = 0.28
-			off = 0.04
-		(c.shadow3d.material_override as StandardMaterial3D).albedo_color = Color(0, 0, 0, a)
-		# 贴在白板上（抵消 pivot 抬升），向右下(+x,+z)偏移
-		c.shadow3d.position = Vector3(off, (CARD_PLANE_Y - 0.018) - w.y, off)
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():

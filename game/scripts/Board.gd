@@ -557,7 +557,8 @@ func _ensure_face3d(c) -> void:
 	m.mesh = qm
 	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 完全平躺在白板上（面朝上、顶边朝北）
 	var mat := StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # 不透明部分能投射阴影
+	mat.alpha_scissor_threshold = 0.5
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
 	m.material_override = mat
@@ -585,6 +586,7 @@ func _bake_face_async(c, mat) -> void:
 	var tex = await face_baker.bake(c)
 	if tex != null and is_instance_valid(mat):
 		mat.albedo_texture = tex
+		mat.albedo_color = Color(1, 1, 1)   # 贴图就位后取消占位底色，否则会乘暗
 
 func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	_ensure_face3d(c)
@@ -2444,6 +2446,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(bottom_info):
 		bottom_info.queue_redraw()   # 底部信息栏随 hover/hint 实时刷新
 	_update_workbars()
+	_relayout_loose_packs()   # 确保卡包就绪后转 3D（含开局卡包）并跟随
 	_update_battle(delta)
 	if is_instance_valid(founder_bubble):
 		var founder = _founder_on_board()
@@ -2747,7 +2750,8 @@ func _ensure_pack3d(p) -> void:
 	m.mesh = qm
 	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
 	var mat := StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # 不透明部分能投射阴影
+	mat.alpha_scissor_threshold = 0.5
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.albedo_color = Color(0.1, 0.1, 0.1)
 	m.material_override = mat
@@ -2769,6 +2773,7 @@ func _bake_pack_async(p, mat) -> void:
 	var tex = await face_baker.bake_pack(p.pack_id, p.pack_name, p.contents)
 	if tex != null and is_instance_valid(mat):
 		mat.albedo_texture = tex
+		mat.albedo_color = Color(1, 1, 1)   # 贴图就位后取消占位深色，否则白图标/名字被乘暗
 
 func _place_pack3d(p) -> void:
 	_ensure_pack3d(p)

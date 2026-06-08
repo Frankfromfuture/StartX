@@ -469,7 +469,7 @@ func _spawn_start_cards() -> void:
 	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
 	var center_tl := _unproject(Vector2(BASE_W, BASE_H) * 0.5 \
 		- Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * view_zoom)
-	_spawn_loose_pack("garage_pack", pack, contents, center_tl)
+	_spawn_loose_pack("garage_pack", pack, contents, center_tl, true)   # 直接 3D 出现在白板上
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	var c := spawn_card(id, pos)
@@ -557,13 +557,29 @@ func _ensure_face3d(c) -> void:
 	m.mesh = qm
 	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)       # 完全平躺在白板上（面朝上、顶边朝北）
 	var mat := StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # 不透明部分能投射阴影
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	mat.alpha_scissor_threshold = 0.5
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.albedo_color = Color(0.86, 0.84, 0.78)              # 烘焙完成前的占位底色
 	m.material_override = mat
-	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # 改用柔和 blob 阴影
 	pivot.add_child(m)
+	# 右下方柔和投影：贴白板的一张径向渐变暗片
+	var sh := MeshInstance3D.new()
+	var sqm := QuadMesh.new()
+	sqm.size = Vector2(CARD3D_W * 1.12, CARD3D_H * 1.12)
+	sh.mesh = sqm
+	sh.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	var smat := StandardMaterial3D.new()
+	smat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	smat.albedo_texture = _blob_shadow_tex()
+	smat.albedo_color = Color(0, 0, 0, 0)
+	sh.material_override = smat
+	sh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	pivot.add_child(sh)
+	c.shadow3d = sh
 	city_bg.world_card_root().add_child(pivot)
 	c.face3d = pivot
 	c.tree_exited.connect(func():
@@ -574,6 +590,22 @@ func _ensure_face3d(c) -> void:
 	m.scale = Vector3.ZERO
 	var tw := create_tween()
 	tw.tween_property(m, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+var _blob_tex: Texture2D = null
+func _blob_shadow_tex() -> Texture2D:
+	if _blob_tex != null:
+		return _blob_tex
+	var s := 64
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	var c := float(s - 1) * 0.5
+	for y in s:
+		for x in s:
+			var d := Vector2(float(x) - c, float(y) - c).length() / c
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			a = a * a            # 边缘柔和衰减
+			img.set_pixel(x, y, Color(0, 0, 0, a))
+	_blob_tex = ImageTexture.create_from_image(img)
+	return _blob_tex
 
 func _face3d_mesh(c) -> MeshInstance3D:
 	if c.face3d != null and is_instance_valid(c.face3d) and c.face3d.get_child_count() > 0:
@@ -601,6 +633,19 @@ func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 		lift += 0.06          # hover：轻轻上抬（不变色，仅靠抬升+阴影反馈）
 	w.y = CARD_PLANE_Y + lift
 	pivot.transform = Transform3D(Basis.IDENTITY, w)
+	# 右下方柔和投影：hover 浅、拿起稍厚；offset 越大越"浮"
+	if c.shadow3d != null and is_instance_valid(c.shadow3d):
+		var a := 0.05
+		var off := 0.02
+		if c.carried or dragging:
+			a = 0.20
+			off = 0.06
+		elif c.hovered:
+			a = 0.12
+			off = 0.04
+		(c.shadow3d.material_override as StandardMaterial3D).albedo_color = Color(0, 0, 0, a)
+		# 贴在白板上（抵消 pivot 抬升），向右下(+x,+z)偏移
+		c.shadow3d.position = Vector3(off, (CARD_PLANE_Y - 0.018) - w.y, off)
 
 func _relayout_all() -> void:
 	for sid in stacks.keys():
@@ -2657,7 +2702,7 @@ func _sanitize_pack_contents(pack_id: String, contents: Array) -> Array:
 		out.append(id)
 	return out
 
-func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landing_override = null) -> Node2D:
+func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landing_override = null, instant: bool = false) -> Node2D:
 	var p = PackCardScript.new()
 	add_child(p)
 	p.setup(pack_id, String(pack.get("name", "卡包")), contents)
@@ -2668,6 +2713,15 @@ func _spawn_loose_pack(pack_id: String, pack: Dictionary, contents: Array, landi
 	loose_packs.append(p)
 	p.board_pos = (landing_override as Vector2) if landing_override != null else _pack_landing_below(pack_id)
 	var landing := _project(p.board_pos)
+
+	if instant:
+		# 开局卡包：不走 2D 甩出动画，直接以 3D 形态出现在白板上
+		p.position = landing
+		p.rotation = 0.0
+		p.ready_to_open = true
+		p.visible = false
+		_place_pack3d(p)
+		return p
 
 	# 甩出方向：朝落点行进方向旋转
 	var dir := signf(landing.x - start.x)

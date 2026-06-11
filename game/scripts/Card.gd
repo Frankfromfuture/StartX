@@ -8,7 +8,7 @@ class_name Card
 const W := 180.0          # square, keeping the previous long side
 const H := 180.0
 const HEADER := 30.0
-const TITLE_FONT_SIZE := 20
+const TITLE_FONT_SIZE := 21
 
 var card_id: String = ""
 var ctype: String = "resource"
@@ -54,7 +54,7 @@ func _header_color() -> Color:
 	if card_id == "founder":
 		return Color("e6b8c2")          # 创始人：换成办公室/设施红粉色
 	if card_id == "cash":
-		return Color("e8b21f")          # 现金：饱满金
+		return Color("c8910f")          # 现金：饱满金（整体加深）
 	if card_id == "revenue":
 		return Color("ecd590")          # 金币 / 回款：黄
 	if _is_black_series_card():
@@ -182,8 +182,8 @@ func _draw_cash_glass(active: bool) -> void:
 	draw_polygon(
 		PackedVector2Array([Vector2(ix, iy), Vector2(ix + iw, iy),
 			Vector2(ix + iw, iy + ih), Vector2(ix, iy + ih)]),
-		PackedColorArray([Color("fff0a8") * Color(1, 1, 1, 0.40), Color("ffe27a") * Color(1, 1, 1, 0.34),
-			Color("a8700c") * Color(1, 1, 1, 0.36), Color("c88f16") * Color(1, 1, 1, 0.30)]))
+		PackedColorArray([Color("f2d878") * Color(1, 1, 1, 0.42), Color("e0bd52") * Color(1, 1, 1, 0.38),
+			Color("805208") * Color(1, 1, 1, 0.44), Color("9c6e0f") * Color(1, 1, 1, 0.38)]))
 	# 顶部镜面高光带（玻璃面反光）
 	draw_polygon(
 		PackedVector2Array([Vector2(ix, iy), Vector2(ix + iw, iy),
@@ -239,24 +239,11 @@ func _pixel_frame(r: Rect2, thick: float, dark: Color, light: Color, shade: Colo
 
 func _draw_bold_string(f: Font, pos: Vector2, text: String, align: HorizontalAlignment, width: float, size: int, col: Color) -> void:
 	draw_string(f, pos, text, align, width, size, col)
-	draw_string(f, pos + Vector2(1, 0), text, align, width, size, col)
+	draw_string(f, pos + Vector2(0.4, 0), text, align, width, size, col)
 
 # 抖动高光：标题栏下方几排棋盘格亮点，硬边，复古磨砂感
-func _draw_dither_gloss(picked: bool) -> void:
-	const VPX := 4.0
-	var col := Color(1, 1, 1, 0.16 if picked else 0.09)
-	var y0 := 5.0 + HEADER + 4.0
-	var y1 := HEADER + (H - HEADER) * 0.30
-	var ry := y0
-	var row := 0
-	while ry < y1:
-		var rx := 10.0 + (VPX * 2.0 if row % 2 == 0 else 0.0)
-		while rx < W - 10.0:
-			draw_rect(Rect2(rx, ry, VPX, VPX), col, true)
-			rx += VPX * 4.0
-		ry += VPX * 2.0
-		row += 1
-
+func _draw_dither_gloss(_picked: bool) -> void:
+	# 卡面烘焙高光已去除（保持纯平涂，不受光照影响）
 	# 底部角标：左下 = 月薪，右下 = 产能；名称区右上 = 剩余次数
 	var salary := int(cdef.get("salary", 0))
 	if salary > 0:
@@ -269,8 +256,8 @@ func _draw_dither_gloss(picked: bool) -> void:
 	if cap > 0:
 		_draw_capacity_badge(Vector2(W - 30, H - 29), str(cap))
 
-	# 工作条：画在本卡【标题栏正上方】（条底边贴着 header 顶边）。叠放时由最下面一张持有，
-	# 故紧贴最底部那张牌的 header 之上，不再悬浮到整摞顶部
+	# 工作条：画在被生产的非人物卡标题栏正上方。生产被人物离开中断时，
+	# work_ratio 仍保留在该目标卡上，重新加入员工后可继续原有进度。
 	if work_ratio > 0.0:
 		var bh := 15.0
 		var bx := 8.0
@@ -422,21 +409,24 @@ func _card_art() -> Texture2D:
 	var art_key := "%s|%s" % [card_id, _card_name()]
 	if _art_cache.has(art_key):
 		return _art_cache[art_key]
-	var img := Image.new()
 	var paths := _card_art_paths()
 	for path in paths:
-		if not FileAccess.file_exists(path):
-			continue
-		if path.ends_with(".png"):
-			if img.load(path) != OK:
-				continue
-		else:
-			# 16×8 = 128px 光栅，足够清晰且像素边缘锐利
-			if img.load_svg_from_string(FileAccess.get_file_as_string(path), 8.0) != OK:
-				continue
-		var tex := ImageTexture.create_from_image(img)
-		_art_cache[art_key] = tex
-		return tex
+		var tex: Texture2D = null
+		if FileAccess.file_exists(path):
+			var img := Image.new()
+			if path.ends_with(".png"):
+				if img.load(path) == OK:
+					tex = ImageTexture.create_from_image(img)
+			else:
+				# 16×8 = 128px 光栅，足够清晰且像素边缘锐利
+				if img.load_svg_from_string(FileAccess.get_file_as_string(path), 8.0) == OK:
+					tex = ImageTexture.create_from_image(img)
+		elif ResourceLoader.exists(path):
+			# web 导出剥离了源文件 → 用导入的纹理（svg 导入缩放已设为 8）
+			tex = load(path) as Texture2D
+		if tex != null:
+			_art_cache[art_key] = tex
+			return tex
 	_art_cache[art_key] = null
 	return null
 
@@ -479,6 +469,8 @@ func _idea_icon() -> Texture2D:
 		var img := Image.new()
 		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 1.0) == OK:
 			idea_icon_tex = ImageTexture.create_from_image(img)
+	elif ResourceLoader.exists(path):
+		idea_icon_tex = load(path) as Texture2D
 	return idea_icon_tex
 
 func _draw_badge_number(center: Vector2, txt: String, radius: float) -> void:
@@ -516,12 +508,21 @@ func _ui_font() -> Font:
 		"/System/Library/Fonts/PingFang.ttc"
 	]
 	for path in candidates:
-		if not FileAccess.file_exists(path):
+		var ff: FontFile
+		if FileAccess.file_exists(path):
+			ff = FontFile.new()
+			ff.load_dynamic_font(path)
+		elif path.begins_with("res://"):
+			var loaded := load(path)
+			if loaded is FontFile:
+				ff = (loaded as FontFile).duplicate() as FontFile
+		if ff == null:
 			continue
-		var ff := FontFile.new()
-		ff.load_dynamic_font(path)
 		ff.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
-		ff.generate_mipmaps = true
+		# MSDF：字形以有向距离场存储，烘焙时从 180→1024 放大仍保持锐利（不再发糊）
+		ff.multichannel_signed_distance_field = true
+		ff.msdf_pixel_range = 8
+		ff.msdf_size = 64
 		ui_font = ff
 		return ui_font
 	ui_font = ThemeDB.fallback_font

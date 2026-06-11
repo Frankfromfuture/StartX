@@ -1,10 +1,384 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scripts/StartMenu.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/StartMenu.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/menu/start_menu_office.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://assets/menu/startx_logo_comic.png" id="3_logo"]
+[ext_resource type="Texture2D" path="res://assets/menu/screen_chart_a.svg" id="5_chart_a"]
+[ext_resource type="Texture2D" path="res://assets/menu/screen_chart_b.svg" id="6_chart_b"]
+[ext_resource type="Texture2D" path="res://assets/menu/lamp_glow.svg" id="7_lamp_glow"]
+[ext_resource type="Texture2D" path="res://assets/menu/steam.svg" id="8_steam"]
 
 [node name="StartMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource("1")
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="WarmWash" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.956863, 0.921569, 0.843137, 0.08)
+
+[node name="Ambient" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LampGlow" type="TextureRect" parent="Ambient"]
+modulate = Color(1, 1, 1, 0.42)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_lamp_glow")
+expand_mode = 1
+
+[node name="ChartA" type="TextureRect" parent="Ambient"]
+modulate = Color(1, 1, 1, 0.82)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_chart_a")
+expand_mode = 1
+
+[node name="ChartB" type="TextureRect" parent="Ambient"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_chart_b")
+expand_mode = 1
+
+[node name="Steam1" type="TextureRect" parent="Ambient"]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 0
+offset_left = 1028.0
+offset_top = 314.0
+offset_right = 1092.0
+offset_bottom = 410.0
+mouse_filter = 2
+texture = ExtResource("8_steam")
+expand_mode = 1
+
+[node name="Steam2" type="TextureRect" parent="Ambient"]
+modulate = Color(1, 1, 1, 0.42)
+layout_mode = 0
+offset_left = 1362.0
+offset_top = 648.0
+offset_right = 1426.0
+offset_bottom = 744.0
+mouse_filter = 2
+texture = ExtResource("8_steam")
+expand_mode = 1
+
+[node name="Brand" type="Control" parent="."]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 158.0
+offset_right = 714.0
+offset_bottom = 422.0
+mouse_filter = 2
+
+[node name="Logo" type="TextureRect" parent="Brand"]
+layout_mode = 0
+offset_right = 660.0
+offset_bottom = 264.0
+mouse_filter = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LogoGloss" type="TextureRect" parent="Brand"]
+layout_mode = 0
+offset_right = 660.0
+offset_bottom = 264.0
+mouse_filter = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Menu" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 446.0
+offset_right = 536.0
+offset_bottom = 864.0
+theme_override_constants/separation = 4
+
+[node name="StartButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 64)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "开始游戏"
+
+[node name="ContinueButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+disabled = true
+focus_mode = 0
+text = "继续游戏"
+
+[node name="GrowthButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "公司成长"
+
+[node name="SettingsButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "设置"
+
+[node name="CreditsButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "制作组"
+
+[node name="QuitButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "退出"
+
+[node name="Footer" type="Label" parent="."]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 976.0
+offset_right = 610.0
+offset_bottom = 1028.0
+mouse_filter = 2
+text = "START SMALL  ·  BUILD SOMETHING"
+vertical_alignment = 1
+
+[node name="OverlayDim" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.105882, 0.0941176, 0.0823529, 0.54)
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 650.0
+offset_top = 208.0
+offset_right = 1270.0
+offset_bottom = 720.0
+
+[node name="Margin" type="MarginContainer" parent="SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 34
+
+[node name="Content" type="VBoxContainer" parent="SettingsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Header" type="HBoxContainer" parent="SettingsPanel/Margin/Content"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="SettingsPanel/Margin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "设置"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="SettingsPanel/Margin/Content/Header"]
+custom_minimum_size = Vector2(100, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "关闭"
+
+[node name="Divider" type="HSeparator" parent="SettingsPanel/Margin/Content"]
+layout_mode = 2
+
+[node name="VolumeRow" type="HBoxContainer" parent="SettingsPanel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="SettingsPanel/Margin/Content/VolumeRow"]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+text = "音效音量"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="SettingsPanel/Margin/Content/VolumeRow"]
+custom_minimum_size = Vector2(300, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="Value" type="Label" parent="SettingsPanel/Margin/Content/VolumeRow"]
+custom_minimum_size = Vector2(72, 48)
+layout_mode = 2
+text = "80%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Fullscreen" type="CheckButton" parent="SettingsPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "全屏"
+
+[node name="ReduceMotion" type="CheckButton" parent="SettingsPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "减少动态"
+
+[node name="MotionHint" type="Label" parent="SettingsPanel/Margin/Content"]
+layout_mode = 2
+text = "关闭环境循环动画，保留按钮状态反馈。"
+autowrap_mode = 2
+
+[node name="DeveloperPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 680.0
+offset_top = 264.0
+offset_right = 1240.0
+offset_bottom = 750.0
+
+[node name="Margin" type="MarginContainer" parent="DeveloperPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 34
+
+[node name="Content" type="VBoxContainer" parent="DeveloperPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="DeveloperPanel/Margin/Content"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="DeveloperPanel/Margin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "实验室"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="DeveloperPanel/Margin/Content/Header"]
+custom_minimum_size = Vector2(100, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "关闭"
+
+[node name="Hint" type="Label" parent="DeveloperPanel/Margin/Content"]
+layout_mode = 2
+text = "开发工具不会出现在正式玩家菜单中。"
+autowrap_mode = 2
+
+[node name="DevButton" type="Button" parent="DeveloperPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "DEV 开局"
+
+[node name="CityBuilderButton" type="Button" parent="DeveloperPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "打开 City Builder"
+
+[node name="Shortcut" type="Label" parent="DeveloperPanel/Margin/Content"]
+layout_mode = 2
+text = "快捷键  Ctrl / ⌘ + D"
+horizontal_alignment = 1
+
+[node name="CreditsPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Background" type="ColorRect" parent="CreditsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0117647, 0.0117647, 0.0392157, 1)
+
+[node name="Reel" type="VBoxContainer" parent="CreditsPanel"]
+layout_mode = 0
+offset_left = 410.0
+offset_top = 1080.0
+offset_right = 1510.0
+offset_bottom = 1080.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Hint" type="Label" parent="CreditsPanel"]
+layout_mode = 0
+offset_left = 610.0
+offset_top = 1016.0
+offset_right = 1310.0
+offset_bottom = 1052.0
+mouse_filter = 2
+text = "点字幕暂停 · 按住可拖动"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkipButton" type="Button" parent="CreditsPanel"]
+layout_mode = 0
+offset_left = 1740.0
+offset_top = 1004.0
+offset_right = 1888.0
+offset_bottom = 1052.0
+mouse_default_cursor_shape = 2
+text = "跳过 ▸"

@@ -1,790 +1,790 @@
 {
   "founder": {
-    "name": "创始人",
-    "type": "employee",
-    "salary": 0,
-    "capacity": 3,
-    "workTags": [
-      "sales",
-      "dev",
-      "admin",
-      "market",
-      "data",
-      "finance",
+	"name": "创始人",
+	"type": "employee",
+	"salary": 0,
+	"capacity": 3,
+	"workTags": [
+	  "sales",
+	  "dev",
+	  "admin",
+	  "market",
+	  "data",
+	  "finance",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "intern": {
-    "name": "实习生",
-    "type": "employee",
-    "salary": 1,
-    "capacity": 1,
-    "workTags": [
+	"name": "实习生",
+	"type": "employee",
+	"salary": 1,
+	"capacity": 1,
+	"workTags": [
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "grad": {
-    "name": "毕业生",
-    "type": "employee",
-    "salary": 1,
-    "capacity": 2,
-    "workTags": [
+	"name": "毕业生",
+	"type": "employee",
+	"salary": 1,
+	"capacity": 2,
+	"workTags": [
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "sales_mgr": {
-    "name": "销售经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 3,
-    "workTags": [
-      "sales",
+	"name": "销售经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 3,
+	"workTags": [
+	  "sales",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "market_mgr": {
-    "name": "市场经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 3,
-    "workTags": [
-      "market",
+	"name": "市场经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 3,
+	"workTags": [
+	  "market",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "dev_mgr": {
-    "name": "研发经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 3,
-    "workTags": [
-      "dev",
+	"name": "研发经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 3,
+	"workTags": [
+	  "dev",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "admin_mgr": {
-    "name": "行政经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 3,
-    "workTags": [
-      "admin",
+	"name": "行政经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 3,
+	"workTags": [
+	  "admin",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "data_mgr": {
-    "name": "数据经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 4,
-    "workTags": [
-      "data",
+	"name": "数据经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 4,
+	"workTags": [
+	  "data",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "finance_mgr": {
-    "name": "财务经理",
-    "type": "employee",
-    "salary": 2,
-    "capacity": 3,
-    "workTags": [
-      "finance",
+	"name": "财务经理",
+	"type": "employee",
+	"salary": 2,
+	"capacity": 3,
+	"workTags": [
+	  "finance",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "sales_dir": {
-    "name": "销售总监",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 6,
-    "workTags": [
-      "sales",
+	"name": "销售总监",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 6,
+	"workTags": [
+	  "sales",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "market_dir": {
-    "name": "市场总监",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 6,
-    "workTags": [
-      "market",
+	"name": "市场总监",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 6,
+	"workTags": [
+	  "market",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "dev_dir": {
-    "name": "研发总监",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 6,
-    "workTags": [
-      "dev",
+	"name": "研发总监",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 6,
+	"workTags": [
+	  "dev",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "admin_dir": {
-    "name": "行政总监",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 6,
-    "workTags": [
-      "admin",
+	"name": "行政总监",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 6,
+	"workTags": [
+	  "admin",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "data_dir": {
-    "name": "数据总监",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 7,
-    "workTags": [
-      "data",
+	"name": "数据总监",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 7,
+	"workTags": [
+	  "data",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "cto": {
-    "name": "首席技术官",
-    "type": "employee",
-    "salary": 7,
-    "capacity": 10,
-    "workTags": [
-      "dev",
+	"name": "首席技术官",
+	"type": "employee",
+	"salary": 7,
+	"capacity": 10,
+	"workTags": [
+	  "dev",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "cmo": {
-    "name": "首席营销官",
-    "type": "employee",
-    "salary": 7,
-    "capacity": 10,
-    "workTags": [
-      "market",
+	"name": "首席营销官",
+	"type": "employee",
+	"salary": 7,
+	"capacity": 10,
+	"workTags": [
+	  "market",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "coo": {
-    "name": "首席运营官",
-    "type": "employee",
-    "salary": 7,
-    "capacity": 10,
-    "workTags": [
-      "admin",
+	"name": "首席运营官",
+	"type": "employee",
+	"salary": 7,
+	"capacity": 10,
+	"workTags": [
+	  "admin",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "cfo": {
-    "name": "首席财务官",
-    "type": "employee",
-    "salary": 7,
-    "capacity": 10,
-    "workTags": [
-      "finance",
+	"name": "首席财务官",
+	"type": "employee",
+	"salary": 7,
+	"capacity": 10,
+	"workTags": [
+	  "finance",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "growth_hacker": {
-    "name": "增长黑客",
-    "type": "employee",
-    "salary": 3,
-    "capacity": 5,
-    "workTags": [
-      "market",
-      "data",
+	"name": "增长黑客",
+	"type": "employee",
+	"salary": 3,
+	"capacity": 5,
+	"workTags": [
+	  "market",
+	  "data",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "architect": {
-    "name": "架构师",
-    "type": "employee",
-    "salary": 5,
-    "capacity": 7,
-    "workTags": [
-      "dev",
+	"name": "架构师",
+	"type": "employee",
+	"salary": 5,
+	"capacity": 7,
+	"workTags": [
+	  "dev",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "legal": {
-    "name": "法务",
-    "type": "employee",
-    "salary": 3,
-    "capacity": 4,
-    "workTags": [
-      "admin",
+	"name": "法务",
+	"type": "employee",
+	"salary": 3,
+	"capacity": 4,
+	"workTags": [
+	  "admin",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "pr": {
-    "name": "公关",
-    "type": "employee",
-    "salary": 3,
-    "capacity": 4,
-    "workTags": [
-      "market",
+	"name": "公关",
+	"type": "employee",
+	"salary": 3,
+	"capacity": 4,
+	"workTags": [
+	  "market",
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "consultant": {
-    "name": "顾问",
-    "type": "employee",
-    "salary": 4,
-    "capacity": 5,
-    "workTags": [
+	"name": "顾问",
+	"type": "employee",
+	"salary": 4,
+	"capacity": 5,
+	"workTags": [
       "any"
-    ],
-    "value": 0
+	],
+	"value": 0
   },
   "sales_kit": {
-    "name": "销售技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "销售技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "market_kit": {
-    "name": "市场技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "市场技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "dev_kit": {
-    "name": "研发技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "研发技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "admin_kit": {
-    "name": "行政技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "行政技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "data_kit": {
-    "name": "数据技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "数据技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "finance_kit": {
-    "name": "财务技能包",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "财务技能包",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "exec_course": {
-    "name": "高管课程",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "高管课程",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "growth_course": {
-    "name": "增长课程",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "增长课程",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "architect_course": {
-    "name": "架构课程",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "架构课程",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "resilience_course": {
-    "name": "抗压课",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "抗压课",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "network": {
-    "name": "人脉",
-    "type": "skill",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "人脉",
+	"type": "skill",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "cash": {
-    "name": "现金",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "现金",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "lead": {
-    "name": "线索",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 1
+	"name": "线索",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 1
   },
   "customer_list": {
-    "name": "客户名单",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 2
+	"name": "客户名单",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 2
   },
   "order": {
-    "name": "订单",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 3
+	"name": "订单",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 3
   },
   "bigdeal": {
-    "name": "大单",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 8
+	"name": "大单",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 8
   },
   "revenue": {
-    "name": "营收",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 12
+	"name": "营收",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 12
   },
   "doc": {
-    "name": "资料",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 1
+	"name": "资料",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 1
   },
   "code": {
-    "name": "代码",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 2
+	"name": "代码",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 2
   },
   "module": {
-    "name": "模块",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 4
+	"name": "模块",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 4
   },
   "prd": {
-    "name": "技术方案",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 2
+	"name": "技术方案",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 2
   },
   "product": {
-    "name": "产品",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 8
+	"name": "产品",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 8
   },
   "data": {
-    "name": "数据",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 1
+	"name": "数据",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 1
   },
   "insight": {
-    "name": "洞察",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 3
+	"name": "洞察",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 3
   },
   "traffic": {
-    "name": "流量",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 1
+	"name": "流量",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 1
   },
   "user": {
-    "name": "用户",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 2
+	"name": "用户",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 2
   },
   "report": {
-    "name": "报告",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 4
+	"name": "报告",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 4
   },
   "contract": {
-    "name": "合同",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 5
+	"name": "合同",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 5
   },
   "proposal": {
-    "name": "方案",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "方案",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "patent": {
-    "name": "专利",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "专利",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "brand": {
-    "name": "品牌",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "品牌",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "license": {
-    "name": "牌照",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "牌照",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "training": {
-    "name": "培训",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 1
+	"name": "培训",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 1
   },
   "market_report": {
-    "name": "行业报告",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 3
+	"name": "行业报告",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 3
   },
   "equity": {
-    "name": "股权",
-    "type": "resource",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "股权",
+	"type": "resource",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "customer_pool": {
-    "name": "客户资源",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 4,
-    "value": 0
+	"name": "客户资源",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 4,
+	"value": 0
   },
   "expo_booth": {
-    "name": "展会摊位",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 3,
-    "value": 0
+	"name": "展会摊位",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 3,
+	"value": 0
   },
   "app_store": {
-    "name": "应用商店",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 5,
-    "value": 0
+	"name": "应用商店",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 5,
+	"value": 0
   },
   "oss_repo": {
-    "name": "开源代码库",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 6,
-    "value": 0
+	"name": "开源代码库",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 6,
+	"value": 0
   },
   "hot_topic": {
-    "name": "热点话题",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 3,
-    "value": 0
+	"name": "热点话题",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 3,
+	"value": 0
   },
   "data_source": {
-    "name": "数据源",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 5,
-    "value": 0
+	"name": "数据源",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 5,
+	"value": 0
   },
   "archive": {
-    "name": "文档库",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 5,
-    "value": 0
+	"name": "文档库",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 5,
+	"value": 0
   },
   "capital_market": {
-    "name": "资本市场",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 4,
-    "value": 0
+	"name": "资本市场",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 4,
+	"value": 0
   },
   "overseas": {
-    "name": "海外市场",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 4,
-    "value": 0
+	"name": "海外市场",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 4,
+	"value": 0
   },
   "talent_pool": {
-    "name": "人才市场",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 3,
-    "value": 0
+	"name": "人才市场",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 3,
+	"value": 0
   },
   "university": {
-    "name": "大学",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "maxUses": 4,
-    "value": 0
+	"name": "大学",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"maxUses": 4,
+	"value": 0
   },
   "research_bench": {
-    "name": "研发台",
-    "type": "resource_node",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "研发台",
+	"type": "resource_node",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "desk": {
-    "name": "工位",
-    "type": "facility",
-    "salary": 0,
-    "capacity": 0,
-    "value": 0
+	"name": "工位",
+	"type": "facility",
+	"salary": 0,
+	"capacity": 0,
+	"value": 0
   },
   "office": {
-    "name": "办公室",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "办公室",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "warehouse": {
-    "name": "仓库",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "仓库",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "meeting_room": {
-    "name": "会议室",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "会议室",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "training_center": {
-    "name": "培训中心",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "培训中心",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "pantry": {
-    "name": "茶水间",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "茶水间",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "biz_hall": {
-    "name": "商务大厅",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "商务大厅",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "crm": {
-    "name": "CRM系统",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "CRM系统",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "server": {
-    "name": "服务器",
-    "type": "facility",
-    "salary": 1,
-    "capacity": 0,
-    "value": 0
+	"name": "服务器",
+	"type": "facility",
+	"salary": 1,
+	"capacity": 0,
+	"value": 0
   },
   "data_center": {
-    "name": "数据中心",
-    "type": "facility",
-    "salary": 2,
-    "capacity": 0,
-    "value": 0
+	"name": "数据中心",
+	"type": "facility",
+	"salary": 2,
+	"capacity": 0,
+	"value": 0
   },
   "business_school": {
-    "name": "商学院",
-    "type": "facility",
-    "salary": 2,
-    "capacity": 0,
-    "value": 0
+	"name": "商学院",
+	"type": "facility",
+	"salary": 2,
+	"capacity": 0,
+	"value": 0
   },
   "hq": {
-    "name": "总部大楼",
-    "type": "facility",
-    "salary": 3,
-    "capacity": 0,
-    "value": 0
+	"name": "总部大楼",
+	"type": "facility",
+	"salary": 3,
+	"capacity": 0,
+	"value": 0
   },
   "r_teashop": {
-    "name": "巷口奶茶店",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 3,
-    "attack": 1,
-    "value": 0
+	"name": "巷口奶茶店",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 3,
+	"attack": 1,
+	"value": 0
   },
   "r_printshop": {
-    "name": "老李打印铺",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 4,
-    "attack": 1,
-    "value": 0
+	"name": "老李打印铺",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 4,
+	"attack": 1,
+	"value": 0
   },
   "r_usedpc": {
-    "name": "二手电脑城",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 5,
-    "attack": 2,
-    "value": 0
+	"name": "二手电脑城",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 5,
+	"attack": 2,
+	"value": 0
   },
   "r_orange": {
-    "name": "橙子科技",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 8,
-    "attack": 3,
-    "value": 0
+	"name": "橙子科技",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 8,
+	"attack": 3,
+	"value": 0
   },
   "r_whale": {
-    "name": "蓝鲸网络",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 10,
-    "attack": 4,
-    "value": 0
+	"name": "蓝鲸网络",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 10,
+	"attack": 4,
+	"value": 0
   },
   "r_elephant": {
-    "name": "大象搬家",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 9,
-    "attack": 3,
-    "value": 0
+	"name": "大象搬家",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 9,
+	"attack": 3,
+	"value": 0
   },
   "r_headhunter": {
-    "name": "猎头老张",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 6,
-    "attack": 2,
-    "value": 0
+	"name": "猎头老张",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 6,
+	"attack": 2,
+	"value": 0
   },
   "r_shadow": {
-    "name": "影子公司",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 7,
-    "attack": 3,
-    "value": 0
+	"name": "影子公司",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 7,
+	"attack": 3,
+	"value": 0
   },
   "r_trolls": {
-    "name": "键盘侠联盟",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 5,
-    "attack": 2,
-    "value": 0
+	"name": "键盘侠联盟",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 5,
+	"attack": 2,
+	"value": 0
   },
   "r_cosmos": {
-    "name": "宇宙集团",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 20,
-    "attack": 7,
-    "value": 0
+	"name": "宇宙集团",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 20,
+	"attack": 7,
+	"value": 0
   },
   "r_titan": {
-    "name": "巨无霸控股",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 25,
-    "attack": 8,
-    "value": 0
+	"name": "巨无霸控股",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 25,
+	"attack": 8,
+	"value": 0
   },
   "r_devour": {
-    "name": "吞天资本",
-    "type": "rival",
-    "salary": 0,
-    "capacity": 0,
-    "hp": 30,
-    "attack": 10,
-    "value": 0
+	"name": "吞天资本",
+	"type": "rival",
+	"salary": 0,
+	"capacity": 0,
+	"hp": 30,
+	"attack": 10,
+	"value": 0
   }
 }

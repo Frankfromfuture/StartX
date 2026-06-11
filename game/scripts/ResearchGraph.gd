@@ -47,10 +47,16 @@ func _ui_font() -> Font:
 		"/System/Library/Fonts/SFNSMono.ttf"
 	]
 	for path in candidates:
-		if not FileAccess.file_exists(path):
+		var ff: FontFile
+		if FileAccess.file_exists(path):
+			ff = FontFile.new()
+			ff.load_dynamic_font(path)
+		elif path.begins_with("res://"):
+			var loaded := load(path)
+			if loaded is FontFile:
+				ff = (loaded as FontFile).duplicate() as FontFile
+		if ff == null:
 			continue
-		var ff := FontFile.new()
-		ff.load_dynamic_font(path)
 		ff.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 		ff.generate_mipmaps = true
 		return ff

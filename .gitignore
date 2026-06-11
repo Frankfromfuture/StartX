@@ -3,12 +3,32 @@
 # Godot generated/import cache
 game/.godot/
 game/.import/
+.godot/
 *.import
+*.tmp
 
 # Node dependencies and build output
 node_modules/
 dist/
 build/
+web_build/
+startx_web.zip
+
+# Local source asset packs; runtime-ready copies live under game/assets/
+City-Builder/
+wall Models/
+
+# Loose source copies duplicated into game/assets/
+/1.svg
+/2.svg
+/3.svg
+/4.svg
+/HP.svg
+/currency (1).svg
+/money-flow.svg
+/new-arrivals.svg
+/new.svg
+/*.ogg
 
 # Local MCP tooling
 godot-mcp/

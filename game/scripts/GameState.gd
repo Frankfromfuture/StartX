@@ -30,8 +30,8 @@ var rng := RandomNumberGenerator.new()
 
 func reset() -> void:
 	rng.randomize()
-	dev_base_cash = 100 if dev_mode else 0
-	cash = dev_base_cash if dev_mode else int(DataLoader.balance.get("start_cash", 5))
+	dev_base_cash = int(DataLoader.balance.get("start_cash", 100))
+	cash = dev_base_cash
 	month = 1
 	discovered.clear()
 	business_models.clear()

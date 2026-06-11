@@ -1,11 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_stage.svg" id="1_stage"]
-[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_rp.svg" id="2_rp"]
 [ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_business.svg" id="3_business"]
 [ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_cash.svg" id="4_cash"]
 [ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_expense.svg" id="5_expense"]
-[ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_valuation.svg" id="6_valuation"]
 [ext_resource type="Texture2D" path="res://assets/ui/streamline/icon_settings.svg" id="7_settings"]
 
 [node name="HUD" type="CanvasLayer"]
@@ -50,29 +48,6 @@ offset_right = 320.0
 offset_bottom = 59.0
 vertical_alignment = 1
 
-[node name="RPGroup" type="Control" parent="TopBar"]
-mouse_filter = 2
-offset_left = 1150.0
-offset_right = 1280.0
-offset_bottom = 78.0
-
-[node name="Icon" type="TextureRect" parent="TopBar/RPGroup"]
-mouse_filter = 2
-offset_top = 27.0
-offset_right = 24.0
-offset_bottom = 51.0
-texture = ExtResource("2_rp")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Label" type="Label" parent="TopBar/RPGroup"]
-mouse_filter = 2
-offset_left = 36.0
-offset_top = 19.0
-offset_right = 130.0
-offset_bottom = 59.0
-vertical_alignment = 1
-
 [node name="ProgressGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
 offset_left = 356.0
@@ -93,8 +68,8 @@ offset_bottom = 51.0
 
 [node name="BusinessGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 1280.0
-offset_right = 1450.0
+offset_left = 1290.0
+offset_right = 1460.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/BusinessGroup"]
@@ -116,8 +91,8 @@ vertical_alignment = 1
 
 [node name="FinanceGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 1450.0
-offset_right = 1620.0
+offset_left = 1490.0
+offset_right = 1660.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/FinanceGroup"]
@@ -139,8 +114,8 @@ vertical_alignment = 1
 
 [node name="ExpenseGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 960.0
-offset_right = 1150.0
+offset_left = 1060.0
+offset_right = 1260.0
 offset_bottom = 78.0
 
 [node name="Icon" type="TextureRect" parent="TopBar/ExpenseGroup"]
@@ -156,29 +131,6 @@ stretch_mode = 5
 offset_left = 36.0
 offset_top = 19.0
 offset_right = 190.0
-offset_bottom = 59.0
-vertical_alignment = 1
-
-[node name="ValuationGroup" type="Control" parent="TopBar"]
-mouse_filter = 2
-offset_left = 1620.0
-offset_right = 1820.0
-offset_bottom = 78.0
-
-[node name="Icon" type="TextureRect" parent="TopBar/ValuationGroup"]
-mouse_filter = 2
-offset_top = 27.0
-offset_right = 24.0
-offset_bottom = 51.0
-texture = ExtResource("6_valuation")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Label" type="Label" parent="TopBar/ValuationGroup"]
-mouse_filter = 2
-offset_left = 36.0
-offset_top = 19.0
-offset_right = 200.0
 offset_bottom = 59.0
 vertical_alignment = 1
 

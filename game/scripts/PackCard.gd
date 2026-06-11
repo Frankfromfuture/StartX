@@ -115,6 +115,11 @@ func _icon_tex() -> Texture2D:
 		return _tex_cache[pack_id]
 	var path := "res://assets/packs/%s.svg" % pack_id
 	if not FileAccess.file_exists(path):
+		# web 导出剥离了源文件 → 用导入的纹理（无法再染色，原色已是白/灰，可接受）
+		if ResourceLoader.exists(path):
+			var t := load(path) as Texture2D
+			_tex_cache[pack_id] = t
+			return t
 		_tex_cache[pack_id] = null
 		return null
 	var txt := FileAccess.get_file_as_string(path)
@@ -153,10 +158,16 @@ func _ui_font() -> Font:
 		"/System/Library/Fonts/SFNSMono.ttf"
 	]
 	for path in candidates:
-		if not FileAccess.file_exists(path):
+		var ff: FontFile
+		if FileAccess.file_exists(path):
+			ff = FontFile.new()
+			ff.load_dynamic_font(path)
+		elif path.begins_with("res://"):
+			var loaded := load(path)
+			if loaded is FontFile:
+				ff = (loaded as FontFile).duplicate() as FontFile
+		if ff == null:
 			continue
-		var ff := FontFile.new()
-		ff.load_dynamic_font(path)
 		ff.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 		ff.generate_mipmaps = true
 		pixel_font = ff

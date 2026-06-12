@@ -1139,7 +1139,7 @@ func _spend_cash_cards(amount: int, target = null) -> bool:
 func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
 	if not is_instance_valid(c):
 		return
-	var start_pos := c.position
+	var start_pos: Vector2 = c.position
 	c.z_index = 2400
 	var tw := create_tween()
 	tw.set_parallel(true)

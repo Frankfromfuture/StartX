@@ -1,19 +1,19 @@
-extends Node
+extends SceneTree
 
-const MAIN_SCENE := preload("res://scenes/Main.tscn")
 const ARROW_Y := 0.052
 const CARD_TOP_Y := 0.05 + 0.05 / 3.0
 
 
-func _ready() -> void:
+func _initialize() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
-	var main := MAIN_SCENE.instantiate()
-	add_child(main)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	var main_scene: PackedScene = load("res://scenes/Main.tscn")
+	var main := main_scene.instantiate()
+	root.add_child(main)
+	await process_frame
+	await process_frame
 
 	var founder = main.spawn_card("founder", Vector2(420, 360))
 	var neighborhood = main.spawn_card("p1_neighborhood", Vector2(520, 360))
@@ -42,5 +42,5 @@ func _run() -> void:
 		CARD_TOP_Y,
 	])
 	main.queue_free()
-	await get_tree().process_frame
-	get_tree().quit()
+	await process_frame
+	quit()

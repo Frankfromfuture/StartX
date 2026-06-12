@@ -646,6 +646,7 @@ func _ensure_face3d(c) -> void:
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.albedo_color = Color(0.86, 0.84, 0.78)
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED   # 卡面保持原色
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	m.material_override = mat
 	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cardroot.add_child(m)

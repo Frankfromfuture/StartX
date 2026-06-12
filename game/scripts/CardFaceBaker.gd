@@ -36,6 +36,7 @@ func bake(card) -> Texture2D:
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	await RenderingServer.frame_post_draw
 	var img := vp.get_texture().get_image()
+	img.generate_mipmaps()
 	var tex := ImageTexture.create_from_image(img)
 	vp.queue_free()
 	_cache[k] = tex
@@ -59,6 +60,7 @@ func bake_pack(pack_id: String, pack_name: String, contents: Array) -> Texture2D
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	await RenderingServer.frame_post_draw
 	var img := vp.get_texture().get_image()
+	img.generate_mipmaps()
 	var tex := ImageTexture.create_from_image(img)
 	vp.queue_free()
 	_cache[k] = tex
@@ -68,6 +70,8 @@ func _new_bake_viewport() -> SubViewport:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(FACE, FACE)
 	vp.transparent_bg = true
+	vp.msaa_2d = Viewport.MSAA_4X
+	vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR
 	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	vp.disable_3d = true
 	add_child(vp)

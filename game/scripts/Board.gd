@@ -894,24 +894,14 @@ func _holo_coat_shader() -> Shader:
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, depth_test_disabled;
 
-uniform float intensity = 0.16;
+uniform float intensity = 0.08;
+uniform float sparkle_intensity = 0.06;
 
 vec3 rainbow(float t) {
 	return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
 }
 
 void fragment() {
-	// 边缘遮罩 (边缘 8px -> 0.044)
-	float mask_x = smoothstep(0.044, 0.046, UV.x) * (1.0 - smoothstep(0.954, 0.956, UV.x));
-	float mask_y = smoothstep(0.044, 0.046, UV.y) * (1.0 - smoothstep(0.954, 0.956, UV.y));
-	float border_mask = mask_x * mask_y;
-	
-	// 右下角齿轮容量角标遮罩 (中心 150/180=0.833, 151/180=0.839, 半径 17/180=0.095)
-	float dist_to_gear = distance(UV, vec2(0.8333, 0.8389));
-	float gear_mask = smoothstep(0.095, 0.105, dist_to_gear);
-	
-	float mask = border_mask * gear_mask;
-
 	// 视角偏移，倾斜卡片时发生滑动
 	float view_offset = VIEW.x * 0.75 + VIEW.y * 0.75;
 	
@@ -928,11 +918,11 @@ void fragment() {
 	float t2 = (1.0 - UV.x) * 0.4 + UV.y * 0.4 - view_offset * 0.3;
 	vec3 cross_rainbow = rainbow(t2);
 	
-	// 混合两组彩虹以及亮片
+	// 混合两组彩虹以及亮片（整体更轻：强度 0.08，闪亮 0.06）
 	vec3 final_color = mix(base_rainbow, cross_rainbow, 0.4) * intensity;
-	final_color += vec3(sparkle * 0.3);
+	final_color += vec3(sparkle * sparkle_intensity);
 	
-	ALBEDO = final_color * mask;
+	ALBEDO = final_color;
 	ALPHA = 1.0;
 }
 """

@@ -43,16 +43,16 @@ NEW_RECIPES = [
      [("p1_wholesale", 1, False)], [("p1_rawprod", 1)]),
     ("p1_package_prod", "包装产品", "", 30,
      [("p1_rawprod", 1, True), ("p1_marketing", 1, False)], [("p1_package", 1)]),
-    # 任意产品 + 任意客户 = 现金（数量 = 产品价值），现金依次快速跳出
+    # 任意产品 + 任意客户 = 现金（数量 = ceil((产品cost + 客户value) * 1.5)），现金依次快速跳出
     # 产品: 裸奔粗糙产品(1) / 带包装粗糙产品(2)；客户: 小区青年(1) / 靠谱客户(2)
     ("p1_cash_pkg_cust", "成交", "", 3,
-     [("p1_package", 1, True), ("p1_customer", 1, True)], [("cash", 2)]),
+     [("p1_package", 1, True), ("p1_customer", 1, True)], [("cash", 6)]),   # ceil((2+2)*1.5)
     ("p1_cash_pkg_youth", "成交", "", 3,
-     [("p1_package", 1, True), ("p1_youth", 1, True)], [("cash", 2)]),
+     [("p1_package", 1, True), ("p1_youth", 1, True)], [("cash", 5)]),      # ceil((2+1)*1.5)
     ("p1_cash_raw_cust", "成交", "", 3,
-     [("p1_rawprod", 1, True), ("p1_customer", 1, True)], [("cash", 1)]),
+     [("p1_rawprod", 1, True), ("p1_customer", 1, True)], [("cash", 5)]),   # ceil((1+2)*1.5)
     ("p1_cash_raw_youth", "成交", "", 3,
-     [("p1_rawprod", 1, True), ("p1_youth", 1, True)], [("cash", 1)]),
+     [("p1_rawprod", 1, True), ("p1_youth", 1, True)], [("cash", 3)]),      # ceil((1+1)*1.5)
 ]
 
 # ----------------------------------------------- garage_pack slot definition

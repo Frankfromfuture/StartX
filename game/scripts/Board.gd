@@ -3206,7 +3206,7 @@ func _cash_output_amount(recipe: Dictionary, fallback: int) -> int:
 			"customer":
 				customer_value += int(cdef.get("value", 0)) * count
 	if product_value > 0 and customer_value > 0:
-		return product_value
+		return int(ceil(float(product_value + customer_value) * 1.5))
 	return fallback
 
 # Decrement remaining uses on non-consumed node inputs; destroy when depleted.

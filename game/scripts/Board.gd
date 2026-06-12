@@ -3121,10 +3121,14 @@ func _stack_capacity(sid: int) -> int:
 	return cap
 
 func _complete_production(sid: int) -> void:
+	if not productions.has(sid):
+		return
 	var rec: Dictionary = productions[sid]["recipe"]
 	var target = productions[sid].get("target")
 	var supply_chain = _supply_chain_for_source_stack(sid)
 	var supply_target = supply_chain.get("target") if supply_chain != null else null
+	
+	productions.erase(sid)
 	
 	var cost := _product_output_cost(sid, rec)
 	if not _charge_product_cost_on_complete(sid, rec):
@@ -3137,8 +3141,6 @@ func _complete_production(sid: int) -> void:
 	if cost > 0:
 		var anim_time := 0.05 * (cost - 1) + 0.4 + 0.35
 		await get_tree().create_timer(anim_time).timeout
-
-	productions.erase(sid)
 	if not stacks.has(sid):
 		return
 	var arr: Array = stacks[sid]

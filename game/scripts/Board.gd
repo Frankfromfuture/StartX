@@ -1706,22 +1706,20 @@ func _card_hint(c) -> String:
 	var nm := String(d.get("name", c.card_id))
 	match c.ctype:
 		"employee":
-			return "「%s · 员工　月薪 $%d　产能 %d — 叠到资源或节点上即可开始生产」" % [
+			return "「%s · 员工　月薪 $%d　产能 %d」" % [
 				nm, int(d.get("salary", 0)), int(d.get("capacity", 0))]
 		"resource_node":
 			var us := ("剩余 %d 次" % c.uses_left) if c.uses_left >= 0 else "可无限使用"
-			return "「%s · 资源节点　%s — 派员工叠上去产出」" % [nm, us]
+			return "「%s · 资源节点　%s」" % [nm, us]
 		"resource", "customer", "product":
-			return "「%s · %s　价值 $%d — 拖到右上『在市场上出售』变现」" % [
+			return "「%s · %s　价值 $%d」" % [
 				nm, String(CODEX_TYPE.get(c.ctype, "资源")), int(d.get("value", 0))]
 		"facility":
-			if c.card_id == "business_school":
-				return "「%s · 设施　员工在其上工作会累积洞察值，满值随机解锁当前阶段 idea」" % nm
-			return "「%s · 设施　提供加成」" % nm
+			return "「%s · 设施」" % nm
 		"department":
-			return "「%s · 部门　%d 人　月薪 $%d — 自动持续产出」" % [nm, int(d.get("capacity", 0)), int(d.get("salary", 0))]
+			return "「%s · 部门　%d 人　月薪 $%d」" % [nm, int(d.get("capacity", 0)), int(d.get("salary", 0))]
 		"risk":
-			return "「%s · 风险　拖员工上去处理，否则持续造成损失」" % nm
+			return "「%s · 风险」" % nm
 		"idea":
 			return "「%s · 想法 / 配方」" % nm
 		"business_model":

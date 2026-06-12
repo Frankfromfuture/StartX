@@ -1,5 +1,5 @@
 {
-  "start_cash": 100,
+  "start_cash": 50,
   "month_seconds": 120.0,
   "office_opex": 1,
   "emergency_seconds": 30.0,

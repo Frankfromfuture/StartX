@@ -511,13 +511,36 @@ func _jit(amount: float) -> Vector2:
 	return Vector2(GameState.rng.randf_range(-amount, amount), GameState.rng.randf_range(-amount, amount))
 
 func _spawn_start_cards() -> void:
-	# 开局只有一个车库包（5 张牌，含创始人）；点一下跳一张，点完消失
+	# 开局只有一个车库包（4 张牌，含创始人）；点一下跳一张，点完消失
 	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
-	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
+	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office"]
 	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
 	var center_tl := _unproject(_screen_center() \
 		- Vector2(PACK_W, PACK_H) * 0.5 * view_zoom)
 	_spawn_loose_pack("garage_pack", pack, contents, center_tl, true)   # 直接 3D 出现在白板上
+
+	# 在活跃画布右侧生成一摞物理现金堆叠，资金完全由画布上的现金卡牌决定
+	var start_cash := int(DataLoader.balance.get("start_cash", 50))
+	if start_cash > 0:
+		var right_pos := clamp_to_zone(Vector2(CANVAS_X1 - CW - 80.0, (MID_Y0 + MID_Y1) * 0.5 - CH * 0.5))
+		var sid := next_stack_id
+		next_stack_id += 1
+		var arr: Array = []
+		for i in range(start_cash):
+			var c = CardScript.new()
+			add_child(c)
+			c.setup("cash")
+			c.is_new_discovery = false
+			c.zone = "all"
+			c.stack_id = sid
+			c.stack_pos = i
+			arr.append(c)
+			all_cards.append(c)
+		stacks[sid] = arr
+		stack_base[sid] = right_pos
+		relayout(sid)
+	
+	_sync_cash_state()
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	var c := spawn_card(id, pos)
@@ -1068,7 +1091,7 @@ func _cash_card_count() -> int:
 	return n
 
 func _sync_cash_state() -> void:
-	GameState.cash = GameState.dev_base_cash + _cash_card_count()
+	GameState.cash = _cash_card_count()
 
 func _spend_cash_cards(amount: int) -> bool:
 	_sync_cash_state()
@@ -1082,9 +1105,6 @@ func _spend_cash_cards(amount: int) -> bool:
 			continue
 		destroy_card(c)
 		need -= 1
-	if need > 0:
-		GameState.dev_base_cash -= need
-		need = 0
 	_sync_cash_state()
 	return true
 

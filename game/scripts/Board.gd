@@ -965,6 +965,101 @@ func _add_holo_coat(parent: Node3D, w: float, h: float, y: float) -> void:
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(g)
 
+func _spend_cash_cards(amount: int, target = null) -> bool:
+	_sync_cash_state()
+	if GameState.cash < amount:
+		return false
+		
+	var cash_candidates: Array = []
+	for c in all_cards:
+		if c.card_id == "cash":
+			cash_candidates.append(c)
+			
+	# 按 c.stack_pos 降序排序，确保优先消耗每一叠最顶端（上面）的卡牌
+	cash_candidates.sort_custom(func(a, b):
+		return a.stack_pos > b.stack_pos
+	)
+	
+	var need := amount
+	var cash_to_animate: Array = []
+	for c in cash_candidates:
+		if need <= 0:
+			break
+		# 从栈和所有卡牌列表中立即移除，完成逻辑上的扣减
+		var sid: int = c.stack_id
+		if stacks.has(sid):
+			stacks[sid].erase(c)
+			if stacks[sid].is_empty():
+				stacks.erase(sid)
+				stack_base.erase(sid)
+				productions.erase(sid)
+			else:
+				relayout(sid)
+		all_cards.erase(c)
+		cash_to_animate.append(c)
+		need -= 1
+		
+	# 播放扣除现金的飞入和消散动画
+	for i in cash_to_animate.size():
+		var c = cash_to_animate[i]
+		var target_pos: Vector2 = c.position
+		if target is Vector2:
+			target_pos = _project(target)
+		elif target is Array and not target.is_empty():
+			var t = target[i % target.size()]
+			if is_instance_valid(t):
+				target_pos = t.position
+		elif is_instance_valid(target):
+			target_pos = target.position
+			
+		_animate_cash_spend(c, target_pos, 0.05 * i)
+		
+	_sync_cash_state()
+	return true
+
+func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
+	if not is_instance_valid(c):
+		return
+	var start_pos: Vector2 = c.position
+	c.z_index = 2400
+	var tw := create_tween()
+	tw.set_parallel(true)
+	# 飞入动画开始时播放 70% 音量的 cash_down 音效
+	tw.tween_callback(func():
+		_sfx("cash_down", 0.7)
+	).set_delay(delay)
+	# 渐变 2D 和 3D 的位置 (飞行时保持原始尺寸，不缩小)
+	tw.tween_method(func(pos: Vector2):
+		if is_instance_valid(c):
+			c.position = pos
+			_place_face3d_from_display(c, pos, pos, 0, false)
+	, start_pos, target_pos, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	
+	# 到达生产牌或发薪牌上后，闪烁金色光芒并消散消失
+	tw.chain().tween_callback(func():
+		if not is_instance_valid(c):
+			return
+		var mesh := _face3d_mesh(c)
+		var mat = mesh.material_override if mesh != null else null
+		
+		var flash_tw := create_tween()
+		flash_tw.set_parallel(true)
+		
+		if mat is StandardMaterial3D:
+			# 启用 Alpha 通道支持，以便做平滑透明度渐变
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			# 3D 渐变：染成 HDR 高亮金光，同时透明度归零
+			flash_tw.tween_property(mat, "albedo_color", Color(3.0, 2.5, 0.4, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+		# 2D 渐变：染成亮金光，同时透明度归零
+		flash_tw.tween_property(c, "modulate", Color(3.0, 2.5, 0.4, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+		flash_tw.chain().tween_callback(func():
+			if is_instance_valid(c):
+				c.queue_free()
+		)
+	)
+
 func _bake_face_async(c, mat) -> void:
 	if face_baker == null or c == null or not is_instance_valid(c):
 		return
@@ -1093,75 +1188,6 @@ func _cash_card_count() -> int:
 func _sync_cash_state() -> void:
 	GameState.cash = _cash_card_count()
 
-func _spend_cash_cards(amount: int, target = null) -> bool:
-	_sync_cash_state()
-	if GameState.cash < amount:
-		return false
-	var need := amount
-	var cash_to_animate: Array = []
-	for c in all_cards.duplicate():
-		if need <= 0:
-			break
-		if c.card_id != "cash":
-			continue
-		# 从栈和所有卡牌列表中立即移除，完成逻辑上的扣减
-		var sid: int = c.stack_id
-		if stacks.has(sid):
-			stacks[sid].erase(c)
-			if stacks[sid].is_empty():
-				stacks.erase(sid)
-				stack_base.erase(sid)
-				productions.erase(sid)
-			else:
-				relayout(sid)
-		all_cards.erase(c)
-		cash_to_animate.append(c)
-		need -= 1
-		
-	# 播放扣除现金的飞入和消散动画
-	for i in cash_to_animate.size():
-		var c = cash_to_animate[i]
-		var target_pos: Vector2 = c.position
-		if target is Vector2:
-			target_pos = _project(target)
-		elif target is Array and not target.is_empty():
-			var t = target[i % target.size()]
-			if is_instance_valid(t):
-				target_pos = t.position
-		elif is_instance_valid(target):
-			target_pos = target.position
-			
-		_animate_cash_spend(c, target_pos, 0.05 * i)
-		
-	_sync_cash_state()
-	return true
-
-func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
-	if not is_instance_valid(c):
-		return
-	var start_pos: Vector2 = c.position
-	c.z_index = 2400
-	var tw := create_tween()
-	tw.set_parallel(true)
-	# 飞入动画开始时播放 70% 音量的 cash_down 音效
-	tw.tween_callback(func():
-		_sfx("cash_down", 0.7)
-	).set_delay(delay)
-	# 渐变 2D 和 3D 的位置
-	tw.tween_method(func(pos: Vector2):
-		if is_instance_valid(c):
-			c.position = pos
-			_place_face3d_from_display(c, pos, pos, 0, false)
-	, start_pos, target_pos, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	# 渐变缩小卡片 (2D & 3D)
-	tw.tween_property(c, "scale", c.scale * 0.3, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	if c.face3d != null and is_instance_valid(c.face3d):
-		tw.tween_property(c.face3d, "scale", Vector3(0.3, 0.3, 0.3), 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	# 动画结束销毁卡牌
-	tw.chain().tween_callback(func():
-		if is_instance_valid(c):
-			c.queue_free()
-	)
 
 func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null) -> void:
 	if amount <= 0:
@@ -3099,18 +3125,25 @@ func _complete_production(sid: int) -> void:
 	var target = productions[sid].get("target")
 	var supply_chain = _supply_chain_for_source_stack(sid)
 	var supply_target = supply_chain.get("target") if supply_chain != null else null
-	productions.erase(sid)
-	if not stacks.has(sid):
-		return
-	var arr: Array = stacks[sid]
-	var base: Vector2 = stack_base[sid]
-	var mult := _output_mult(_stack_capacity(sid))   # 产能 -> 产出倍率
+	
+	var cost := _product_output_cost(sid, rec)
 	if not _charge_product_cost_on_complete(sid, rec):
 		if is_instance_valid(target):
 			target.work_elapsed = 0.0
 			target.set_work(0.0)
 		_set_stack_workbar(sid, 0.0)
 		return
+		
+	if cost > 0:
+		var anim_time := 0.05 * (cost - 1) + 0.4 + 0.35
+		await get_tree().create_timer(anim_time).timeout
+
+	productions.erase(sid)
+	if not stacks.has(sid):
+		return
+	var arr: Array = stacks[sid]
+	var base: Vector2 = stack_base[sid]
+	var mult := _output_mult(_stack_capacity(sid))
 	for inp in rec.get("inputs", []):
 		if not inp.get("consume", false):
 			continue

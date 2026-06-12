@@ -56,7 +56,7 @@ const BODY := Color("faf5ec")    # 奶白卡身
 # 游戏分类 -> 莫兰迪淡彩标题栏色
 func _header_color() -> Color:
 	if card_id == "founder":
-		return Color("e6b8c2")          # 创始人：换成办公室/设施红粉色
+		return Color("ff9999")          # 创始人：淡红色标题栏
 	if card_id == "cash":
 		return Color("c8910f")          # 现金：饱满金（整体加深）
 	if card_id == "revenue":
@@ -84,7 +84,7 @@ func body_color() -> Color:
 	var head := _header_color()
 	var bg := head.lightened(0.28)
 	if card_id == "founder":
-		bg = Color("f4d7dd")
+		bg = Color("ffe5e5")
 	if _is_black_series_card():
 		bg = Color("d5d1c9")
 	if _is_blue_series_card():
@@ -124,8 +124,8 @@ func _draw() -> void:
 	var bg := head.lightened(0.28)                          # 卡身 = header 浅一号，但整体更沉
 	var ring := head.lightened(0.48)                        # 中间圆圈 = 更浅一号
 	if card_id == "founder":
-		bg = Color("f4d7dd")
-		ring = Color("f8e6ea")
+		bg = Color("ffe5e5")
+		ring = Color("fff2f2")
 	if _is_black_series_card():
 		bg = Color("d5d1c9")
 		ring = Color("ece9e3")

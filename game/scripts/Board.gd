@@ -84,9 +84,11 @@ var supply_flow_phase: float = 0.0
 var supply_hover_chain = null
 var supply_hover_scale: float = 0.0
 var supply_transits: Array = []
+var supply_arrow_mesh: MeshInstance3D
 const SUPPLY_BLUE := Color("465d78")
 const SUPPLY_BLUE_LIGHT := Color("607792")
 const SUPPLY_BLUE_DARK := Color("33485f")
+const SUPPLY_ARROW_Y := 0.052
 
 var month_time: float = 0.0
 
@@ -427,6 +429,7 @@ func _setup_city_background() -> void:
 	city_bg = CityBackgroundScript.new()
 	city_bg.size = Vector2i(_screen_size())
 	layer.add_child(city_bg)
+	_setup_supply_arrow_mesh()
 	var tr := TextureRect.new()
 	tr.name = "CityView"
 	tr.texture = city_bg.get_texture()
@@ -437,6 +440,18 @@ func _setup_city_background() -> void:
 	layer.add_child(tr)
 	# 初始化 3D 相机（city_bg._ready 已建好 cam）
 	_apply_camera()
+
+func _setup_supply_arrow_mesh() -> void:
+	supply_arrow_mesh = MeshInstance3D.new()
+	supply_arrow_mesh.name = "SupplyArrows"
+	supply_arrow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.vertex_color_use_as_albedo = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	supply_arrow_mesh.material_override = material
+	city_bg.world_card_root().add_child(supply_arrow_mesh)
 
 func _load_image_tex(path: String) -> Texture2D:
 	# 读取 Godot 导入后的资源；直接 Image.load() 在 Web 导出中拿不到源文件。
@@ -3590,6 +3605,7 @@ func _unshaded_mat(col: Color) -> StandardMaterial3D:
 func _update_card_visual_states(delta: float) -> void:
 	dash_phase += delta * 35.0
 	supply_flow_phase += delta * 55.0
+	_update_supply_arrow_mesh()
 	if bank_button != null and is_instance_valid(bank_button) and _is_dragging_sellable():
 		bank_button.queue_redraw()
 	var mouse_pos := get_viewport().get_mouse_position()
@@ -6140,24 +6156,163 @@ func _draw_supply_arrow(edge_pair: Dictionary, connected: bool, hovered: bool) -
 	var points := _supply_path(edge_pair)
 	if points.size() < 2:
 		return
-	var end_pt := points[points.size() - 1]
+	if hovered and connected:
+		_draw_supply_delete_x(_point_along_polyline(points, 0.5), supply_hover_scale)
+
+func _update_supply_arrow_mesh() -> void:
+	if supply_arrow_mesh == null or not is_instance_valid(supply_arrow_mesh):
+		return
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	_cleanup_supply_chains()
+	for chain in supply_chains:
+		var source = chain.get("source")
+		var target = chain.get("target")
+		if not is_instance_valid(source) or not is_instance_valid(target) \
+				or source.stack_id == target.stack_id:
+			continue
+		_append_supply_arrow_geometry(
+			_supply_path(_supply_edge_pair(source.stack_id, target.stack_id)),
+			true, vertices, normals, colors, indices
+		)
+	if supply_drag_source != null and is_instance_valid(supply_drag_source):
+		var pair := _supply_edge_pair_to_point(supply_drag_source.stack_id, supply_drag_mouse)
+		if supply_drag_target != null and is_instance_valid(supply_drag_target):
+			pair = _supply_edge_pair(supply_drag_source.stack_id, supply_drag_target.stack_id)
+		_append_supply_arrow_geometry(
+			_supply_path(pair), false, vertices, normals, colors, indices
+		)
+	if vertices.is_empty():
+		supply_arrow_mesh.mesh = null
+		return
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	supply_arrow_mesh.mesh = mesh
+
+func _append_supply_arrow_geometry(
+		points: PackedVector2Array,
+		connected: bool,
+		vertices: PackedVector3Array,
+		normals: PackedVector3Array,
+		colors: PackedColorArray,
+		indices: PackedInt32Array
+	) -> void:
+	if points.size() < 2:
+		return
 	var col := Color(SUPPLY_BLUE_LIGHT, 0.94 if connected else 0.76)
-	# 半透明蓝色外辉 + 粗蓝段/透明段交替。负相位让流动方向从上游指向下游。
-	_draw_dashed_polyline(self, points, 22.0, 11.0, Color(col, col.a * 0.18), 16.0, -supply_flow_phase)
-	_draw_dashed_polyline(self, points, 22.0, 11.0, col, 8.0, -supply_flow_phase)
+	_append_dashed_supply_ribbon(
+		points, 22.0, 11.0, Color(col, col.a * 0.18), 16.0,
+		-supply_flow_phase, vertices, normals, colors, indices
+	)
+	_append_dashed_supply_ribbon(
+		points, 22.0, 11.0, col, 8.0,
+		-supply_flow_phase, vertices, normals, colors, indices
+	)
+	var end_pt := points[points.size() - 1]
 	var arrow_dir := (end_pt - points[points.size() - 2]).normalized()
 	if arrow_dir.length() < 0.1:
 		arrow_dir = Vector2.RIGHT
 	var side := arrow_dir.orthogonal()
-	var tip := end_pt + arrow_dir * 5.0
 	var head := PackedVector2Array([
-		tip,
+		end_pt + arrow_dir * 5.0,
 		end_pt - arrow_dir * 13.0 + side * 9.0,
 		end_pt - arrow_dir * 13.0 - side * 9.0,
 	])
-	draw_colored_polygon(head, col)
-	if hovered and connected:
-		_draw_supply_delete_x(_point_along_polyline(points, 0.5), supply_hover_scale)
+	_append_supply_triangle(head, col, vertices, normals, colors, indices)
+
+func _append_dashed_supply_ribbon(
+		points: PackedVector2Array,
+		dash: float,
+		gap: float,
+		col: Color,
+		width: float,
+		phase0: float,
+		vertices: PackedVector3Array,
+		normals: PackedVector3Array,
+		colors: PackedColorArray,
+		indices: PackedInt32Array
+	) -> void:
+	var period := dash + gap
+	var phase := fposmod(phase0, period)
+	for i in range(points.size() - 1):
+		var a: Vector2 = points[i]
+		var b: Vector2 = points[i + 1]
+		var segment := b - a
+		var length := segment.length()
+		if length < 0.001:
+			continue
+		var direction := segment / length
+		var pos := -phase
+		while pos < length:
+			var from := maxf(pos, 0.0)
+			var to := minf(pos + dash, length)
+			if to > from:
+				_append_supply_ribbon_segment(
+					a + direction * from, a + direction * to, width, col,
+					vertices, normals, colors, indices
+				)
+			pos += period
+		phase = fposmod(phase + length, period)
+
+func _append_supply_ribbon_segment(
+		display_a: Vector2,
+		display_b: Vector2,
+		width: float,
+		col: Color,
+		vertices: PackedVector3Array,
+		normals: PackedVector3Array,
+		colors: PackedColorArray,
+		indices: PackedInt32Array
+	) -> void:
+	var board_a := _unproject(display_a)
+	var board_b := _unproject(display_b)
+	var a := board_to_world(board_a)
+	var b := board_to_world(board_b)
+	a.y = SUPPLY_ARROW_Y
+	b.y = SUPPLY_ARROW_Y
+	var direction := b - a
+	direction.y = 0.0
+	if direction.length_squared() < 0.000001:
+		return
+	direction = direction.normalized()
+	var half_width := width / maxf(view_zoom, 0.05) / CITY_CELL * 0.5
+	var side := Vector3(-direction.z, 0.0, direction.x) * half_width
+	var start := vertices.size()
+	vertices.append_array(PackedVector3Array([a - side, a + side, b + side, b - side]))
+	for i in 4:
+		normals.append(Vector3.UP)
+		colors.append(col)
+	indices.append_array(PackedInt32Array([
+		start, start + 1, start + 2,
+		start, start + 2, start + 3,
+	]))
+
+func _append_supply_triangle(
+		display_points: PackedVector2Array,
+		col: Color,
+		vertices: PackedVector3Array,
+		normals: PackedVector3Array,
+		colors: PackedColorArray,
+		indices: PackedInt32Array
+	) -> void:
+	if display_points.size() != 3:
+		return
+	var start := vertices.size()
+	for point in display_points:
+		var world := board_to_world(_unproject(point))
+		world.y = SUPPLY_ARROW_Y + 0.0002
+		vertices.append(world)
+		normals.append(Vector3.UP)
+		colors.append(col)
+	indices.append_array(PackedInt32Array([start, start + 1, start + 2]))
 
 func _supply_path(edge_pair: Dictionary) -> PackedVector2Array:
 	if edge_pair.is_empty():

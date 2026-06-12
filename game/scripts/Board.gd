@@ -919,7 +919,7 @@ void fragment() {
 	
 	// 混合两组彩虹以及亮片
 	vec3 final_color = mix(base_rainbow, cross_rainbow, 0.4) * intensity;
-	final_color += vec3(sparkle * 0.12);
+	final_color += vec3(sparkle * 0.3);
 	
 	ALBEDO = final_color;
 	ALPHA = 1.0;

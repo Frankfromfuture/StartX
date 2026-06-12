@@ -13,11 +13,9 @@ config_version=5
 config/name="StartX"
 run/main_scene="res://scenes/StartMenu.tscn"
 config/features=PackedStringArray("4.6")
-boot_splash/image="res://assets/menu/intro_splash.png"
 boot_splash/bg_color=Color(0.0901961, 0.0823529, 0.0705882, 1)
-boot_splash/show_image=true
-boot_splash/fullsize=true
 boot_splash/use_filter=false
+boot_splash/image="res://assets/menu/intro_splash.png"
 
 [autoload]
 

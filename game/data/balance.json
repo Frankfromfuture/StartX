@@ -1,6 +1,6 @@
 {
   "start_cash": 100,
-  "month_seconds": 90.0,
+  "month_seconds": 120.0,
   "office_opex": 1,
   "emergency_seconds": 30.0,
   "discovery_reward": 1,

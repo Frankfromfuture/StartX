@@ -1121,7 +1121,7 @@ func _spend_cash_cards(amount: int, target = null) -> bool:
 	# 播放扣除现金的飞入和消散动画
 	for i in cash_to_animate.size():
 		var c = cash_to_animate[i]
-		var target_pos := c.position
+		var target_pos: Vector2 = c.position
 		if target is Vector2:
 			target_pos = _project(target)
 		elif target is Array and not target.is_empty():

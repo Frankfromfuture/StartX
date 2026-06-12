@@ -29,6 +29,7 @@ func _load_workbook() -> void:
 	recipes = _parse_recipes(_rows_as_dicts(sheets.get("recipes", [])))
 	_add_business_model_cards()
 	packs = _parse_packs(_rows_as_dicts(sheets.get("packs", [])))
+	_validate_workbook_data()
 	print("DataLoader: 从 Excel 载入 %d 卡 / %d 配方 / %d 卡包" % [cards.size(), recipes.size(), packs.size()])
 
 # 用表头行把每行转成 { 列名: 字符串值 }
@@ -64,6 +65,9 @@ func _parse_cards(rows: Array) -> Dictionary:
 	for d in rows:
 		var id := String(d.get("id", "")).strip_edges()
 		if id == "":
+			continue
+		if out.has(id):
+			push_error("DataLoader: cards 表存在重复 id：%s" % id)
 			continue
 		var c := {
 			"name": String(d.get("name", id)),
@@ -105,10 +109,15 @@ func _parse_cards(rows: Array) -> Dictionary:
 
 func _parse_recipes(rows: Array) -> Array:
 	var out: Array = []
+	var seen := {}
 	for d in rows:
 		var id := String(d.get("id", "")).strip_edges()
 		if id == "":
 			continue
+		if seen.has(id):
+			push_error("DataLoader: recipes 表存在重复 id：%s" % id)
+			continue
+		seen[id] = true
 		var r := {
 			"id": id,
 			"name": String(d.get("name", id)),
@@ -125,6 +134,40 @@ func _parse_recipes(rows: Array) -> Array:
 			r["output_zone"] = zone
 		out.append(r)
 	return out
+
+func _validate_workbook_data() -> void:
+	for recipe in recipes:
+		var recipe_id := String(recipe.get("id", ""))
+		var inputs: Array = recipe.get("inputs", [])
+		var outputs: Array = recipe.get("outputs", [])
+		if inputs.is_empty():
+			push_error("DataLoader: 配方 %s 没有输入" % recipe_id)
+		if outputs.is_empty():
+			push_error("DataLoader: 配方 %s 没有产出" % recipe_id)
+		for entry in inputs:
+			_validate_card_reference(recipe_id, "输入", entry)
+		for entry in outputs:
+			_validate_card_reference(recipe_id, "产出", entry)
+	for pack_id in packs:
+		var pack: Dictionary = packs[pack_id]
+		var min_cards := int(pack.get("minCards", 0))
+		var max_cards := int(pack.get("maxCards", 0))
+		if min_cards < 0 or max_cards < min_cards:
+			push_error("DataLoader: 卡包 %s 的卡牌数量范围无效：%d-%d" % [pack_id, min_cards, max_cards])
+		for slot in pack.get("slots", []):
+			for option in slot:
+				_validate_card_reference(String(pack_id), "卡包", option)
+				if int(option.get("w", 0)) <= 0:
+					push_error("DataLoader: 卡包 %s 中 %s 的权重必须大于 0" % [pack_id, option.get("id", "")])
+
+func _validate_card_reference(owner_id: String, label: String, entry: Dictionary) -> void:
+	var card_id := String(entry.get("id", "")).strip_edges()
+	if card_id == "":
+		push_error("DataLoader: %s 的%s卡牌 id 为空" % [owner_id, label])
+	elif not cards.has(card_id):
+		push_error("DataLoader: %s 的%s引用了不存在的卡牌：%s" % [owner_id, label, card_id])
+	if int(entry.get("count", 1)) <= 0:
+		push_error("DataLoader: %s 的%s数量必须大于 0：%s" % [owner_id, label, card_id])
 
 func _parse_inputs(d: Dictionary) -> Array:
 	if String(d.get("input1", "")).strip_edges() == "":
@@ -176,6 +219,9 @@ func _parse_packs(rows: Array) -> Dictionary:
 	for d in rows:
 		var id := String(d.get("id", "")).strip_edges()
 		if id == "":
+			continue
+		if out.has(id):
+			push_error("DataLoader: packs 表存在重复 id：%s" % id)
 			continue
 		out[id] = {
 			"name": String(d.get("name", id)),

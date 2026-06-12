@@ -439,14 +439,8 @@ func _setup_city_background() -> void:
 	_apply_camera()
 
 func _load_image_tex(path: String) -> Texture2D:
-	if FileAccess.file_exists(path):
-		var img := Image.new()
-		if img.load(path) == OK:
-			return ImageTexture.create_from_image(img)
-	elif ResourceLoader.exists(path):
-		# web 导出剥离了源 png → 用导入的纹理（否则画布底图缺失会被纯白填充盖住）
-		return load(path) as Texture2D
-	return null
+	# 读取 Godot 导入后的资源；直接 Image.load() 在 Web 导出中拿不到源文件。
+	return ResourceLoader.load(path) as Texture2D if ResourceLoader.exists(path) else null
 
 # 画布外的俯视街道：在围绕画布的大世界矩形内平铺街景图，随透视投影/缩放一起平移
 const STREET_TILE_W := 2600.0   # 单张街景图覆盖的世界宽
@@ -3705,6 +3699,9 @@ func buy_pack(pack_id: String) -> void:
 	if GameState.stage < int(pack.get("stage", 0)):
 		_show_toast("该卡包需「%s」阶段解锁" % GameState.STAGE_NAMES[int(pack.get("stage", 0))])
 		return
+	if (pack.get("slots", []) as Array).is_empty():
+		_show_toast("该卡包内容尚未开放")
+		return
 	var price := int(pack.get("price", 6))
 	if not _spend_cash_cards(price):
 		_show_toast("场上现金不足，买不起卡包")
@@ -4113,8 +4110,12 @@ func _refresh_packs() -> void:
 		var stg := int(pack.get("stage", 0))
 		var btn: Button = row["btn"]
 		var locked := GameState.stage < stg
-		btn.disabled = locked
-		_style_pack_button(btn, String(pack.get("name", "")), int(pack.get("price", 0)), locked)
+		var unavailable := (pack.get("slots", []) as Array).is_empty()
+		btn.disabled = locked or unavailable
+		var label := String(pack.get("name", ""))
+		if unavailable:
+			label += "（开发中）"
+		_style_pack_button(btn, label, int(pack.get("price", 0)), locked or unavailable)
 
 func _on_stage_changed(_stage: int) -> void:
 	_refresh_packs()

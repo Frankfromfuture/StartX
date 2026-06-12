@@ -27,7 +27,7 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_background")
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 0
 
 [node name="WarmWash" type="ColorRect" parent="."]
 layout_mode = 1
@@ -138,7 +138,7 @@ offset_left = 126.0
 offset_top = 446.0
 offset_right = 536.0
 offset_bottom = 864.0
-theme_override_constants/separation = 4
+theme_override_constants/separation = 10
 
 [node name="StartButton" type="Button" parent="Menu"]
 custom_minimum_size = Vector2(410, 64)
@@ -185,7 +185,7 @@ offset_top = 976.0
 offset_right = 610.0
 offset_bottom = 1028.0
 mouse_filter = 2
-text = "START SMALL  ·  BUILD SOMETHING"
+text = "FrankFromFuture Studio"
 vertical_alignment = 1
 
 [node name="OverlayDim" type="ColorRect" parent="."]

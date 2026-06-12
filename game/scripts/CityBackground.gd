@@ -80,7 +80,8 @@ func world_card_root() -> Node3D:
 	return card_root
 
 func _ready() -> void:
-	size = Vector2i(VIEW_W, VIEW_H)
+	if size.x <= 1 or size.y <= 1:
+		size = Vector2i(VIEW_W, VIEW_H)
 	transparent_bg = false
 	msaa_3d = Viewport.MSAA_4X
 	render_target_update_mode = SubViewport.UPDATE_ALWAYS if LIVE_UPDATE else SubViewport.UPDATE_ONCE

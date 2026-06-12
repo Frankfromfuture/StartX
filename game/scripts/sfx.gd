@@ -9,6 +9,11 @@ const FILES := {
 	"resource_down": "res://assets/sounds/facility and resource down.ogg", # 资源/设施等放下
 	"cash_down": "res://assets/sounds/cash down.ogg",                    # 现金牌放下
 	"unpack": "res://assets/sounds/unpack.ogg",                          # 拆包
+	"battle_start": "res://assets/sounds/battlestart.ogg",               # 战斗开始
+	"battle_end": "res://assets/sounds/battleend.ogg",                   # 战斗结束
+	"aha": "res://assets/sounds/aha.ogg",                                # 创始人灵感气泡
+	"founder": "res://assets/sounds/founder.ogg",                        # 创始人落地
+	"hit": "res://assets/sounds/hit.ogg",                                # 战斗伤害数字
 }
 
 var _streams: Dictionary = {}

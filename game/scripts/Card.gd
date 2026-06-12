@@ -9,6 +9,7 @@ const W := 180.0          # square, keeping the previous long side
 const H := 180.0
 const HEADER := 30.0
 const TITLE_FONT_SIZE := 21
+const CARD_RADIUS := 9.0
 
 var card_id: String = ""
 var ctype: String = "resource"
@@ -37,6 +38,9 @@ var shimmer_t: float = 0.0           # hover 扫光相位
 var face3d: Node = null          # 3D 卡牌网格（Phase 2：本卡的真立体表现，挂在城市世界里）
 var workbar3d: Node = null       # 生产进度条的 3D 表现（在 face3d 上方）
 var shadow3d: Node = null        # 右下方柔和投影（hover 浅、拿起稍厚）
+var is_new_discovery: bool = false
+var new_badge3d: Node = null
+var new_badge_tween: Tween = null
 var ui_font: Font
 var capacity_icon_tex: Texture2D
 var cost_icon_tex: Texture2D
@@ -138,10 +142,10 @@ func _draw() -> void:
 	if carried:
 		lift_level = 2
 
-	# ---- 像素风卡身：硬投影 + 纯色身 + 复古斜面描边（无圆角无抗锯齿）----
+	# ---- 像素风卡身：保留硬边质感，仅在四角加入很小的圆角。----
 	var off := 5.0 + 3.0 * lift_level
-	draw_rect(Rect2(off, off, W, H), Color(0, 0, 0, 0.16 + 0.08 * lift_level), true)   # 硬投影块
-	draw_rect(Rect2(0, 0, W, H), bg, true)                                            # 卡身平涂
+	_draw_rounded_rect(Rect2(off, off, W, H), Color(0, 0, 0, 0.16 + 0.08 * lift_level), CARD_RADIUS)
+	_draw_rounded_rect(Rect2(0, 0, W, H), bg, CARD_RADIUS)
 	_pixel_frame(Rect2(0, 0, W, H), 8.0, INK, bg.lightened(0.30), bg.darkened(0.22))  # 斜面描边（加粗）
 
 	# 选中不再画外圈黄框（仅保留信息栏提示与轻微光泽反馈）
@@ -224,18 +228,29 @@ func _pixel_frame(r: Rect2, thick: float, dark: Color, light: Color, shade: Colo
 	var y := r.position.y
 	var w := r.size.x
 	var h := r.size.y
-	draw_rect(Rect2(x, y, w, thick), dark, true)
-	draw_rect(Rect2(x, y + h - thick, w, thick), dark, true)
-	draw_rect(Rect2(x, y, thick, h), dark, true)
-	draw_rect(Rect2(x + w - thick, y, thick, h), dark, true)
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = Color(0, 0, 0, 0)
+	frame.border_color = dark
+	frame.set_border_width_all(int(thick))
+	frame.set_corner_radius_all(int(CARD_RADIUS))
+	frame.corner_detail = 4
+	draw_style_box(frame, r)
 	var ix := x + thick
 	var iy := y + thick
 	var iw := w - thick * 2.0
 	var ih := h - thick * 2.0
-	draw_rect(Rect2(ix, iy, iw, VPX), light, true)                 # 内·上 提亮
-	draw_rect(Rect2(ix, iy, VPX, ih), light, true)                 # 内·左 提亮
-	draw_rect(Rect2(ix, iy + ih - VPX, iw, VPX), shade, true)      # 内·下 压暗
-	draw_rect(Rect2(ix + iw - VPX, iy, VPX, ih), shade, true)      # 内·右 压暗
+	var inset := CARD_RADIUS * 0.45
+	draw_rect(Rect2(ix + inset, iy, iw - inset * 2.0, VPX), light, true)                 # 内·上 提亮
+	draw_rect(Rect2(ix, iy + inset, VPX, ih - inset * 2.0), light, true)                 # 内·左 提亮
+	draw_rect(Rect2(ix + inset, iy + ih - VPX, iw - inset * 2.0, VPX), shade, true)      # 内·下 压暗
+	draw_rect(Rect2(ix + iw - VPX, iy + inset, VPX, ih - inset * 2.0), shade, true)      # 内·右 压暗
+
+func _draw_rounded_rect(rect: Rect2, color: Color, radius: float) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.set_corner_radius_all(int(radius))
+	style.corner_detail = 4
+	draw_style_box(style, rect)
 
 func _draw_bold_string(f: Font, pos: Vector2, text: String, align: HorizontalAlignment, width: float, size: int, col: Color) -> void:
 	draw_string(f, pos, text, align, width, size, col)

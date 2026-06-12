@@ -60,6 +60,7 @@ func _ready() -> void:
 	_connect_interface()
 	_sync_settings()
 	_build_credits()
+	_layout_responsive()
 
 	_steam_origins[steam_1] = steam_1.position
 	_steam_origins[steam_2] = steam_2.position
@@ -71,6 +72,30 @@ func _ready() -> void:
 	Settings.sfx_volume_changed.connect(_on_sfx_volume_changed)
 	_refresh_motion()
 	start_button.grab_focus.call_deferred()
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+func _on_viewport_size_changed() -> void:
+	_layout_responsive()
+	_steam_origins[steam_1] = steam_1.position
+	_steam_origins[steam_2] = steam_2.position
+
+func _layout_responsive() -> void:
+	var viewport_size := get_viewport_rect().size
+	var extra := viewport_size - Vector2(1920.0, 1080.0)
+
+	brand.position = Vector2(54.0, 158.0 + extra.y * 0.5)
+	$Menu.position = Vector2(126.0, 446.0 + extra.y * 0.5)
+	$Footer.position = Vector2(128.0, 976.0 + extra.y)
+
+	settings_panel.position = Vector2(650.0, 208.0) + extra * 0.5
+	developer_panel.position = Vector2(680.0, 264.0) + extra * 0.5
+
+	credits_reel.position.x = 410.0 + extra.x * 0.5
+	credits_hint.position = Vector2(610.0 + extra.x * 0.5, 1016.0 + extra.y)
+	credits_skip.position = Vector2(1740.0 + extra.x, 1004.0 + extra.y)
+
+	steam_1.position = Vector2(1028.0 + extra.x * 0.535, 314.0 + extra.y * 0.291)
+	steam_2.position = Vector2(1362.0 + extra.x * 0.709, 648.0 + extra.y * 0.600)
 
 func _process(delta: float) -> void:
 	_update_menu_cursor()
@@ -101,7 +126,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _style_interface() -> void:
-	_font($Footer, 15)
+	_font($Footer, 20)
 	$Footer.add_theme_color_override("font_color", Color("6f675e"))
 
 	_font($SettingsPanel/Margin/Content/Header/Title, 34)
@@ -128,12 +153,12 @@ func _style_interface() -> void:
 	settings_panel.add_theme_stylebox_override("panel", _panel_style())
 	developer_panel.add_theme_stylebox_override("panel", _panel_style())
 
-	_prepare_menu_text_button(start_button, 36)
-	_prepare_menu_text_button(continue_button, 31)
-	_prepare_menu_text_button(growth_button, 31)
-	_prepare_menu_text_button(settings_button, 31)
-	_prepare_menu_text_button(credits_button, 31)
-	_prepare_menu_text_button(quit_button, 31)
+	_prepare_menu_text_button(start_button, 47)
+	_prepare_menu_text_button(continue_button, 40)
+	_prepare_menu_text_button(growth_button, 40)
+	_prepare_menu_text_button(settings_button, 40)
+	_prepare_menu_text_button(credits_button, 40)
+	_prepare_menu_text_button(quit_button, 40)
 	continue_button.add_theme_color_override("font_disabled_color", Color("9b958c"))
 	growth_button.add_theme_color_override("font_color", Color("777067"))
 	growth_button.add_theme_color_override("font_hover_color", Color("777067"))

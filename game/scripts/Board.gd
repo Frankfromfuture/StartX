@@ -74,6 +74,20 @@ var hover_card = null
 var cursor_state: String = ""
 var dash_phase: float = 0.0
 
+# 供应链：连接绑定卡牌实例而非 stack_id，避免牌堆合并重编号后断线。
+# 每项为 {source: Card, target: Card}；source 是生产堆中的稳定锚点。
+var supply_chains: Array = []
+var supply_drag_source = null
+var supply_drag_mouse: Vector2 = Vector2.ZERO
+var supply_drag_target = null
+var supply_flow_phase: float = 0.0
+var supply_hover_chain = null
+var supply_hover_scale: float = 0.0
+var supply_transits: Array = []
+const SUPPLY_BLUE := Color("465d78")
+const SUPPLY_BLUE_LIGHT := Color("607792")
+const SUPPLY_BLUE_DARK := Color("33485f")
+
 var month_time: float = 0.0
 
 const DEFAULT_HINT := "「公司的地板光亮如新，有可能是创始人晚上擦的」"
@@ -155,6 +169,7 @@ const BOARD_CX := (CANVAS_X0 + CANVAS_X1) * 0.5   # 960
 const BOARD_CY := (MID_Y0 + MID_Y1) * 0.5         # 580
 const CARD3D_THICK := 0.05 / 3.0                    # 卡牌厚度（薄盒子，用来投射真阴影）
 const CARD_PLANE_Y := 0.05 + CARD3D_THICK           # 卡顶高度（盒底正好贴白板）
+const CARD3D_RADIUS := 9.0 / 180.0 * (CW / CITY_CELL) # 与 Card.CARD_RADIUS 一致的轻微圆角
 const PACK3D_THICK := CARD3D_THICK * 2.5            # 卡包厚度（原厚度的一半）
 const DEFAULT_CAM_PITCH_DEG := 77.0
 const DEFAULT_CAM_DIST := 2.31
@@ -203,6 +218,8 @@ func _ready() -> void:
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
 	_build_hud()
+	get_viewport().size_changed.connect(_layout_responsive)
+	_layout_responsive()
 	_spawn_start_cards()
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
@@ -216,6 +233,15 @@ func _ready() -> void:
 	rival_timer.autostart = true
 	add_child(rival_timer)
 	rival_timer.timeout.connect(_rival_hop_tick)
+
+func _screen_size() -> Vector2:
+	return get_viewport().get_visible_rect().size
+
+func _screen_center() -> Vector2:
+	return _screen_size() * 0.5
+
+func _bottom_y() -> float:
+	return _screen_size().y - (BASE_H - INFO_Y)
 
 # ---------------------------------------------------------------- perspective
 func _row_scale(_y: float) -> float:
@@ -316,11 +342,12 @@ func _clamp_view_offset() -> void:
 func _visible_world_half_extents() -> Vector2:
 	if _cam() == null:
 		return Vector2(INF, INF)
+	var screen := _screen_size()
 	var pts := [
 		_unproject_world(Vector2.ZERO),
-		_unproject_world(Vector2(BASE_W, 0.0)),
-		_unproject_world(Vector2(BASE_W, BASE_H)),
-		_unproject_world(Vector2(0.0, BASE_H)),
+		_unproject_world(Vector2(screen.x, 0.0)),
+		_unproject_world(screen),
+		_unproject_world(Vector2(0.0, screen.y)),
 	]
 	var min_x: float = pts[0].x
 	var max_x: float = pts[0].x
@@ -398,6 +425,7 @@ func _setup_city_background() -> void:
 	layer.layer = -10                       # 在所有 2D 棋盘内容之后（最底）
 	add_child(layer)
 	city_bg = CityBackgroundScript.new()
+	city_bg.size = Vector2i(_screen_size())
 	layer.add_child(city_bg)
 	var tr := TextureRect.new()
 	tr.name = "CityView"
@@ -477,7 +505,7 @@ func _spawn_start_cards() -> void:
 	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
 	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
 	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
-	var center_tl := _unproject(Vector2(BASE_W, BASE_H) * 0.5 \
+	var center_tl := _unproject(_screen_center() \
 		- Vector2(PACK_W, PACK_H) * 0.5 * view_zoom)
 	_spawn_loose_pack("garage_pack", pack, contents, center_tl, true)   # 直接 3D 出现在白板上
 
@@ -489,11 +517,13 @@ func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 func spawn_card(id: String, pos: Vector2) -> Node2D:
 	if id == "founder" and _founder_on_board() != null:
 		return null
-	if not GameState.drawn_cards.has(id):
+	var first_appearance := not GameState.drawn_cards.has(id)
+	if first_appearance:
 		GameState.drawn_cards[id] = true
 	var c = CardScript.new()
 	add_child(c)
 	c.setup(id)
+	c.is_new_discovery = first_appearance and c.ctype != "rival"
 	if not is_person(c):
 		c.zone = _zone_for_center(pos + Vector2(CW * 0.5, CH * 0.5))
 	var sid := next_stack_id
@@ -568,8 +598,7 @@ func _ensure_face3d(c) -> void:
 	pivot.add_child(cardroot)
 	# 卡身边框（黑，与牌面黑框线一致）：满尺寸薄盒 → 投射阴影 + 厚度上下黑边线
 	var frame := MeshInstance3D.new()
-	var fbm := BoxMesh.new()
-	fbm.size = Vector3(CARD3D_W, CARD3D_THICK, CARD3D_H)
+	var fbm := _rounded_card_box_mesh(CARD3D_W, CARD3D_H, CARD3D_THICK, CARD3D_RADIUS)
 	frame.mesh = fbm
 	frame.position = Vector3(0, -CARD3D_THICK * 0.5, 0)     # 顶面在 cardroot 原点、底面贴白板
 	var fmat := StandardMaterial3D.new()
@@ -580,8 +609,12 @@ func _ensure_face3d(c) -> void:
 	# 厚度涂色（奶白）：X/Z 略大盖住侧面中段、Y 内缩露出上下黑框线
 	var eb := 0.00867
 	var body := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(CARD3D_W * 1.004, CARD3D_THICK - eb * 2.0, CARD3D_H * 1.004)
+	var bm := _rounded_card_box_mesh(
+		CARD3D_W * 1.004,
+		CARD3D_H * 1.004,
+		CARD3D_THICK - eb * 2.0,
+		CARD3D_RADIUS
+	)
 	body.mesh = bm
 	body.position = Vector3(0, -CARD3D_THICK * 0.5, 0)
 	var bmat := StandardMaterial3D.new()
@@ -608,6 +641,8 @@ func _ensure_face3d(c) -> void:
 	cardroot.add_child(m)
 	if c.is_cash or c.ctype == "business_model":
 		_add_glass_coat(cardroot, CARD3D_W, CARD3D_H, 0.004)   # 现金 / 商业模式：玻璃反光
+	if c.is_new_discovery:
+		_add_new_card_badge(c, cardroot)
 	# 拿起时的 solid 同形阴影：贴白板的浅色圆角方块（与 cardroot 同级，不受 pop 缩放影响）
 	var shadow := MeshInstance3D.new()
 	shadow.name = "DropShadow"
@@ -628,6 +663,8 @@ func _ensure_face3d(c) -> void:
 	city_bg.world_card_root().add_child(pivot)
 	c.face3d = pivot
 	c.tree_exited.connect(func():
+		if c.new_badge_tween != null and c.new_badge_tween.is_valid():
+			c.new_badge_tween.kill()
 		if is_instance_valid(pivot):
 			pivot.queue_free())
 	_bake_face_async(c, mat)
@@ -635,6 +672,130 @@ func _ensure_face3d(c) -> void:
 	cardroot.scale = Vector3.ZERO
 	var tw := create_tween()
 	tw.tween_property(cardroot, "scale", Vector3.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _add_new_card_badge(c, cardroot: Node3D) -> void:
+	var badge := Node3D.new()
+	badge.name = "NewBadge"
+	badge.position = Vector3(CARD3D_W * 0.46, 0.011, -CARD3D_H * 0.46)
+	var mesh_instance := MeshInstance3D.new()
+	var mesh := QuadMesh.new()
+	var badge_size := CARD3D_W * 0.34 * 1.3
+	mesh.size = Vector2(badge_size, badge_size)
+	mesh_instance.mesh = mesh
+	mesh_instance.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	material.alpha_scissor_threshold = 0.25
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_texture = load("res://assets/ui/new.svg")
+	mesh_instance.material_override = material
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	badge.add_child(mesh_instance)
+	cardroot.add_child(badge)
+	c.new_badge3d = badge
+	badge.scale = Vector3.ONE * 0.95
+	var pulse := create_tween()
+	pulse.tween_property(badge, "scale", Vector3.ONE * 1.05, 0.55) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(badge, "scale", Vector3.ONE * 0.95, 0.55) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.set_loops()
+	c.new_badge_tween = pulse
+
+func _dismiss_new_card_badge(c) -> void:
+	if c == null or not is_instance_valid(c) or not c.is_new_discovery:
+		return
+	c.is_new_discovery = false
+	if c.new_badge_tween != null and c.new_badge_tween.is_valid():
+		c.new_badge_tween.kill()
+	c.new_badge_tween = null
+	var badge = c.new_badge3d
+	c.new_badge3d = null
+	if badge == null or not is_instance_valid(badge):
+		return
+	var tw := create_tween()
+	tw.tween_property(badge, "scale", Vector3.ZERO, 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_callback(badge.queue_free)
+
+func _rounded_card_box_mesh(width: float, height: float, thickness: float, radius: float) -> ArrayMesh:
+	var perimeter := PackedVector2Array()
+	var centers := [
+		Vector2(width * 0.5 - radius, height * 0.5 - radius),
+		Vector2(-width * 0.5 + radius, height * 0.5 - radius),
+		Vector2(-width * 0.5 + radius, -height * 0.5 + radius),
+		Vector2(width * 0.5 - radius, -height * 0.5 + radius),
+	]
+	var starts := [0.0, PI * 0.5, PI, PI * 1.5]
+	const CORNER_STEPS := 4
+	for corner in 4:
+		for step in CORNER_STEPS:
+			var angle: float = starts[corner] + (PI * 0.5) * float(step) / float(CORNER_STEPS)
+			perimeter.append(centers[corner] + Vector2(cos(angle), sin(angle)) * radius)
+
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var indices := PackedInt32Array()
+	var top_y := thickness * 0.5
+	var bottom_y := -thickness * 0.5
+	var count := perimeter.size()
+
+	# 顶面和底面各用一个中心扇形。
+	vertices.append(Vector3(0, top_y, 0))
+	normals.append(Vector3.UP)
+	uvs.append(Vector2(0.5, 0.5))
+	for point in perimeter:
+		vertices.append(Vector3(point.x, top_y, point.y))
+		normals.append(Vector3.UP)
+		uvs.append(Vector2(point.x / width + 0.5, point.y / height + 0.5))
+	for i in count:
+		indices.append(0)
+		indices.append(1 + (i + 1) % count)
+		indices.append(1 + i)
+
+	var bottom_center := vertices.size()
+	vertices.append(Vector3(0, bottom_y, 0))
+	normals.append(Vector3.DOWN)
+	uvs.append(Vector2(0.5, 0.5))
+	var bottom_start := vertices.size()
+	for point in perimeter:
+		vertices.append(Vector3(point.x, bottom_y, point.y))
+		normals.append(Vector3.DOWN)
+		uvs.append(Vector2(point.x / width + 0.5, point.y / height + 0.5))
+	for i in count:
+		indices.append(bottom_center)
+		indices.append(bottom_start + (i + 1) % count)
+		indices.append(bottom_start + i)
+
+	# 侧面独立顶点，保证法线沿圆角轮廓向外。
+	for i in count:
+		var a := perimeter[i]
+		var b := perimeter[(i + 1) % count]
+		var side_start := vertices.size()
+		var outward := Vector3(a.x + b.x, 0, a.y + b.y).normalized()
+		vertices.append(Vector3(a.x, top_y, a.y))
+		vertices.append(Vector3(b.x, top_y, b.y))
+		vertices.append(Vector3(b.x, bottom_y, b.y))
+		vertices.append(Vector3(a.x, bottom_y, a.y))
+		for j in 4:
+			normals.append(outward)
+			uvs.append(Vector2(float(j % 2), float(j / 2)))
+		indices.append_array(PackedInt32Array([
+			side_start, side_start + 1, side_start + 2,
+			side_start, side_start + 2, side_start + 3,
+		]))
+
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 var _blob_tex: Texture2D = null
 func _blob_shadow_tex() -> Texture2D:
@@ -711,14 +872,29 @@ func _add_glass_coat(parent: Node3D, w: float, h: float, y: float) -> void:
 	parent.add_child(g)
 
 func _bake_face_async(c, mat) -> void:
-	if face_baker == null:
+	if face_baker == null or c == null or not is_instance_valid(c):
 		return
+	var revision := int(c.get_meta("face_bake_revision", 0)) + 1
+	c.set_meta("face_bake_revision", revision)
 	var tex = await face_baker.bake(c)
+	if not is_instance_valid(c) or int(c.get_meta("face_bake_revision", 0)) != revision:
+		return
 	if tex != null and is_instance_valid(mat):
 		mat.albedo_texture = tex
 		mat.albedo_color = Color(1, 1, 1)
 		if mat.emission_enabled:
 			mat.emission_texture = tex
+
+func _refresh_card_face(c) -> void:
+	if c == null or not is_instance_valid(c):
+		return
+	c.queue_redraw()
+	var mesh := _face3d_mesh(c)
+	if mesh == null:
+		return
+	var mat = mesh.material_override
+	if mat != null:
+		_bake_face_async(c, mat)
 
 func _place_face3d(c, bp: Vector2, idx: int, dragging: bool) -> void:
 	_ensure_face3d(c)
@@ -754,8 +930,8 @@ func _update_drop_shadow(c, lift: float, idx: int, dragging: bool) -> void:
 	if shadow == null:
 		return
 	var picked: bool = c.carried or dragging
-	# 贴白板上方一点点；随抬升轻微向右下偏移 → 悬浮感
-	shadow.position = Vector3(lift * 0.3, -(CARD3D_THICK + lift) + 0.0015, lift * 0.3)
+	# 紧贴选中卡牌底面，使阴影显示在下层卡牌之上。
+	shadow.position = Vector3(lift * 0.3, -(CARD3D_THICK + 0.0015), lift * 0.3)
 	var cardroot: Node = pivot.get_child(0)
 	if cardroot != null and cardroot.get_child_count() > 0:
 		var frame := cardroot.get_child(0) as MeshInstance3D
@@ -783,7 +959,7 @@ func _face3d_lift(c, idx: int, dragging: bool) -> float:
 	var lift := float(idx) * CARD3D_STACK_DY
 	lift += float(maxi(c.stack_id, 0)) * CARD3D_ORDER_DY
 	if c.carried or dragging:
-		lift += 0.1067        # 拿起：抬得更高（阴影随之拉开）
+		lift += 0.05335       # 拿起/选中抬升减半
 	elif c.hovered:
 		lift += 0.02          # hover 时轻轻上抬（单牌/整叠均适用）
 	return lift
@@ -803,7 +979,7 @@ func _card_lift(c) -> float:
 	if c == null or not is_instance_valid(c):
 		return 0.0
 	if c.carried:
-		return 7.33
+		return 3.665
 	if c.hovered:
 		return 3.33
 	return 0.0
@@ -972,6 +1148,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		var wp := _to_world(event)
 		dbg_last = _unproject(wp)
 		if event.pressed:
+			var delete_chain = _supply_delete_chain_at(wp)
+			if delete_chain != null:
+				supply_chains.erase(delete_chain)
+				supply_hover_chain = null
+				supply_hover_scale = 0.0
+				_show_toast("供应链已解除")
+				queue_redraw()
+				return
 			panning_canvas = false
 			if not drag_cards.is_empty():
 				_end_drag(wp)            # 携带中再次点击 = 放下
@@ -1015,11 +1199,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		_zoom_view_at(_to_world(event), VIEW_ZOOM_STEP)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 		_zoom_view_at(_to_world(event), 1.0 / VIEW_ZOOM_STEP)
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		# 右键：在卡牌当前所在地放下，并取消选取与拖拽
-		if not drag_cards.is_empty():
-			_cancel_drag()
-		_deselect()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+		var wp := _to_world(event)
+		if event.pressed:
+			var picked := _topmost_at(wp, true)
+			if picked != null and productions.has(picked.stack_id):
+				_begin_supply_drag(picked, wp)
+			else:
+				# 非生产牌堆上右键仍保持原来的“放下/取消选择”行为。
+				if not drag_cards.is_empty():
+					_cancel_drag()
+				_deselect()
+		elif supply_drag_source != null:
+			_end_supply_drag(wp)
 	elif event is InputEventMouseMotion and panning_canvas:
 		var wp := _to_world(event)
 		# 抓取式平移：让光标下的世界点跟手 → 反向移动相机注视点
@@ -1042,6 +1234,137 @@ func _unhandled_input(event: InputEvent) -> void:
 		relayout(drag_sid)
 		if wp.distance_to(press_pos) > DRAG_TAP_PX:
 			press_moved = true
+	elif event is InputEventMouseMotion and supply_drag_source != null:
+		supply_drag_mouse = _to_world(event)
+		supply_drag_target = _supply_target_at(supply_drag_mouse)
+		queue_redraw()
+
+func _begin_supply_drag(picked, wp: Vector2) -> void:
+	if picked == null or not is_instance_valid(picked) or not productions.has(picked.stack_id):
+		return
+	var source = _supply_source_anchor(picked.stack_id)
+	if source == null:
+		return
+	supply_drag_source = source
+	supply_drag_mouse = wp
+	supply_drag_target = null
+	panning_canvas = false
+	_show_toast("拖到可互动的下游牌堆，松开右键建立供应链")
+	queue_redraw()
+
+func _end_supply_drag(wp: Vector2) -> void:
+	supply_drag_mouse = wp
+	var target = _supply_target_at(wp)
+	if target != null:
+		_set_supply_chain(supply_drag_source, target)
+		_show_toast("供应链已连接：产出将直接叠到下游")
+	supply_drag_source = null
+	supply_drag_target = null
+	queue_redraw()
+
+func _supply_source_anchor(sid: int):
+	if not productions.has(sid) or not stacks.has(sid):
+		return null
+	var rec: Dictionary = productions[sid].get("recipe", {})
+	for inp in rec.get("inputs", []):
+		if inp.get("consume", false):
+			continue
+		var input_id := String(inp.get("id", ""))
+		for c in stacks[sid]:
+			if c.card_id == input_id:
+				return c
+	for c in stacks[sid]:
+		if is_person(c):
+			return c
+	return stacks[sid][0] if not stacks[sid].is_empty() else null
+
+func _supply_target_at(display_pt: Vector2):
+	var target = _topmost_at(display_pt, true)
+	if target == null or not is_instance_valid(target):
+		return null
+	if supply_drag_source == null or not is_instance_valid(supply_drag_source):
+		return null
+	if target.stack_id == supply_drag_source.stack_id:
+		return null
+	if not _stack_accepts_supply_outputs(supply_drag_source.stack_id, target.stack_id):
+		return null
+	return target
+
+func _set_supply_chain(source, target) -> void:
+	if source == null or target == null:
+		return
+	for chain in supply_chains:
+		if chain.get("source") == source:
+			chain["target"] = target
+			return
+	supply_chains.append({"source": source, "target": target})
+
+func _supply_delete_chain_at(display_pt: Vector2):
+	if supply_hover_chain == null or not supply_chains.has(supply_hover_chain):
+		return null
+	var center := _supply_chain_midpoint(supply_hover_chain)
+	var radius := 18.0 * maxf(supply_hover_scale, 0.65)
+	return supply_hover_chain if center.distance_to(display_pt) <= radius else null
+
+func _stack_accepts_supply_outputs(source_sid: int, target_sid: int) -> bool:
+	if not productions.has(source_sid) or not stacks.has(target_sid):
+		return false
+	var rec: Dictionary = productions[source_sid].get("recipe", {})
+	for outp in rec.get("outputs", []):
+		var output_id := "cash" if outp.has("cash") else String(outp.get("id", ""))
+		if output_id != "" and _output_id_interacts_with_stack(output_id, target_sid):
+			return true
+	return false
+
+func _output_id_interacts_with_stack(output_id: String, target_sid: int) -> bool:
+	if output_id == "" or not stacks.has(target_sid):
+		return false
+	var counts: Dictionary = {output_id: 1}
+	var all_same := true
+	var first_id := output_id
+	var has_worker := DataLoader.card_type(output_id) == "employee"
+	for c in stacks[target_sid]:
+		counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
+		if c.card_id != first_id:
+			all_same = false
+		if c.ctype == "employee":
+			has_worker = true
+	if all_same and not has_worker and DataLoader.card_type(output_id) not in ["department", "risk", "idea"]:
+		return true
+	if _is_partial_recipe_stack(counts):
+		return true
+	if has_worker and counts.has("business_school"):
+		return true
+	for recipe in DataLoader.recipes:
+		var gate := String(recipe.get("requiredIdeaId", ""))
+		if gate != "" and not GameState.idea_done(gate):
+			continue
+		if _supply_counts_match_recipe(recipe, counts, target_sid, output_id):
+			return true
+	return false
+
+func _supply_counts_match_recipe(recipe: Dictionary, counts: Dictionary, target_sid: int, output_id: String) -> bool:
+	for inp in recipe.get("inputs", []):
+		if int(counts.get(String(inp.get("id", "")), 0)) < int(inp.get("count", 1)):
+			return false
+	var tags: Dictionary = {}
+	var has_worker := false
+	for c in stacks[target_sid]:
+		if c.ctype == "employee":
+			has_worker = true
+			for tag in c.cdef.get("workTags", []):
+				tags[tag] = true
+	if DataLoader.card_type(output_id) == "employee":
+		has_worker = true
+		for tag in DataLoader.card_def(output_id).get("workTags", []):
+			tags[tag] = true
+	var required_tags: Array = recipe.get("worker_tags", [])
+	if required_tags.is_empty():
+		return true
+	for tag in required_tags:
+		if (tag == "any" and has_worker) or tags.has(tag):
+			return true
+	return false
 
 func _topmost_at(display_pt: Vector2, include_rivals: bool = false) -> Node2D:
 	# 3D：把屏幕点投到白板平面得 board 点，再测哪张卡的 board 矩形命中；
@@ -1114,6 +1437,8 @@ func _play_drop_sound(c) -> void:
 		return
 	if c.is_cash:
 		_sfx("cash_down")
+	elif c.card_id == "founder":
+		_sfx("founder")
 	elif is_person(c) or c.ctype == "customer":   # 创始人/员工/客户
 		_sfx("down")
 	else:
@@ -1123,6 +1448,16 @@ func _end_drag(_wp: Vector2) -> void:
 	if drag_cards.is_empty():
 		return
 	var sid := drag_sid
+	# 供应链可能在拖拽期间完成生产，并把产出并入当前携带的下游栈。
+	# 合并会生成新 stack_id；若仍拿着旧编号，则从携带卡实例恢复最新编号。
+	if not stacks.has(sid) or not stack_base.has(sid):
+		var carried = drag_cards[0] if not drag_cards.is_empty() else null
+		if is_instance_valid(carried) and stacks.has(carried.stack_id) and stack_base.has(carried.stack_id):
+			sid = carried.stack_id
+			drag_sid = sid
+		else:
+			_clear_drag()
+			return
 	var bottom = stacks[sid][0]
 	_play_drop_sound(bottom)         # 放下卡音效（按类型）
 	var lead_person := is_person(bottom)
@@ -1225,7 +1560,12 @@ func _update_drag_spring(delta: float) -> void:
 const HINT_BORDER := CW * 0.045              # 虚线框线宽（board 单位，细）
 func _update_stack_hint(_delta: float) -> void:
 	stack_hint_sids = []
-	if not drag_cards.is_empty() and stacks.has(drag_sid):
+	if supply_drag_source != null and is_instance_valid(supply_drag_source):
+		var source_sid: int = supply_drag_source.stack_id
+		for sid in stacks.keys():
+			if int(sid) != source_sid and _stack_accepts_supply_outputs(source_sid, int(sid)):
+				stack_hint_sids.append(sid)
+	elif not drag_cards.is_empty() and stacks.has(drag_sid):
 		for sid in stacks.keys():
 			if sid == drag_sid:
 				continue
@@ -1462,7 +1802,7 @@ func _draw_info_line(canvas: CanvasItem, f: Font, baseline_y: float, parts: Arra
 			w += 1.0
 		p["_w"] = w
 		total += w
-	var x := maxf(24.0, (BASE_W - total) * 0.5)
+	var x := maxf(24.0, (_screen_size().x - total) * 0.5)
 	for p in parts:
 		if p["i"]:
 			var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), Vector2(x, baseline_y))
@@ -1498,6 +1838,7 @@ func _set_stack_hovered(sid: int, v: bool) -> void:
 func _merge(from_sid: int, to_sid: int) -> int:
 	var moving: Array = stacks[from_sid]
 	var dest: Array = stacks[to_sid]
+	var merged_drag_stack := from_sid == drag_sid or to_sid == drag_sid
 	for c in moving:
 		dest.append(c)                      # 被拖入的牌追加到末尾 = 栈顶（最后放的在最上）
 	# 整摞重新编号为最新栈号 → ORDER_DY 最高 → 渲染在所有重叠卡之上（最后操作的牌堆置顶）
@@ -1513,6 +1854,8 @@ func _merge(from_sid: int, to_sid: int) -> int:
 	stack_base.erase(to_sid)
 	productions.erase(from_sid)
 	productions.erase(to_sid)
+	if merged_drag_stack:
+		drag_sid = new_sid
 	relayout(new_sid)
 	evaluate_stack(new_sid)
 	return new_sid
@@ -1832,6 +2175,7 @@ func _push_stack_outside_battle(base: Vector2) -> Vector2:
 
 func _start_battle(rival, employee, rival_first: bool = true) -> void:
 	battle_active = true
+	_sfx("battle_start")
 	battle_rival = rival
 	battle_employee = employee
 	battle_rival_first = rival_first
@@ -1894,6 +2238,8 @@ func _scatter_cards_out_of_battle(center: Vector2, rsid: int, esid: int) -> void
 			_battle_move_stack(sid, new_base)
 
 func _end_battle() -> void:
+	if battle_active:
+		_sfx("battle_end")
 	battle_active = false
 	battle_running = false
 	battle_attacker_sid = -1
@@ -2154,6 +2500,7 @@ func _battle_apply_damage(rival_attacking: bool, power: float) -> void:
 
 # 伤害数字（保留一位小数）从被攻击卡上跳出，背景为 battle-bubble.svg
 func _battle_damage_popup(defender, amount: float) -> void:
+	_sfx("hit")
 	var scr := _project(stack_base[defender.stack_id] + Vector2(CW * 0.5, CH * 0.3))
 	var holder := Control.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2608,6 +2955,8 @@ func _stack_capacity(sid: int) -> int:
 func _complete_production(sid: int) -> void:
 	var rec: Dictionary = productions[sid]["recipe"]
 	var target = productions[sid].get("target")
+	var supply_chain = _supply_chain_for_source_stack(sid)
+	var supply_target = supply_chain.get("target") if supply_chain != null else null
 	productions.erase(sid)
 	if not stacks.has(sid):
 		return
@@ -2631,11 +2980,13 @@ func _complete_production(sid: int) -> void:
 			if c.card_id == rid:
 				_dissolve_node(c)
 				need -= 1
+	if supply_chain != null and _recipe_can_route_to_target(rec, supply_target):
+		await _animate_supply_transfer(supply_chain)
 	var made_card := false
 	for outp in rec.get("outputs", []):
 		if outp.has("cash"):
 			var amt := _cash_output_amount(rec, int(outp["cash"]) * mult)
-			_spawn_cash_cards(amt, base, "office")
+			_spawn_cash_output(amt, base, supply_target)
 			GameState.add_revenue(amt)
 			_ka_ching(base, amt)
 		elif outp.has("id"):
@@ -2645,7 +2996,7 @@ func _complete_production(sid: int) -> void:
 				# 产品 + 客户成交时，现金按 value 公式动态计算；其它现金产物按配方数量。
 				# 依次快速跳出现金卡（_spawn_cash_cards 内已带 0.04s 逐张弹出 + 同步资金）
 				var cash_n := _cash_output_amount(rec, int(outp.get("count", 1)))
-				_spawn_cash_cards(cash_n, base, "office")
+				_spawn_cash_output(cash_n, base, supply_target)
 				GameState.add_revenue(cash_n)
 				_ka_ching(base, cash_n)
 				made_card = true
@@ -2653,7 +3004,7 @@ func _complete_production(sid: int) -> void:
 				var forced := String(rec.get("output_zone", ""))
 				var zone := forced if forced != "" else _zone_for_center(base + Vector2(CW * 0.5, CH * 0.5))
 				for i in n:
-					_drop_output(oid, base, zone)
+					_drop_output(oid, base, zone, supply_target)
 				made_card = true
 	if made_card:
 		_wiggle_top_card(sid)            # 产出时生产堆顶卡轻微扭动
@@ -2695,7 +3046,7 @@ func _consume_node_uses(sid: int, rec: Dictionary) -> void:
 		for c in stacks[sid].duplicate():
 			if c.card_id == rid and c.uses_left >= 0:
 				c.uses_left -= 1
-				c.queue_redraw()
+				_refresh_card_face(c)
 				if c.uses_left <= 0:
 					_show_toast(String(c.cdef.get("name", rid)) + " 已耗尽")
 					_dissolve_node(c)
@@ -2705,7 +3056,71 @@ func _consume_node_uses(sid: int, rec: Dictionary) -> void:
 func _output_mult(cap: int) -> int:
 	return 1 + int(floor(maxf(0, cap - 3) / 4.0))
 
-func _drop_output(id: String, from_pos: Vector2, zone: String) -> void:
+func _supply_chain_for_source_stack(source_sid: int):
+	_cleanup_supply_chains()
+	for chain in supply_chains:
+		var source = chain.get("source")
+		var target = chain.get("target")
+		if is_instance_valid(source) and source.stack_id == source_sid \
+				and is_instance_valid(target) and target.stack_id != source_sid:
+			return chain
+	return null
+
+func _recipe_can_route_to_target(recipe: Dictionary, supplied_target) -> bool:
+	if supplied_target == null or not is_instance_valid(supplied_target) \
+			or not stacks.has(supplied_target.stack_id):
+		return false
+	for outp in recipe.get("outputs", []):
+		var id := "cash" if outp.has("cash") else String(outp.get("id", ""))
+		if _output_id_interacts_with_stack(id, supplied_target.stack_id):
+			return true
+	return false
+
+func _animate_supply_transfer(chain) -> void:
+	if chain == null:
+		return
+	var source = chain.get("source")
+	var supplied_target = chain.get("target")
+	if not is_instance_valid(source) or not is_instance_valid(supplied_target):
+		return
+	var transit := {
+		"source": source,
+		"target": supplied_target,
+		"progress": 0.0,
+	}
+	supply_transits.append(transit)
+	var tw := create_tween()
+	tw.tween_method(func(value: float):
+		transit["progress"] = value
+		queue_redraw()
+	, 0.0, 1.0, 0.8).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
+	await tw.finished
+	supply_transits.erase(transit)
+	queue_redraw()
+
+func _spawn_cash_output(amount: int, from_pos: Vector2, supplied_target = null) -> void:
+	if supplied_target != null and is_instance_valid(supplied_target) \
+			and stacks.has(supplied_target.stack_id) \
+			and _output_id_interacts_with_stack("cash", supplied_target.stack_id):
+		for i in amount:
+			_drop_output("cash", from_pos, "office", supplied_target)
+		_sync_cash_state()
+		return
+	_spawn_cash_cards(amount, from_pos, "office")
+
+func _drop_output(id: String, from_pos: Vector2, zone: String, supplied_target = null) -> void:
+	if supplied_target != null and is_instance_valid(supplied_target) \
+			and stacks.has(supplied_target.stack_id) \
+			and _output_id_interacts_with_stack(id, supplied_target.stack_id):
+		var target_sid: int = supplied_target.stack_id
+		var landing: Vector2 = stack_base[target_sid]
+		var nc := spawn_card(id, landing)
+		nc.zone = zone
+		var merged_sid := _merge(nc.stack_id, target_sid)
+		_fly_out_card(nc, _project(from_pos + Vector2(CW, CH) * 0.5))
+		if stacks.has(merged_sid):
+			relayout(merged_sid)
+		return
 	const GROUP_RANGE := 2.0
 	var origin_center := from_pos + Vector2(CW, CH) * 0.5
 	var landing := _nearby_output_landing(origin_center, zone)
@@ -3180,9 +3595,20 @@ func _unshaded_mat(col: Color) -> StandardMaterial3D:
 
 func _update_card_visual_states(delta: float) -> void:
 	dash_phase += delta * 35.0
+	supply_flow_phase += delta * 55.0
 	if bank_button != null and is_instance_valid(bank_button) and _is_dragging_sellable():
 		bank_button.queue_redraw()
 	var mouse_pos := get_viewport().get_mouse_position()
+	var hovered_chain = null
+	if drag_cards.is_empty() and drag_pack == null and supply_drag_source == null and not panning_canvas:
+		hovered_chain = _supply_chain_at(mouse_pos)
+	if hovered_chain != supply_hover_chain:
+		supply_hover_chain = hovered_chain
+	supply_hover_scale = move_toward(
+		supply_hover_scale,
+		1.0 if supply_hover_chain != null else 0.0,
+		delta * 7.5
+	)
 	var next_hover = null
 	if drag_cards.is_empty() and not panning_canvas:
 		next_hover = _topmost_at(mouse_pos, true)   # 对手卡虽不可拾取，悬停仍显示信息
@@ -3200,11 +3626,18 @@ func _update_card_visual_states(delta: float) -> void:
 		# If the stack changed, hover the new stack (single card stacks included)
 		if new_sid != -1 and old_sid != new_sid:
 			if stacks.has(new_sid):
+				_dismiss_new_card_badge(next_hover)
 				_set_stack_hovered(new_sid, true)
 				relayout(new_sid)
 
 	var hint_sids: Dictionary = {}
-	if drag_sid != -1 and stacks.has(drag_sid):
+	if supply_drag_source != null and is_instance_valid(supply_drag_source):
+		var source_sid: int = supply_drag_source.stack_id
+		for sid in stacks.keys():
+			var osid := int(sid)
+			if osid != source_sid and _stack_accepts_supply_outputs(source_sid, osid):
+				hint_sids[osid] = true
+	elif drag_sid != -1 and stacks.has(drag_sid):
 		for sid in stacks.keys():
 			var osid := int(sid)
 			if osid == drag_sid:
@@ -3221,6 +3654,9 @@ func _update_card_visual_states(delta: float) -> void:
 			c.set_dash_phase(dash_phase)
 
 func _update_cursor() -> void:
+	if supply_drag_source != null:
+		_set_cursor_state("drag")
+		return
 	if not drag_cards.is_empty() or drag_pack != null:
 		_set_cursor_state("drag")
 		return
@@ -3232,6 +3668,9 @@ func _update_cursor() -> void:
 		_set_cursor_state("hover")
 		return
 	var p := get_viewport().get_mouse_position()
+	if supply_hover_chain != null:
+		_set_cursor_state("hover")
+		return
 	if _topmost_at(p) != null:
 		_set_cursor_state("hover")
 		return
@@ -3567,8 +4006,11 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 	var sid: int = c.stack_id
 	get_tree().create_timer(FLY_OUT_TIME).timeout.connect(func():
 		# 创始人/员工/客户从卡包飞出落地时播放放下音效
-		if is_instance_valid(c) and (is_person(c) or c.ctype == "customer"):
-			_sfx("down")
+		if is_instance_valid(c):
+			if c.card_id == "founder":
+				_sfx("founder")
+			elif is_person(c) or c.ctype == "customer":
+				_sfx("down")
 		if stacks.has(sid):
 			evaluate_stack(sid)
 	)
@@ -3934,6 +4376,46 @@ func _clear_button_style(b: Button) -> void:
 		sb.content_margin_bottom = 0
 		b.add_theme_stylebox_override(state, sb)
 
+func _style_menu_text_button(b: Button, font_size: int) -> void:
+	_apply_pixel_font(b, font_size)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.add_theme_color_override("font_color", INK)
+	b.add_theme_color_override("font_hover_color", Color("5b8295"))
+	b.add_theme_color_override("font_focus_color", Color("5b8295"))
+	b.add_theme_color_override("font_pressed_color", Color("3f6f85"))
+	b.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0))
+	b.add_theme_constant_override("outline_size", 0)
+
+	var empty := StyleBoxEmpty.new()
+	empty.content_margin_left = 8
+	empty.content_margin_right = 8
+	empty.content_margin_top = 4
+	empty.content_margin_bottom = 4
+	for state in ["normal", "hover", "focus", "pressed", "disabled"]:
+		b.add_theme_stylebox_override(state, empty)
+
+	b.resized.connect(_update_menu_text_button_pivot.bind(b))
+	b.mouse_entered.connect(_set_menu_text_button_emphasis.bind(b, true))
+	b.mouse_exited.connect(_set_menu_text_button_emphasis.bind(b, false))
+	b.focus_entered.connect(_set_menu_text_button_emphasis.bind(b, true))
+	b.focus_exited.connect(_set_menu_text_button_emphasis.bind(b, false))
+	_update_menu_text_button_pivot(b)
+
+func _update_menu_text_button_pivot(b: Button) -> void:
+	b.pivot_offset = b.size * 0.5
+
+func _set_menu_text_button_emphasis(b: Button, emphasized: bool) -> void:
+	var target := Vector2.ONE * (1.025 if emphasized else 1.0)
+	var old: Tween = b.get_meta("menu_scale_tween") as Tween if b.has_meta("menu_scale_tween") else null
+	if old != null and old.is_valid():
+		old.kill()
+	if Settings.reduce_motion:
+		b.scale = target
+		return
+	var tw := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	b.set_meta("menu_scale_tween", tw)
+	tw.tween_property(b, "scale", target, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 func _pack_button_poly(size: Vector2, cut: float) -> PackedVector2Array:
 	return PackedVector2Array([
 		Vector2(cut, 0), Vector2(size.x - cut, 0), Vector2(size.x, cut),
@@ -3956,16 +4438,16 @@ func _ensure_top_bar() -> Control:
 		top_bar.name = "TopBar"
 		top_bar.position = Vector2.ZERO
 		hud.add_child(top_bar)
-	top_bar.size = Vector2(BASE_W, HUD_H)
+	top_bar.size = Vector2(_screen_size().x, HUD_H)
 	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var bg := top_bar.get_node_or_null("TopBarBg") as ColorRect
 	if bg != null:
-		bg.size = Vector2(BASE_W, HUD_H)
+		bg.size = Vector2(_screen_size().x, HUD_H)
 	var line := top_bar.get_node_or_null("TopBarLine") as ColorRect
 	if line != null:
 		line.position = Vector2(0, HUD_H - 2.0)
-		line.size = Vector2(BASE_W, 2.0)
+		line.size = Vector2(_screen_size().x, 2.0)
 
 	return top_bar
 
@@ -3978,36 +4460,49 @@ func _clear_legacy_top_nodes() -> void:
 		if node != null:
 			node.queue_free()
 
-func _top_stat_label(group_name: String, icon_name: String, x: float, w: float, icon_size: float = TOP_ICON_SIZE) -> Label:
+func _top_stat_label(
+	group_name: String,
+	icon_name: String,
+	x: float,
+	w: float,
+	icon_size: float = TOP_ICON_SIZE,
+	right_align: bool = false
+) -> Label:
 	var group := top_bar.get_node_or_null(group_name) as Control
 	if group == null:
 		group = Control.new()
 		group.name = group_name
-		group.position = Vector2(x, 0)
 		group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top_bar.add_child(group)
+	group.position = Vector2(x, 0)
 	group.size = Vector2(w, HUD_H)
 
 	var icon := group.get_node_or_null("Icon") as TextureRect
-	if icon == null:
-		icon = TextureRect.new()
-		icon.name = "Icon"
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		group.add_child(icon)
-	icon.size = Vector2(icon_size, icon_size)
-	icon.position = Vector2(0, (HUD_H - icon_size) * 0.5)
-	icon.texture = _ui_icon(icon_name)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if icon_name == "":
+		if icon != null:
+			icon.queue_free()
+	else:
+		if icon == null:
+			icon = TextureRect.new()
+			icon.name = "Icon"
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			group.add_child(icon)
+		icon.size = Vector2(icon_size, icon_size)
+		icon.position = Vector2(0, (HUD_H - icon_size) * 0.5)
+		icon.texture = _ui_icon(icon_name)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 	var label := group.get_node_or_null("Label") as Label
 	if label == null:
 		label = Label.new()
 		label.name = "Label"
-		label.size = Vector2(w - icon_size - 12, 40)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		group.add_child(label)
-	label.position = Vector2(icon_size + 12, _top_label_y())
+	var text_left := 0.0 if icon_name == "" else icon_size + 12.0
+	label.position = Vector2(text_left, _top_label_y())
+	label.size = Vector2(w - text_left, 40)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right_align else HORIZONTAL_ALIGNMENT_LEFT
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(label, TOP_LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", INK)
@@ -4205,12 +4700,12 @@ func _build_hud() -> void:
 	month_progress_full_width = 270.0
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	lbl_expense = _top_stat_label("ExpenseGroup", "streamline/icon_expense", 1060, 200, TOP_ICON_SIZE * 1.4)
+	lbl_expense = _top_stat_label("ExpenseGroup", "", 1220, 220, TOP_ICON_SIZE, true)
 	lbl_expense.mouse_filter = Control.MOUSE_FILTER_STOP
 	lbl_expense.mouse_entered.connect(_on_expense_hover)
 	lbl_expense.mouse_exited.connect(_hide_hover)
-	lbl_business = _top_stat_label("BusinessGroup", "streamline/icon_business", 1290, 170)
-	lbl_finance = _top_stat_label("FinanceGroup", "streamline/icon_cash", 1490, 170, TOP_ICON_SIZE * 1.4)
+	lbl_business = _top_stat_label("BusinessGroup", "", 1450, 180, TOP_ICON_SIZE, true)
+	lbl_finance = _top_stat_label("FinanceGroup", "", 1640, 180, TOP_ICON_SIZE, true)
 	lbl_val = null
 
 	var gear_btn := top_bar.get_node_or_null("GearButton") as Button
@@ -4232,7 +4727,7 @@ func _build_hud() -> void:
 		rbtn.name = "ResearchButton"
 		hud.add_child(rbtn)
 	rbtn.position = Vector2(28, _toolbar_y())
-	rbtn.size = Vector2(154, TOOLBAR_BUTTON_H)
+	rbtn.size = Vector2(154.0, TOOLBAR_BUTTON_H)
 	rbtn.text = "研发"
 	_apply_bold_pixel_font(rbtn, 22)
 	_style_button(rbtn, Color("6f8793"))
@@ -4249,7 +4744,7 @@ func _build_hud() -> void:
 		book_btn.size = Vector2(130, 64)
 		hud.add_child(book_btn)
 	book_btn.text = "商业模式"
-	_apply_pixel_font(book_btn, 20)
+	_apply_pixel_font(book_btn, 26)
 	# 按钮底色与弹窗一致，作为文件夹标签
 	_style_button(book_btn, PANEL_CREAM)
 	if not book_btn.pressed.is_connected(_toggle_recipe_book):
@@ -4266,7 +4761,7 @@ func _build_hud() -> void:
 		hud.add_child(task_btn)
 	task_btn.position = Vector2(book_panel_right - task_w, INFO_Y - 88)
 	task_btn.text = "公司任务"
-	_apply_pixel_font(task_btn, 20)
+	_apply_pixel_font(task_btn, 26)
 	_style_button(task_btn, Color("2c3e63"))
 	# 深蓝底配浅色字，保证可读
 	var task_fg := Color("f3ead7")
@@ -4360,6 +4855,91 @@ func _build_hud() -> void:
 	_build_hover_panel()
 	_build_zoom_buttons()
 
+func _layout_responsive() -> void:
+	var screen := _screen_size()
+	var extra := screen - Vector2(BASE_W, BASE_H)
+	if city_bg != null:
+		city_bg.size = Vector2i(maxi(1, roundi(screen.x)), maxi(1, roundi(screen.y)))
+
+	if top_bar != null:
+		top_bar.size.x = screen.x
+		var bg := top_bar.get_node_or_null("TopBarBg") as Control
+		var line := top_bar.get_node_or_null("TopBarLine") as Control
+		if bg != null:
+			bg.size.x = screen.x
+		if line != null:
+			line.size.x = screen.x
+		var gear_btn := top_bar.get_node_or_null("GearButton") as Control
+		if gear_btn != null:
+			gear_btn.position.x = screen.x - 76.0
+	_layout_top_right_stats()
+
+	var bottom := _bottom_y()
+	if book_btn != null:
+		book_btn.position.y = bottom - 88.0
+	var task_btn := hud.find_child("CompanyTaskButton", true, false) as Control if hud != null else null
+	if task_btn != null:
+		task_btn.position.y = bottom - 88.0
+	if recipe_panel != null:
+		var panel_h := recipe_panel.size.y
+		recipe_panel.position.y = (bottom - 88.0) - 22.0 - panel_h
+
+	if bank_button != null:
+		bank_button.position.x = screen.x - 182.0
+	_layout_pack_buttons()
+
+	var zoom_x := screen.x - 70.8
+	var zoom_bottom := bottom - 68.8
+	for data in [
+		["ZoomOut", 0.0],
+		["ZoomIn", -72.8],
+		["ViewBack", -145.6],
+		["ViewFront", -218.4],
+	]:
+		var button := hud.get_node_or_null(String(data[0])) as Control if hud != null else null
+		if button != null:
+			button.position = Vector2(zoom_x, zoom_bottom + float(data[1]))
+
+	if gear_menu != null:
+		gear_menu.size = screen
+		var dim := gear_menu.get_child(0) as Control if gear_menu.get_child_count() > 0 else null
+		var panel := gear_menu.get_child(1) as Control if gear_menu.get_child_count() > 1 else null
+		if dim != null:
+			dim.size = screen
+		if panel != null:
+			panel.position = Vector2((screen.x - panel.size.x) * 0.5, 300.0 + extra.y * 0.5)
+	if codex_panel != null:
+		codex_panel.position = Vector2((screen.x - 1320.0) * 0.5 - 110.0, 120.0 + extra.y * 0.5)
+	if settings_panel != null:
+		settings_panel.position = Vector2((screen.x - 460.0) * 0.5, 320.0 + extra.y * 0.5)
+	if research_panel != null:
+		research_panel.size = screen
+	if bottom_info != null:
+		bottom_info.queue_redraw()
+	_recompute_view_zoom()
+	_relayout_all()
+	_relayout_loose_packs()
+
+func _layout_pack_buttons() -> void:
+	if pack_buttons.is_empty() or bank_button == null:
+		return
+	var count := pack_buttons.size()
+	var pack_w := 120.0
+	var old_first_x := 208.0
+	var old_last_x := bank_button.position.x - 26.0 - pack_w
+	var old_step := 0.0 if count <= 1 else (old_last_x - old_first_x) / float(count - 1)
+	var old_border_gap := maxf(0.0, old_step - pack_w)
+	var new_step := pack_w + old_border_gap * 0.9
+	var group_width := pack_w + float(maxi(0, count - 1)) * new_step
+	var first_x := (_screen_size().x - group_width) * 0.5
+	for i in pack_buttons.size():
+		var button := pack_buttons[i].get("btn") as Button
+		if button != null:
+			button.position = Vector2(
+				first_x + new_step * i,
+				_toolbar_y()
+			)
+
 # ---------------------------------------------------------------- zoom buttons
 func _build_zoom_buttons() -> void:
 	# 屏幕右下角：柔软白色立体 + / - 键（+ 在上放大、- 在下缩小）
@@ -4413,7 +4993,7 @@ func _build_zoom_buttons() -> void:
 
 func _zoom_view_center(factor: float) -> void:
 	# 以播放区中心为锚点缩放视角
-	_zoom_view_at(Vector2(BASE_W * 0.5, (HUD_H + INFO_Y) * 0.5), factor)
+	_zoom_view_at(Vector2(_screen_size().x * 0.5, (HUD_H + _bottom_y()) * 0.5), factor)
 
 func _style_zoom_button(b: Button, icon_path: String = "") -> void:
 	# 柔软白色立体：圆角、柔和投影、淡边；图标为灰黑色 svg
@@ -4817,12 +5397,12 @@ func _build_gear_menu() -> void:
 
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _panel_stylebox())
-	panel.position = Vector2(BASE_W * 0.5 - 180, 300)
-	panel.size = Vector2(360, 0)
+	panel.position = Vector2(BASE_W * 0.5 - 210, 300)
+	panel.size = Vector2(420, 0)
 	gear_menu.add_child(panel)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
+	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 
 	var title := Label.new()
@@ -4833,19 +5413,20 @@ func _build_gear_menu() -> void:
 	box.add_child(title)
 
 	var items := [
-		{"t": "继续", "c": Color("aecbe0"), "f": Callable(self, "_gear_continue")},
-		{"t": "重新开始", "c": Color("dcc9a6"), "f": Callable(self, "_gear_restart")},
-		{"t": "图鉴", "c": Color("b9d6c2"), "f": Callable(self, "_gear_codex")},
-		{"t": "商业模式", "c": Color("c2b6d6"), "f": Callable(self, "_gear_recipes")},
-		{"t": "设置", "c": Color("e0c39a"), "f": Callable(self, "_gear_settings")},
-		{"t": "回到主菜单", "c": Color("d8b3b0"), "f": Callable(self, "_gear_main_menu")},
+		{"t": "继续", "f": Callable(self, "_gear_continue")},
+		{"t": "重新开始", "f": Callable(self, "_gear_restart")},
+		{"t": "图鉴", "f": Callable(self, "_gear_codex")},
+		{"t": "商业模式", "f": Callable(self, "_gear_recipes")},
+		{"t": "设置", "f": Callable(self, "_gear_settings")},
+		{"t": "回到主菜单", "f": Callable(self, "_gear_main_menu")},
 	]
 	for it in items:
 		var b := Button.new()
 		b.text = String(it["t"])
-		b.custom_minimum_size = Vector2(0, 56)
-		_apply_pixel_font(b, 24)
-		_style_button(b, it["c"])
+		b.custom_minimum_size = Vector2(0, 58)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		_style_menu_text_button(b, 34)
 		b.pressed.connect(it["f"])
 		box.add_child(b)
 
@@ -5091,8 +5672,9 @@ func _codex_hover(id: String, lbl: Label) -> void:
 		return
 	codex_preview.setup(id)
 	codex_preview.queue_redraw()
-	var px := minf(codex_panel.position.x + codex_panel.size.x + 26, BASE_W - 220)
-	var py := clampf(lbl.global_position.y - 60, 130, BASE_H - 250)
+	var screen := _screen_size()
+	var px := minf(codex_panel.position.x + codex_panel.size.x + 26, screen.x - 220)
+	var py := clampf(lbl.global_position.y - 60, 130, screen.y - 250)
 	codex_preview.position = Vector2(px, py)
 	codex_preview.visible = true
 	codex_preview_bg.position = Vector2(px - 16, py - 16)
@@ -5372,12 +5954,43 @@ func _on_idea_unlocked(idea_id: String) -> void:
 		evaluate_stack(sid)
 	_refresh_recipe_book()
 
+func _stage_pack_name(stage: int) -> String:
+	for pack_value in DataLoader.packs.values():
+		var pack: Dictionary = pack_value
+		if int(pack.get("stage", -1)) != stage:
+			continue
+		var pack_name := String(pack.get("name", GameState.stage_name()))
+		return pack_name.trim_suffix("包")
+	return GameState.stage_name()
+
+func _layout_top_right_stats() -> void:
+	var right_edge := _screen_size().x - 100.0
+	var visible_gap := 10.0
+	for label in [lbl_finance, lbl_business, lbl_expense]:
+		if label == null or not is_instance_valid(label):
+			continue
+		var font: Font = label.get_theme_font("font")
+		var text_width := 0.0
+		if font != null:
+			text_width = font.get_string_size(
+				label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, TOP_LABEL_FONT_SIZE
+			).x
+		var width := ceilf(text_width) + 4.0
+		var group := label.get_parent() as Control
+		if group == null:
+			continue
+		group.position.x = right_edge - width
+		group.size.x = width
+		label.position.x = 0.0
+		label.size.x = width
+		right_edge = group.position.x - visible_gap
+
 func _update_hud() -> void:
 	if lbl_status == null:
 		return
 	_sync_cash_state()
 	lbl_status.text = "阶段「%s」  第%d月%s" % [
-		GameState.stage_name(), GameState.month,
+		_stage_pack_name(GameState.stage), GameState.month,
 		("   [紧急!]" if emergency else "")]
 	if lbl_top_rp:
 		lbl_top_rp.text = "RP %d" % int(GameState.rp)
@@ -5391,6 +6004,7 @@ func _update_hud() -> void:
 		lbl_finance.text = "资金 $%d" % GameState.cash
 	if lbl_expense:
 		lbl_expense.text = "月支出 $%d" % _current_expense()
+	_layout_top_right_stats()
 	if lbl_val:
 		lbl_val.text = "估值 $%d" % GameState.valuation
 	if research_panel and research_panel.visible:
@@ -5400,6 +6014,7 @@ func _update_hud() -> void:
 func _draw() -> void:
 	# 地面 = 3D 城市里的白板（在 CityBackground 渲染）。
 	_draw_battle_decoration()   # 战斗中：中心 VS 装饰（画在卡牌之下）
+	_draw_supply_chains()
 
 	var f := _ui_font()
 	# fixed bank slot, outside the zoomable canvas
@@ -5409,6 +6024,268 @@ func _draw() -> void:
 		draw_string(f, BANK_RECT.position + Vector2(86, 54), "在市场上出售", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("3a352f"))
 
 	# 底部信息栏现绘制在 bottom_info（HUD 层）上，始终置顶，见 _draw_bottom_info()
+
+func _cleanup_supply_chains() -> void:
+	for chain in supply_chains.duplicate():
+		var source = chain.get("source")
+		var target = chain.get("target")
+		if not is_instance_valid(source) or not is_instance_valid(target) \
+				or not stacks.has(source.stack_id) or not stacks.has(target.stack_id):
+			supply_chains.erase(chain)
+
+func _draw_supply_chains() -> void:
+	_cleanup_supply_chains()
+	for chain in supply_chains:
+		var source = chain.get("source")
+		var target = chain.get("target")
+		if source.stack_id == target.stack_id:
+			continue
+		_draw_supply_glow(source.stack_id, false)
+		_draw_supply_glow(target.stack_id, false)
+		var edge_pair := _supply_edge_pair(source.stack_id, target.stack_id)
+		_draw_supply_arrow(
+			edge_pair,
+			true,
+			chain == supply_hover_chain
+		)
+	if supply_drag_source != null and is_instance_valid(supply_drag_source):
+		_draw_supply_glow(supply_drag_source.stack_id, true)
+		var drag_pair := _supply_edge_pair_to_point(supply_drag_source.stack_id, supply_drag_mouse)
+		if supply_drag_target != null and is_instance_valid(supply_drag_target):
+			_draw_supply_glow(supply_drag_target.stack_id, true)
+			drag_pair = _supply_edge_pair(supply_drag_source.stack_id, supply_drag_target.stack_id)
+		_draw_supply_arrow(drag_pair, false, false)
+	for transit in supply_transits:
+		_draw_supply_transit(transit)
+
+func _supply_edge_points(sid: int) -> Array:
+	if not stack_base.has(sid):
+		return []
+	var stack_height := CH
+	if stacks.has(sid):
+		stack_height += maxf(0.0, float(stacks[sid].size() - 1) * CARD_OFFSET)
+	var base: Vector2 = stack_base[sid]
+	return [
+		{"point": _project(base + Vector2(CW * 0.5, 0)), "normal": Vector2.UP},
+		{"point": _project(base + Vector2(CW, stack_height * 0.5)), "normal": Vector2.RIGHT},
+		{"point": _project(base + Vector2(CW * 0.5, stack_height)), "normal": Vector2.DOWN},
+		{"point": _project(base + Vector2(0, stack_height * 0.5)), "normal": Vector2.LEFT},
+	]
+
+func _supply_edge_pair(source_sid: int, target_sid: int) -> Dictionary:
+	var source_edges := _supply_edge_points(source_sid)
+	var target_edges := _supply_edge_points(target_sid)
+	if source_edges.is_empty() or target_edges.is_empty():
+		return {}
+	var best: Dictionary = {}
+	var best_distance := INF
+	for source_edge in source_edges:
+		for target_edge in target_edges:
+			var distance: float = source_edge["point"].distance_squared_to(target_edge["point"])
+			if distance < best_distance:
+				best_distance = distance
+				best = {
+					"start": source_edge["point"],
+					"finish": target_edge["point"],
+					"start_normal": source_edge["normal"],
+					"finish_normal": target_edge["normal"],
+				}
+	return best
+
+func _supply_edge_pair_to_point(source_sid: int, target_point: Vector2) -> Dictionary:
+	var source_edges := _supply_edge_points(source_sid)
+	if source_edges.is_empty():
+		return {}
+	var best: Dictionary = {}
+	var best_distance := INF
+	for source_edge in source_edges:
+		var distance: float = source_edge["point"].distance_squared_to(target_point)
+		if distance < best_distance:
+			best_distance = distance
+			best = {
+				"start": source_edge["point"],
+				"finish": target_point,
+				"start_normal": source_edge["normal"],
+				"finish_normal": -source_edge["normal"],
+			}
+	return best
+
+func _draw_supply_glow(sid: int, active: bool) -> void:
+	if not stack_base.has(sid):
+		return
+	var base: Vector2 = stack_base[sid]
+	var stack_height := CH + maxf(0.0, float(stacks[sid].size() - 1) * CARD_OFFSET)
+	var breath := (sin(supply_flow_phase * 0.035) + 1.0) * 0.5
+	# 光罩紧贴牌堆实际轮廓，不再向外留出“框”的间距。
+	var corners := PackedVector2Array([
+		_project(base),
+		_project(base + Vector2(CW, 0)),
+		_project(base + Vector2(CW, stack_height)),
+		_project(base + Vector2(0, stack_height)),
+	])
+	var loop := corners.duplicate()
+	loop.append(corners[0])
+	var strength := (0.72 if active else 0.48) + breath * (0.20 if active else 0.15)
+	var flicker := 0.84 + sin(supply_flow_phase * 0.19) * 0.10 + sin(supply_flow_phase * 0.41) * 0.06
+	var glow := Color(SUPPLY_BLUE_LIGHT, strength * flicker)
+	draw_colored_polygon(corners, Color(SUPPLY_BLUE, 0.025 + breath * 0.035))
+	draw_polyline(loop, Color(SUPPLY_BLUE, (0.08 + breath * 0.09) * flicker), 6.7 + breath * 1.7, true)
+	draw_polyline(loop, Color(SUPPLY_BLUE_LIGHT, (0.18 + breath * 0.13) * flicker), 3.7 + breath, true)
+	draw_polyline(loop, glow, 1.5 + breath * 0.5, true)
+
+func _draw_supply_arrow(edge_pair: Dictionary, connected: bool, hovered: bool) -> void:
+	if edge_pair.is_empty():
+		return
+	var points := _supply_path(edge_pair)
+	if points.size() < 2:
+		return
+	var end_pt := points[points.size() - 1]
+	var col := Color(SUPPLY_BLUE_LIGHT, 0.94 if connected else 0.76)
+	# 半透明蓝色外辉 + 粗蓝段/透明段交替。负相位让流动方向从上游指向下游。
+	_draw_dashed_polyline(self, points, 22.0, 11.0, Color(col, col.a * 0.18), 16.0, -supply_flow_phase)
+	_draw_dashed_polyline(self, points, 22.0, 11.0, col, 8.0, -supply_flow_phase)
+	var arrow_dir := (end_pt - points[points.size() - 2]).normalized()
+	if arrow_dir.length() < 0.1:
+		arrow_dir = Vector2.RIGHT
+	var side := arrow_dir.orthogonal()
+	var tip := end_pt + arrow_dir * 5.0
+	var head := PackedVector2Array([
+		tip,
+		end_pt - arrow_dir * 13.0 + side * 9.0,
+		end_pt - arrow_dir * 13.0 - side * 9.0,
+	])
+	draw_colored_polygon(head, col)
+	if hovered and connected:
+		_draw_supply_delete_x(_point_along_polyline(points, 0.5), supply_hover_scale)
+
+func _supply_path(edge_pair: Dictionary) -> PackedVector2Array:
+	if edge_pair.is_empty():
+		return PackedVector2Array()
+	var start: Vector2 = edge_pair["start"]
+	var finish: Vector2 = edge_pair["finish"]
+	if start.distance_to(finish) < 8.0:
+		return PackedVector2Array([start, finish])
+	var start_normal: Vector2 = edge_pair.get("start_normal", Vector2.RIGHT)
+	var finish_normal: Vector2 = edge_pair.get("finish_normal", Vector2.LEFT)
+	var stub := minf(28.0, start.distance_to(finish) * 0.22)
+	var start_out := start + start_normal * stub
+	var finish_out := finish + finish_normal * stub
+	var raw := PackedVector2Array([start, start_out])
+	if absf(start_normal.x) > 0.5:
+		var elbow_x := (start_out.x + finish_out.x) * 0.5
+		raw.append(Vector2(elbow_x, start_out.y))
+		raw.append(Vector2(elbow_x, finish_out.y))
+	else:
+		var elbow_y := (start_out.y + finish_out.y) * 0.5
+		raw.append(Vector2(start_out.x, elbow_y))
+		raw.append(Vector2(finish_out.x, elbow_y))
+	raw.append(finish_out)
+	raw.append(finish)
+	return _rounded_supply_path(raw, 18.0)
+
+func _supply_chain_at(display_pt: Vector2):
+	_cleanup_supply_chains()
+	var best = null
+	var best_distance := 15.0
+	for chain in supply_chains:
+		var source = chain.get("source")
+		var target = chain.get("target")
+		if not is_instance_valid(source) or not is_instance_valid(target) \
+				or source.stack_id == target.stack_id:
+			continue
+		var path := _supply_path(_supply_edge_pair(source.stack_id, target.stack_id))
+		var distance := _distance_to_polyline(display_pt, path)
+		if distance < best_distance:
+			best_distance = distance
+			best = chain
+	return best
+
+func _supply_chain_midpoint(chain) -> Vector2:
+	if chain == null:
+		return Vector2.ZERO
+	var source = chain.get("source")
+	var target = chain.get("target")
+	if not is_instance_valid(source) or not is_instance_valid(target):
+		return Vector2.ZERO
+	return _point_along_polyline(
+		_supply_path(_supply_edge_pair(source.stack_id, target.stack_id)),
+		0.5
+	)
+
+func _draw_supply_delete_x(center: Vector2, amount: float) -> void:
+	if amount <= 0.01:
+		return
+	var radius := 15.0 * amount
+	draw_circle(center, radius + 5.0, Color(SUPPLY_BLUE_DARK, 0.22 * amount))
+	draw_circle(center, radius, Color("f3eee4"))
+	draw_arc(center, radius, 0.0, TAU, 32, Color(SUPPLY_BLUE_DARK, 0.95), 3.0, true)
+	var arm := 6.5 * amount
+	draw_line(center + Vector2(-arm, -arm), center + Vector2(arm, arm), SUPPLY_BLUE_DARK, 3.5, true)
+	draw_line(center + Vector2(arm, -arm), center + Vector2(-arm, arm), SUPPLY_BLUE_DARK, 3.5, true)
+
+func _draw_supply_transit(transit: Dictionary) -> void:
+	var source = transit.get("source")
+	var target = transit.get("target")
+	if not is_instance_valid(source) or not is_instance_valid(target) \
+			or not stacks.has(source.stack_id) or not stacks.has(target.stack_id):
+		return
+	var path := _supply_path(_supply_edge_pair(source.stack_id, target.stack_id))
+	var point := _point_along_polyline(path, float(transit.get("progress", 0.0)))
+	draw_circle(point, 13.0, Color(SUPPLY_BLUE, 0.16))
+	draw_circle(point, 8.0, Color(SUPPLY_BLUE_LIGHT, 0.34))
+	draw_circle(point, 4.5, SUPPLY_BLUE_DARK)
+
+func _distance_to_polyline(point: Vector2, points: PackedVector2Array) -> float:
+	var best := INF
+	for i in range(points.size() - 1):
+		var a: Vector2 = points[i]
+		var b: Vector2 = points[i + 1]
+		var segment := b - a
+		var denom := segment.length_squared()
+		var t := 0.0 if denom <= 0.001 else clampf((point - a).dot(segment) / denom, 0.0, 1.0)
+		best = minf(best, point.distance_to(a + segment * t))
+	return best
+
+func _point_along_polyline(points: PackedVector2Array, ratio: float) -> Vector2:
+	if points.is_empty():
+		return Vector2.ZERO
+	var total := 0.0
+	for i in range(points.size() - 1):
+		total += points[i].distance_to(points[i + 1])
+	if total <= 0.001:
+		return points[0]
+	var wanted := clampf(ratio, 0.0, 1.0) * total
+	var walked := 0.0
+	for i in range(points.size() - 1):
+		var length := points[i].distance_to(points[i + 1])
+		if walked + length >= wanted:
+			return points[i].lerp(points[i + 1], (wanted - walked) / maxf(length, 0.001))
+		walked += length
+	return points[points.size() - 1]
+
+func _rounded_supply_path(points: PackedVector2Array, radius: float) -> PackedVector2Array:
+	if points.size() < 3:
+		return points
+	var out := PackedVector2Array([points[0]])
+	for i in range(1, points.size() - 1):
+		var prev: Vector2 = points[i - 1]
+		var corner: Vector2 = points[i]
+		var next: Vector2 = points[i + 1]
+		var in_len := corner.distance_to(prev)
+		var out_len := corner.distance_to(next)
+		if in_len < 0.01 or out_len < 0.01:
+			out.append(corner)
+			continue
+		var r := minf(radius, minf(in_len, out_len) * 0.45)
+		var before := corner + (prev - corner).normalized() * r
+		var after := corner + (next - corner).normalized() * r
+		out.append(before)
+		for step in range(1, 6):
+			var t := float(step) / 5.0
+			var omt := 1.0 - t
+			out.append(before * (omt * omt) + corner * (2.0 * omt * t) + after * (t * t))
+	out.append(points[points.size() - 1])
+	return out
 
 # 伪斜体：对画布做切变后绘制（fallback 字体无真斜体）
 func _round_corners(q: Array, r: float) -> PackedVector2Array:
@@ -5459,7 +6336,7 @@ func _inset_quad(q: Array, d: float) -> Array:
 func _draw_italic(canvas: CanvasItem, f: Font, pos: Vector2, text: String, size: int, col: Color) -> void:
 	var t := Transform2D(Vector2(1, 0), Vector2(-0.22, 1), pos)
 	canvas.draw_set_transform_matrix(t)
-	canvas.draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, BASE_W, size, col)
+	canvas.draw_string(f, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_CENTER, _screen_size().x, size, col)
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 # 底部信息栏：画在 HUD 层的 bottom_info 节点上，z 高于所有卡牌，始终置顶。
@@ -5467,17 +6344,29 @@ func _draw_bottom_info() -> void:
 	if bottom_info == null:
 		return
 	var f := _ui_font()
-	bottom_info.draw_rect(Rect2(0, INFO_Y, BASE_W, BASE_H - INFO_Y), ORG_BG, true)
-	bottom_info.draw_line(Vector2(0, INFO_Y), Vector2(BASE_W, INFO_Y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
-	var info_y := INFO_Y
+	var screen := _screen_size()
+	var info_y := _bottom_y()
+	var info_h := screen.y - info_y
+	var font_size := 29
+	var baseline_y := info_y + (info_h - f.get_height(font_size)) * 0.5 + f.get_ascent(font_size)
+	bottom_info.draw_rect(Rect2(0, info_y, screen.x, info_h), ORG_BG, true)
+	bottom_info.draw_line(Vector2(0, info_y), Vector2(screen.x, info_y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
+	if battle_active and is_instance_valid(battle_rival) and is_instance_valid(battle_employee):
+		var rival_name := String(battle_rival.cdef.get("name", battle_rival.card_id))
+		var employee_name := String(battle_employee.cdef.get("name", battle_employee.card_id))
+		_draw_info_line(bottom_info, f, baseline_y, [
+			{"t": "商战开始！　", "b": true, "i": false},
+			{"t": "%s vs %s" % [rival_name, employee_name], "b": false, "i": false},
+		], Color(0.27, 0.25, 0.22, 0.98), font_size)
+		return
 	# 悬停优先：鼠标移到卡上即出该卡（或堆叠）信息；移开则恢复选中/默认 hint
 	var info_parts := _hover_info_parts()
 	if not info_parts.is_empty():
-		_draw_info_line(bottom_info, f, info_y + 30, info_parts, Color(0.30, 0.27, 0.23, 0.95), 22)
+		_draw_info_line(bottom_info, f, baseline_y, info_parts, Color(0.30, 0.27, 0.23, 0.95), font_size)
 	else:
 		var fresh := toast_t > 0.0
 		var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
-		_draw_italic(bottom_info, f, Vector2(0, info_y + 30), hint_text, 22, hint_col)
+		_draw_italic(bottom_info, f, Vector2(0, baseline_y), hint_text, font_size, hint_col)
 
 func _on_business_model_unlocked(recipe_id: String) -> void:
 	var bm_name := DataLoader.card_name(DataLoader.business_model_card_id(recipe_id))
@@ -5496,6 +6385,8 @@ func _show_founder_bubble(text: String) -> void:
 		
 	if is_instance_valid(founder_bubble):
 		founder_bubble.queue_free()
+
+	_sfx("aha")
 		
 	var bubble := PanelContainer.new()
 	bubble.name = "FounderSpeechBubble"
@@ -5516,11 +6407,14 @@ func _show_founder_bubble(text: String) -> void:
 	sb.content_margin_top = 14
 	sb.content_margin_bottom = 14
 	
-	# 实心偏移层作为气泡厚度，保持正向屏幕显示，不依赖倾斜制造立体感。
-	sb.shadow_color = Color(0.04, 0.04, 0.04, 1.0)
-	sb.shadow_size = 0
-	sb.shadow_offset = Vector2(8, 8)
 	bubble.add_theme_stylebox_override("panel", sb)
+
+	# 主体与尾巴共用一个位于背后的阴影层，避免两块阴影各画各的产生割裂。
+	var bubble_shadow := Control.new()
+	bubble_shadow.name = "BubbleShadow"
+	bubble_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble_shadow.show_behind_parent = true
+	bubble.add_child(bubble_shadow)
 	
 	var label := Label.new()
 	label.name = "BubbleLabel"
@@ -5530,6 +6424,41 @@ func _show_founder_bubble(text: String) -> void:
 	label.add_theme_font_override("font", _ui_font())
 	label.add_theme_font_size_override("font_size", 28)
 	bubble.add_child(label)
+
+	bubble_shadow.draw.connect(func():
+		var f = _founder_on_board()
+		if not is_instance_valid(f):
+			return
+		var depth := Vector2(8.0 / 3.0, 8.0 / 3.0)
+		var mouth := _founder_mouth_screen(f)
+		var local_pivot := mouth - bubble.position
+		var w := bubble.size.x
+		var h := bubble.size.y
+		var base_w := 36.0
+		var lean := 28.0
+		var on_bottom: bool = local_pivot.y > h * 0.5
+		var edge_y: float = (h - 6.0) if on_bottom else 6.0
+		var base_cx: float = clampf(local_pivot.x + lean, 25.0 + base_w * 0.5, w - 25.0 - base_w * 0.5)
+		var pt_a := local_pivot
+		var pt_b := Vector2(base_cx - base_w * 0.5, edge_y)
+		var pt_c := Vector2(base_cx + base_w * 0.5, edge_y)
+		var shadow_color := Color(0.04, 0.04, 0.04, 0.20)
+		var shadow_box := StyleBoxFlat.new()
+		shadow_box.bg_color = shadow_color
+		shadow_box.set_corner_radius_all(22)
+		shadow_box.corner_detail = 8
+		bubble_shadow.draw_style_box(shadow_box, Rect2(depth, bubble.size))
+		# 阴影尾巴只从主体外轮廓开始，避免半透明区域与主体阴影重复叠色。
+		var shadow_edge_y := h if on_bottom else 0.0
+		bubble_shadow.draw_colored_polygon(
+			PackedVector2Array([
+				Vector2(pt_b.x, shadow_edge_y) + depth,
+				pt_a + depth,
+				Vector2(pt_c.x, shadow_edge_y) + depth,
+			]),
+			shadow_color
+		)
+	)
 	
 	# Connect draw signal to draw the comic speech balloon pointing tail
 	bubble.draw.connect(func():
@@ -5553,13 +6482,6 @@ func _show_founder_bubble(text: String) -> void:
 		var base_cx: float = clampf(local_pivot.x + lean, 25.0 + base_w * 0.5, w - 25.0 - base_w * 0.5)
 		var pt_b := Vector2(base_cx - base_w * 0.5, edge_y)
 		var pt_c := Vector2(base_cx + base_w * 0.5, edge_y)
-
-		# 尾巴的右下侧面，与主体厚度方向一致。
-		var depth := Vector2(8, 8)
-		bubble.draw_colored_polygon(
-			PackedVector2Array([pt_b + depth, pt_a + depth, pt_c + depth]),
-			Color(0.04, 0.04, 0.04, 1.0)
-		)
 
 		# Fill the tail (extend the base a few px into the body so it merges seamlessly).
 		var inset: float = 8.0 if on_bottom else -8.0
@@ -5602,22 +6524,28 @@ func _reposition_founder_bubble(bubble: Control, founder: Node2D) -> void:
 
 	var w = bubble.size.x
 	var h = bubble.size.y
+	var shadow := bubble.get_node_or_null("BubbleShadow") as Control
+	if shadow != null:
+		shadow.size = bubble.size
 
 	# Sit the bubble up-and-to-one-side of the mouth so the tail angles back
 	# toward the face. Bias toward the open space horizontally.
 	var x = 0.0
-	if mouth.x > BASE_W * 0.5:
+	var screen := _screen_size()
+	if mouth.x > screen.x * 0.5:
 		x = mouth.x - w * 0.78
 	else:
 		x = mouth.x - w * 0.22
 
-	x = clampf(x, 16.0, BASE_W - w - 16.0)
+	x = clampf(x, 16.0, screen.x - w - 16.0)
 	var y = mouth.y - h - 31.0
-	y = clampf(y, HUD_H + 8.0, BASE_H - h - 8.0)
+	y = clampf(y, HUD_H + 8.0, screen.y - h - 8.0)
 
 	bubble.position = Vector2(x, y)
 
 	# Pivot the pop-in animation from the mouth side for a "spoken" feel.
 	var local_pivot = mouth - bubble.position
 	bubble.pivot_offset = Vector2(clampf(local_pivot.x, 0.0, w), clampf(local_pivot.y, 0.0, h))
+	if shadow != null:
+		shadow.queue_redraw()
 	bubble.queue_redraw()

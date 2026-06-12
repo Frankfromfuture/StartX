@@ -1005,12 +1005,17 @@ func _spend_cash_cards(amount: int, target = null) -> bool:
 		var target_pos: Vector2 = c.position
 		if target is Vector2:
 			target_pos = _project(target)
+		elif target is Control:
+			target_pos = target.global_position + target.size * 0.5
 		elif target is Array and not target.is_empty():
 			var t = target[i % target.size()]
 			if is_instance_valid(t):
-				target_pos = t.position
+				if t is Control:
+					target_pos = t.global_position + t.size * 0.5
+				else:
+					target_pos = t.position
 		elif is_instance_valid(target):
-			target_pos = target.position
+			target_pos = target.global_position + target.size * 0.5 if target is Control else target.position
 			
 		_animate_cash_spend(c, target_pos, 0.05 * i)
 		
@@ -3893,9 +3898,23 @@ func buy_pack(pack_id: String) -> void:
 		return
 	var price := int(pack.get("price", 6))
 	var landing_pos := _pack_landing_below(pack_id)
-	if not _spend_cash_cards(price, landing_pos):
+	
+	# Find the card pack button in the top toolbar
+	var btn: Button = null
+	for row in pack_buttons:
+		if String(row["id"]) == pack_id:
+			btn = row["btn"]
+			break
+			
+	var target_to_fly = btn if btn != null else landing_pos
+	if not _spend_cash_cards(price, target_to_fly):
 		_show_toast("场上现金不足，买不起卡包")
 		return
+		
+	# Wait for the cash cards to fly to the button and disappear before spawning the pack
+	var anim_time := 0.05 * (price - 1) + 0.45 + 0.35
+	await get_tree().create_timer(anim_time).timeout
+	
 	var slots: Array = pack.get("slots", [])
 	var n := GameState.rng.randi_range(int(pack.get("minCards", 3)), int(pack.get("maxCards", 5)))
 	var got := mini(n, slots.size())
@@ -4152,9 +4171,23 @@ func _open_loose_pack(p) -> void:
 		p.opened = true                    # 锁住后续点击
 		_dissolve_pack(p)
 	else:
+		var mat := _pack_material(p)
+		if mat != null:
+			_bake_pack_async(p, mat)
 		var tw := create_tween()           # 弹一下反馈
 		tw.tween_property(p, "scale", Vector2(1.14, 0.86) * PACK_SCALE * view_zoom, 0.08).set_trans(Tween.TRANS_QUAD)
 		tw.tween_property(p, "scale", Vector2.ONE * PACK_SCALE * view_zoom, 0.14).set_trans(Tween.TRANS_BACK)
+
+func _pack_material(p) -> StandardMaterial3D:
+	if p == null or not is_instance_valid(p) or p.face3d == null or not is_instance_valid(p.face3d):
+		return null
+	var cardroot = p.face3d.get_child(0) if p.face3d.get_child_count() > 0 else null
+	if cardroot == null:
+		return null
+	for child in cardroot.get_children():
+		if child is MeshInstance3D and child.mesh is QuadMesh and child.material_override is StandardMaterial3D:
+			return child.material_override as StandardMaterial3D
+	return null
 
 func _dissolve_pack(p) -> void:
 	if not is_instance_valid(p):

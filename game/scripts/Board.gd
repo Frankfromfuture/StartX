@@ -1040,11 +1040,10 @@ func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
 			_place_face3d_from_display(c, pos, pos, 0, false)
 	, start_pos, target_pos, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
-	# 到达生产牌或发薪牌上后，闪烁金色光芒并消散消失
+	# 到达生产牌或发薪牌上后，渐变消散消失
 	tw.chain().tween_callback(func():
 		if not is_instance_valid(c):
 			return
-		_sparkle_burst(target_pos)
 		var mesh := _face3d_mesh(c)
 		var mat = mesh.material_override if mesh != null else null
 		
@@ -1054,49 +1053,17 @@ func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
 		if mat is StandardMaterial3D:
 			# 启用 Alpha 通道支持，以便做平滑透明度渐变
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			# 3D 渐变：染成 HDR 高亮金光，同时透明度归零
-			flash_tw.tween_property(mat, "albedo_color", Color(3.0, 2.5, 0.4, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			# 3D 渐变：透明度归零，不改变颜色也不变亮
+			flash_tw.tween_property(mat, "albedo_color", Color(1.0, 1.0, 1.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		
-		# 2D 渐变：染成亮金光，同时透明度归零
-		flash_tw.tween_property(c, "modulate", Color(3.0, 2.5, 0.4, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		# 2D 渐变：透明度归零，不改变颜色也不变亮
+		flash_tw.tween_property(c, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		
 		flash_tw.chain().tween_callback(func():
 			if is_instance_valid(c):
 				c.queue_free()
 		)
 	)
-
-func _sparkle_burst(pos: Vector2) -> void:
-	var p := CPUParticles2D.new()
-	add_child(p)
-	p.position = pos
-	p.z_index = 2500
-	p.texture = load("res://assets/star.svg")
-	p.emitting = true
-	p.one_shot = true
-	p.explosiveness = 0.85
-	p.amount = 8
-	p.lifetime = 0.6
-	p.direction = Vector2.UP
-	p.spread = 180.0
-	p.initial_velocity_min = 50.0
-	p.initial_velocity_max = 120.0
-	p.gravity = Vector2(0, 80)
-	p.scale_amount_min = 0.04
-	p.scale_amount_max = 0.12
-	# Speed scale and damping for smooth movement
-	p.damping_min = 10.0
-	p.damping_max = 20.0
-	# Color gradient for fading out
-	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, 0.7, 1.0])
-	gradient.colors = PackedColorArray([
-		Color("fff9a6"), # Light gold
-		Color("ffe66d"), # Rich gold
-		Color("ffe66d", 0.0) # Fade out
-	])
-	p.color_ramp = gradient
-	get_tree().create_timer(1.0).timeout.connect(p.queue_free)
 
 func _bake_face_async(c, mat) -> void:
 	if face_baker == null or c == null or not is_instance_valid(c):

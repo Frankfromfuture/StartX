@@ -511,9 +511,9 @@ func _jit(amount: float) -> Vector2:
 	return Vector2(GameState.rng.randf_range(-amount, amount), GameState.rng.randf_range(-amount, amount))
 
 func _spawn_start_cards() -> void:
-	# 开局只有一个车库包（4 张牌，含创始人）；点一下跳一张，点完消失
+	# 开局只有一个车库包（6 张牌，含创始人）；点一下跳一张，点完消失
 	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
-	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office"]
+	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
 	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
 	var center_tl := _unproject(_screen_center() \
 		- Vector2(PACK_W, PACK_H) * 0.5 * view_zoom)
@@ -1093,20 +1093,75 @@ func _cash_card_count() -> int:
 func _sync_cash_state() -> void:
 	GameState.cash = _cash_card_count()
 
-func _spend_cash_cards(amount: int) -> bool:
+func _spend_cash_cards(amount: int, target = null) -> bool:
 	_sync_cash_state()
 	if GameState.cash < amount:
 		return false
 	var need := amount
+	var cash_to_animate: Array = []
 	for c in all_cards.duplicate():
 		if need <= 0:
 			break
 		if c.card_id != "cash":
 			continue
-		destroy_card(c)
+		# 从栈和所有卡牌列表中立即移除，完成逻辑上的扣减
+		var sid := c.stack_id
+		if stacks.has(sid):
+			stacks[sid].erase(c)
+			if stacks[sid].is_empty():
+				stacks.erase(sid)
+				stack_base.erase(sid)
+				productions.erase(sid)
+			else:
+				relayout(sid)
+		all_cards.erase(c)
+		cash_to_animate.append(c)
 		need -= 1
+		
+	# 播放扣除现金的飞入和消散动画
+	for i in cash_to_animate.size():
+		var c = cash_to_animate[i]
+		var target_pos := c.position
+		if target is Vector2:
+			target_pos = _project(target)
+		elif target is Array and not target.is_empty():
+			var t = target[i % target.size()]
+			if is_instance_valid(t):
+				target_pos = t.position
+		elif is_instance_valid(target):
+			target_pos = target.position
+			
+		_animate_cash_spend(c, target_pos, 0.05 * i)
+		
 	_sync_cash_state()
 	return true
+
+func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
+	if not is_instance_valid(c):
+		return
+	var start_pos := c.position
+	c.z_index = 2400
+	var tw := create_tween()
+	tw.set_parallel(true)
+	# 飞入动画开始时播放 70% 音量的 cash_down 音效
+	tw.tween_callback(func():
+		_sfx("cash_down", 0.7)
+	).set_delay(delay)
+	# 渐变 2D 和 3D 的位置
+	tw.tween_method(func(pos: Vector2):
+		if is_instance_valid(c):
+			c.position = pos
+			_place_face3d_from_display(c, pos, pos, 0, false)
+	, start_pos, target_pos, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# 渐变缩小卡片 (2D & 3D)
+	tw.tween_property(c, "scale", c.scale * 0.3, 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if c.face3d != null and is_instance_valid(c.face3d):
+		tw.tween_property(c.face3d, "scale", Vector3(0.3, 0.3, 0.3), 0.4).set_delay(delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# 动画结束销毁卡牌
+	tw.chain().tween_callback(func():
+		if is_instance_valid(c):
+			c.queue_free()
+	)
 
 func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null) -> void:
 	if amount <= 0:
@@ -1517,10 +1572,10 @@ func _begin_drag(wp: Vector2, picked: Node2D = null) -> void:
 	_sfx("grab")                     # 拿起卡音效
 
 # 播放音效（用节点路径取 Sfx 自动加载，避免解析期对自动加载标识符的依赖）
-func _sfx(sfx_name: String) -> void:
+func _sfx(sfx_name: String, volume_ratio: float = 1.0) -> void:
 	var s := get_node_or_null("/root/Sfx")
 	if s != null:
-		s.play(sfx_name)
+		s.play(sfx_name, volume_ratio)
 
 # 按卡牌类型播放「放下」音效
 func _play_drop_sound(c) -> void:
@@ -2970,7 +3025,7 @@ func _can_afford_product_cost(sid: int, recipe: Dictionary) -> bool:
 	var cost := _product_output_cost(sid, recipe)
 	_sync_cash_state()
 	if cost > GameState.cash:
-		_show_toast("资金不足，无法生产产品")
+		_show_toast("无足够现金，生产失败")
 		return false
 	return true
 
@@ -2978,11 +3033,12 @@ func _charge_product_cost_on_complete(sid: int, recipe: Dictionary) -> bool:
 	var cost := _product_output_cost(sid, recipe)
 	if cost <= 0:
 		return true
-	if not _spend_cash_cards(cost):
-		_show_toast("资金不足，产品未完成")
+	var base_card = null
+	if stacks.has(sid) and not stacks[sid].is_empty():
+		base_card = stacks[sid][0]
+	if not _spend_cash_cards(cost, base_card):
+		_show_toast("无足够现金，生产失败")
 		return false
-	var base: Vector2 = stack_base.get(sid, Vector2(300, 360))
-	_float_cost(cost, base + Vector2(CW * 0.5, -34.0))
 	return true
 
 func _product_output_cost(sid: int, recipe: Dictionary) -> int:
@@ -3766,19 +3822,24 @@ func _update_cursor() -> void:
 # ---------------------------------------------------------------- month
 func _settle_month() -> void:
 	var payroll := 0
+	var employees_to_pay := []
 	for c in all_cards:
-		payroll += int(c.cdef.get("salary", 0))
-	var payroll_short := payroll > GameState.cash
+		var sal := int(c.cdef.get("salary", 0))
+		if sal > 0:
+			payroll += sal
+			employees_to_pay.append(c)
+			
+	if payroll > GameState.cash:
+		_trigger_game_over()
+		return
+		
 	if payroll > 0:
-		_spend_cash_cards(mini(payroll, GameState.cash))
+		_spend_cash_cards(payroll, employees_to_pay)
+		
 	_float_text("发薪 -$" + str(payroll), Vector2(880, 300), Color("ff8c8c"))
 	GameState.advance_month()
 	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
 	_sync_cash_state()
-	if payroll_short:
-		emergency = true
-		emergency_t = float(DataLoader.balance.get("emergency_seconds", 30.0))
-		_show_toast("现金不足以发薪！30秒内卖卡补足，否则破产")
 
 func _trigger_game_over() -> void:
 	game_over = true
@@ -3796,7 +3857,8 @@ func buy_pack(pack_id: String) -> void:
 		_show_toast("该卡包内容尚未开放")
 		return
 	var price := int(pack.get("price", 6))
-	if not _spend_cash_cards(price):
+	var landing_pos := _pack_landing_below(pack_id)
+	if not _spend_cash_cards(price, landing_pos):
 		_show_toast("场上现金不足，买不起卡包")
 		return
 	var slots: Array = pack.get("slots", [])

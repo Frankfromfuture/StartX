@@ -36,12 +36,19 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 	_hook_buttons(get_tree().root)
 
-func play(sfx_name: String) -> void:
+func play(sfx_name: String, volume_ratio: float = 1.0) -> void:
 	if not _streams.has(sfx_name) or _players.is_empty():
 		return
 	var p: AudioStreamPlayer = _players[_i]
 	_i = (_i + 1) % _players.size()
 	p.stream = _streams[sfx_name]
+	var base_vol := Settings.sfx_volume_db()
+	if volume_ratio <= 0.0:
+		p.volume_db = -80.0
+	elif volume_ratio < 1.0:
+		p.volume_db = base_vol + 20.0 * (log(volume_ratio) / log(10.0))
+	else:
+		p.volume_db = base_vol
 	p.play()
 
 func _on_node_added(n: Node) -> void:

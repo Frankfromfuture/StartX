@@ -651,6 +651,8 @@ func _ensure_face3d(c) -> void:
 	cardroot.add_child(m)
 	if c.is_cash or c.ctype == "business_model":
 		_add_glass_coat(cardroot, CARD3D_W, CARD3D_H, 0.004)   # 现金 / 商业模式：玻璃反光
+	if c.card_id == "founder":
+		_add_holo_coat(cardroot, CARD3D_W, CARD3D_H, 0.004)   # 创始人：彩色镭射效果
 	if c.is_new_discovery:
 		_add_new_card_badge(c, cardroot)
 	# 拿起时的 solid 同形阴影：贴白板的浅色圆角方块（与 cardroot 同级，不受 pop 缩放影响）
@@ -877,6 +879,63 @@ func _add_glass_coat(parent: Node3D, w: float, h: float, y: float) -> void:
 	g.position = Vector3(0, y, 0)
 	var gm := ShaderMaterial.new()
 	gm.shader = _glass_coat_shader()
+	g.material_override = gm
+	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(g)
+
+# 彩色镭射反光罩：覆在卡面上的一层加色彩虹镭射效果（用于创始人卡牌）。
+# 会随视角倾斜滑动，并伴随微小的金属闪光颗粒感。
+var _holo_shader: Shader = null
+func _holo_coat_shader() -> Shader:
+	if _holo_shader != null:
+		return _holo_shader
+	_holo_shader = Shader.new()
+	_holo_shader.code = """
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, depth_test_disabled;
+
+uniform float intensity = 0.16;
+
+vec3 rainbow(float t) {
+	return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
+}
+
+void fragment() {
+	// 视角偏移，倾斜卡片时发生滑动
+	float view_offset = VIEW.x * 0.75 + VIEW.y * 0.75;
+	
+	// 彩虹基础坐标
+	float t = UV.x * 0.5 + UV.y * 0.5 + view_offset * 0.5;
+	vec3 base_rainbow = rainbow(t);
+	
+	// 高频闪烁亮片效果（模拟金属镭射微粒）
+	float sparkle1 = sin(UV.x * 150.0) * sin(UV.y * 150.0);
+	float sparkle2 = sin(UV.x * 80.0 - VIEW.x * 30.0) * sin(UV.y * 80.0 - VIEW.y * 30.0);
+	float sparkle = clamp((sparkle1 * sparkle2) * 4.0 - 2.8, 0.0, 1.0);
+	
+	// 双层彩虹条纹交叉，更有立体镭射质感
+	float t2 = (1.0 - UV.x) * 0.4 + UV.y * 0.4 - view_offset * 0.3;
+	vec3 cross_rainbow = rainbow(t2);
+	
+	// 混合两组彩虹以及亮片
+	vec3 final_color = mix(base_rainbow, cross_rainbow, 0.4) * intensity;
+	final_color += vec3(sparkle * 0.12);
+	
+	ALBEDO = final_color;
+	ALPHA = 1.0;
+}
+"""
+	return _holo_shader
+
+func _add_holo_coat(parent: Node3D, w: float, h: float, y: float) -> void:
+	var g := MeshInstance3D.new()
+	var qm := QuadMesh.new()
+	qm.size = Vector2(w, h)
+	g.mesh = qm
+	g.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	g.position = Vector3(0, y, 0)
+	var gm := ShaderMaterial.new()
+	gm.shader = _holo_coat_shader()
 	g.material_override = gm
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(g)

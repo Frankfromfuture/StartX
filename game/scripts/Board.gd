@@ -901,6 +901,11 @@ vec3 rainbow(float t) {
 }
 
 void fragment() {
+	// 边缘和标题栏遮罩 (边缘 8px -> 0.044, 标题栏 43px -> 0.239)
+	float mask_x = smoothstep(0.044, 0.046, UV.x) * (1.0 - smoothstep(0.954, 0.956, UV.x));
+	float mask_y = smoothstep(0.238, 0.240, UV.y) * (1.0 - smoothstep(0.954, 0.956, UV.y));
+	float mask = mask_x * mask_y;
+
 	// 视角偏移，倾斜卡片时发生滑动
 	float view_offset = VIEW.x * 0.75 + VIEW.y * 0.75;
 	
@@ -921,7 +926,7 @@ void fragment() {
 	vec3 final_color = mix(base_rainbow, cross_rainbow, 0.4) * intensity;
 	final_color += vec3(sparkle * 0.3);
 	
-	ALBEDO = final_color;
+	ALBEDO = final_color * mask;
 	ALPHA = 1.0;
 }
 """

@@ -1105,7 +1105,7 @@ func _spend_cash_cards(amount: int, target = null) -> bool:
 		if c.card_id != "cash":
 			continue
 		# 从栈和所有卡牌列表中立即移除，完成逻辑上的扣减
-		var sid := c.stack_id
+		var sid: int = c.stack_id
 		if stacks.has(sid):
 			stacks[sid].erase(c)
 			if stacks[sid].is_empty():

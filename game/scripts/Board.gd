@@ -97,6 +97,7 @@ const DEFAULT_HINT := "「公司的地板光亮如新，有可能是创始人晚
 var hud: CanvasLayer
 var top_bar: Control
 var bottom_info: Node2D     # 底部信息栏（HUD 层绘制，始终盖在卡牌之上）
+var book_tab_shadow: Node2D # 商业模式整体阴影背景
 var book_tab_seam: Node2D   # 商业模式弹窗与按钮的「文件夹标签」融合缝盖
 var book_btn: Button        # 商业模式按钮（作为弹窗的文件夹标签）
 const PANEL_CREAM := Color(0.98, 0.95, 0.89, 0.97)   # 弹窗/标签共用奶白底
@@ -1503,9 +1504,6 @@ func _end_drag(_wp: Vector2) -> void:
 	elif is_fixed(bottom):
 		target_zone = bottom.zone
 	else:
-		var dropped := region_of(center)
-		if bottom.zone != "" and dropped != bottom.zone:
-			_show_toast("资源不能跨区，只有人能搬运")
 		target_zone = bottom.zone if bottom.zone != "" else _zone_for_center(center)
 
 	stack_base[sid] = clamp_to_zone(stack_base[sid], target_zone)
@@ -4933,6 +4931,10 @@ func _layout_responsive() -> void:
 		research_panel.size = screen
 	if bottom_info != null:
 		bottom_info.queue_redraw()
+	if book_tab_shadow != null:
+		book_tab_shadow.queue_redraw()
+	if book_tab_seam != null:
+		book_tab_seam.queue_redraw()
 	_recompute_view_zoom()
 	_relayout_all()
 	_relayout_loose_packs()
@@ -5230,6 +5232,13 @@ func _show_toast(txt: String) -> void:
 
 # ---------------------------------------------------------------- recipe book
 func _build_recipe_book_panel() -> void:
+	# 阴影层：添加在最底层以绘制整体阴影
+	book_tab_shadow = Node2D.new()
+	book_tab_shadow.name = "BookTabShadow"
+	book_tab_shadow.visible = false
+	hud.add_child(book_tab_shadow)
+	book_tab_shadow.draw.connect(_draw_book_tab_shadow)
+
 	recipe_panel = PanelContainer.new()
 	# 弹窗坐落在「商业模式」按钮上方、左对齐；底边内缩（recessed）到按钮顶边之上，
 	# 由 book_tab_seam 用圆弧把内缩的底边自然下接到按钮（文件夹标签效果）。
@@ -5248,9 +5257,9 @@ func _build_recipe_book_panel() -> void:
 	psb.border_color = INK
 	psb.set_border_width_all(4)        # 与按钮边框同粗
 	psb.border_width_bottom = 0        # 底边交给 seam 画
-	# 与按钮一致的投影
+	# 弹窗自身的默认 shadow size 设为 0，因为其阴影由底层的 book_tab_shadow 统一绘制
 	psb.shadow_color = Color(0, 0, 0, 0.28)
-	psb.shadow_size = 4
+	psb.shadow_size = 0
 	psb.shadow_offset = Vector2(4, 5)
 	psb.content_margin_left = 18
 	psb.content_margin_right = 18
@@ -5306,6 +5315,62 @@ func _build_recipe_book_panel() -> void:
 
 # 弹窗（文件夹）+ 按钮（标签）整体只画一条连续墨线：
 # 弹窗内缩底边 → 圆弧下接 → 标签右/底/左边 → 接回弹窗左边框。线段一体化，无接缝。
+func _draw_book_tab_shadow() -> void:
+	if book_tab_shadow == null or recipe_panel == null or not recipe_panel.visible:
+		return
+	
+	var pl := 30.0                   # 弹窗/标签矩形左边
+	var pr := 340.0                  # 弹窗矩形右边
+	var tr := 160.0                  # 标签（按钮）矩形右边
+	var tab_top := _bottom_y() - 88.0     # 按钮顶边
+	var tab_bot := _bottom_y() - 24.0     # 按钮底边（position.y + 高 64）
+	var y_recess := tab_top - 22.0   # 弹窗内缩后的底边
+	var pt := y_recess - recipe_panel.size.y
+	var r := 16.0                    # 连接圆弧半径
+	
+	var poly := PackedVector2Array()
+	# Top-left rounded corner (radius 8)
+	poly.append(Vector2(pl + 8.0, pt))
+	poly.append(Vector2(pl + 2.3, pt + 2.3))
+	poly.append(Vector2(pl, pt + 8.0))
+	
+	# Left edge down to bottom of button
+	poly.append(Vector2(pl, tab_bot))
+	
+	# Bottom of button
+	poly.append(Vector2(tr, tab_bot))
+	
+	# Right of button up to recess
+	poly.append(Vector2(tr, y_recess + r))
+	
+	# Arc from (tr, y_recess + r) to (tr + r, y_recess)
+	var cx := tr + r
+	var cy := y_recess + r
+	var steps := 12
+	for i in steps + 1:
+		var ang := deg_to_rad(180.0 + 90.0 * float(i) / float(steps)) # 180° -> 270°
+		poly.append(Vector2(cx + r * cos(ang), cy + r * sin(ang)))
+		
+	# Bottom of panel (recessed part)
+	poly.append(Vector2(pr, y_recess))
+	
+	# Right edge of panel up to top-right corner
+	poly.append(Vector2(pr, pt + 8.0))
+	
+	# Top-right rounded corner (radius 8)
+	poly.append(Vector2(pr - 2.3, pt + 2.3))
+	poly.append(Vector2(pr - 8.0, pt))
+	
+	# Draw the unified shadow offset by (4, 5)
+	var shadow_offset := Vector2(4, 5)
+	var shadow_poly := PackedVector2Array()
+	for p in poly:
+		shadow_poly.append(p + shadow_offset)
+	
+	book_tab_shadow.draw_colored_polygon(shadow_poly, Color(0, 0, 0, 0.28))
+
+# 弹窗（文件夹）+ 按钮（标签）整体只画一条连续墨线：
+# 弹窗内缩底边 → 圆弧下接 → 标签右/底/左边 → 接回弹窗左边框。线段一体化，无接缝。
 func _draw_book_tab_seam() -> void:
 	if book_tab_seam == null or recipe_panel == null or not recipe_panel.visible:
 		return
@@ -5317,8 +5382,8 @@ func _draw_book_tab_seam() -> void:
 	var pl_line := pl + ins          # 左框线中心（= 按钮左框线，对齐）
 	var pr_line := pr - ins          # 右框线中心
 	var tr_line := tr - ins          # 标签右框线中心
-	var tab_top := INFO_Y - 88.0     # 按钮顶边
-	var tab_bot := INFO_Y - 24.0     # 按钮底边（position.y 928 + 高 64）
+	var tab_top := _bottom_y() - 88.0     # 按钮顶边
+	var tab_bot := _bottom_y() - 24.0     # 按钮底边（position.y + 高 64）
 	var y_recess := tab_top - 22.0   # 弹窗内缩后的底边（与 _build_recipe_book_panel 一致）
 	var r := 16.0                    # 连接圆弧半径
 	var up := 8.0                    # 向上叠进弹窗左右边框，消除接缝缺口
@@ -5352,13 +5417,14 @@ func _draw_book_tab_seam() -> void:
 	path.append(Vector2(tr_line, tab_bot))         # 标签右边
 	path.append(Vector2(pl_line, tab_bot))         # 标签底边
 	path.append(Vector2(pl_line, y_recess - up))   # 标签/弹窗左边，叠进弹窗左边框
-	book_tab_seam.draw_polyline(path, INK, w, true)
+	book_tab_seam.draw_polyline(path, INK, w, false)
 
 # 打开/合上「商业模式」按钮自身边框：打开时整框关闭，轮廓交由 seam 一体绘制
 func _set_book_tab_open(open: bool) -> void:
 	if book_btn == null:
 		return
 	var bw := 0 if open else 4
+	var ss := 0 if open else 4
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var sb := book_btn.get_theme_stylebox(state) as StyleBoxFlat
 		if sb != null:
@@ -5366,12 +5432,16 @@ func _set_book_tab_open(open: bool) -> void:
 			sb.border_width_right = bw
 			sb.border_width_top = bw
 			sb.border_width_bottom = bw
+			sb.shadow_size = ss
 
 func _toggle_recipe_book() -> void:
 	if recipe_panel == null:
 		return
 	recipe_panel.visible = not recipe_panel.visible
 	_set_book_tab_open(recipe_panel.visible)
+	if book_tab_shadow != null:
+		book_tab_shadow.visible = recipe_panel.visible
+		book_tab_shadow.queue_redraw()
 	if book_tab_seam != null:
 		book_tab_seam.visible = recipe_panel.visible
 		book_tab_seam.queue_redraw()

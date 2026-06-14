@@ -12,7 +12,7 @@ const TITLE_FONT_SIZE := 21
 const CARD_RADIUS := 9.0
 
 var card_id: String = ""
-var ctype: String = "resource"
+var ctype: String = "tool"
 var cdef: Dictionary = {}
 
 var stack_id: int = -1
@@ -53,7 +53,7 @@ static var _art_cache: Dictionary = {}
 const INK := Color("141414")     # 黑描边 / 分割线 / 图标 / 数字圈
 const BODY := Color("faf5ec")    # 奶白卡身
 
-# 游戏分类 -> 莫兰迪淡彩标题栏色
+# 游戏分类 -> 莫兰迪标题栏色
 func _header_color() -> Color:
 	if card_id == "founder":
 		return Color("ff9999")          # 创始人：淡红色标题栏
@@ -61,18 +61,15 @@ func _header_color() -> Color:
 		return Color("c8910f")          # 现金：饱满金（整体加深）
 	if card_id == "revenue":
 		return Color("ecd590")          # 金币 / 回款：黄
-	if _is_black_series_card():
-		return Color("2b2926")          # 第一包场景牌：创始人式黑灰系
-	if _is_blue_series_card():
-		return Color("8eb8d8")          # 产品牌：蓝色系
 	if ctype == "business_model":
 		return Color("4c3478")
 	match ctype:
-		"employee":      return Color("efe7d6")   # 人物：米白
-		"resource_node": return Color("aebfcf")   # 资源（节点）：灰蓝
-		"resource", "customer", "product":
-			return Color("aeccb0")                 # 资源 / 客户 / 产品：绿色
-		"facility":      return Color("e6b8c2")   # 建筑：粉红
+		"facility":      return Color("35383a")   # 设施：深灰黑
+		"employee":      return Color("a96f72")   # 员工：莫兰迪红
+		"customer":      return Color("506f61")   # 客户：莫兰迪深绿
+		"resource":      return Color("8d9290")   # 资源：浅灰黑
+		"product":       return Color("c58a5c")   # 产品：莫兰迪橙
+		"tool":          return Color("536b7a")   # 工具：莫兰迪深蓝
 		"risk":          return Color("d99a90")   # 怪物 / 风险：红
 		"rival":         return Color("75383a")   # 对手：深红（略加饱和、整体加深）
 		"idea":          return Color("2a2622")   # 想法 / 卡包：黑
@@ -85,24 +82,14 @@ func body_color() -> Color:
 	var bg := head.lightened(0.28)
 	if card_id == "founder":
 		bg = Color("ffe5e5")
-	if _is_black_series_card():
-		bg = Color("d5d1c9")
-	if _is_blue_series_card():
-		bg = Color("d4e5f1")
 	if ctype == "business_model":
 		bg = Color("6b4ca0")
 	return bg
 
-func _is_black_series_card() -> bool:
-	return card_id in ["office", "p1_office", "university", "p1_university", "p1_wholesale"]
-
-func _is_blue_series_card() -> bool:
-	return card_id in ["product", "p1_rawprod", "p1_package"]
-
 func setup(id: String) -> void:
 	card_id = id
 	cdef = DataLoader.card_def(id)
-	ctype = String(cdef.get("type", "resource"))
+	ctype = String(cdef.get("type", "tool"))
 	# 试用次数：支持区间（maxUsesMin/Max）→ 每张实例随机取；否则用固定 maxUses
 	if cdef.has("maxUsesMin"):
 		uses_left = GameState.rng.randi_range(int(cdef["maxUsesMin"]), int(cdef["maxUsesMax"]))
@@ -119,19 +106,13 @@ func setup(id: String) -> void:
 
 func _draw() -> void:
 	var head := _header_color()
-	var dark_head := (ctype == "idea") or ctype == "business_model" or ctype == "rival" or _is_black_series_card()   # 深色底卡用反白文字
+	var dark_head := head.get_luminance() < 0.48             # 深色底卡用反白文字
 	var title_fg := Color("f7f2e8") if dark_head else INK   # 深色标题栏用浅字
 	var bg := head.lightened(0.28)                          # 卡身 = header 浅一号，但整体更沉
 	var ring := head.lightened(0.48)                        # 中间圆圈 = 更浅一号
 	if card_id == "founder":
 		bg = Color("ffe5e5")
 		ring = Color("fff2f2")
-	if _is_black_series_card():
-		bg = Color("d5d1c9")
-		ring = Color("ece9e3")
-	if _is_blue_series_card():
-		bg = Color("d4e5f1")
-		ring = Color("e8f2f8")
 	if ctype == "business_model":
 		bg = Color("6b4ca0")
 		ring = Color("8f75bd")
@@ -263,12 +244,12 @@ func _draw_dither_gloss(_picked: bool) -> void:
 	var salary := int(cdef.get("salary", 0))
 	if salary > 0:
 		_draw_salary_badge(Vector2(28, H - 29), str(salary))
-	elif ctype == "customer" or ctype == "product":
+	elif ctype in ["tool", "customer", "product"]:
 		var value := int(cdef.get("value", 0))
 		if value > 0:
 			_draw_value_badge(Vector2(28, H - 29), str(value))
 	var cap := int(cdef.get("capacity", 0))
-	if cap > 0:
+	if cap > 0 and ctype not in ["tool", "product"]:
 		_draw_capacity_badge(Vector2(W - 30, H - 29), str(cap))
 
 	# 工作条：画在被生产的非人物卡标题栏正上方。生产被人物离开中断时，
@@ -289,7 +270,7 @@ func _draw_dither_gloss(_picked: bool) -> void:
 func _draw_emblem(ring: Color) -> void:
 	var col := INK                    # 剪影统一黑色线稿
 	var cx := W * 0.5
-	var cy := HEADER + (H - HEADER) * 0.44
+	var cy := HEADER + (H - HEADER) * 0.5
 	var u := W / 12.0 * 0.9
 	# 更浅圆形底纹
 	draw_circle(Vector2(cx, cy), W * 0.252, ring)
@@ -339,11 +320,11 @@ func _draw_emblem(ring: Color) -> void:
 				Vector2(cx - 2.4 * u, cy + 2.4 * u), Vector2(cx - 1.7 * u, cy - 0.1 * u),
 				Vector2(cx + 1.7 * u, cy - 0.1 * u), Vector2(cx + 2.4 * u, cy + 2.4 * u)])
 			draw_colored_polygon(body, col)
-		"resource_node":
+		"resource":
 			draw_rect(Rect2(cx - 2.7 * u, cy + 0.9 * u, 5.4 * u, 1.4 * u), col)
 			draw_rect(Rect2(cx - 1.9 * u, cy - 0.6 * u, 3.8 * u, 1.4 * u), col)
 			draw_rect(Rect2(cx - 1.1 * u, cy - 2.1 * u, 2.2 * u, 1.4 * u), col)
-		"resource", "customer", "product":
+		"cash", "tool", "customer", "product":
 			draw_rect(Rect2(cx - 2.4 * u, cy - 2.4 * u, 4.8 * u, 4.8 * u), col)
 			draw_rect(Rect2(cx - 2.4 * u, cy - 0.35 * u, 4.8 * u, 0.7 * u), ring)
 			draw_rect(Rect2(cx - 0.35 * u, cy - 2.4 * u, 0.7 * u, 4.8 * u), ring)
@@ -372,7 +353,7 @@ func _draw_emblem(ring: Color) -> void:
 func _draw_business_model_body() -> void:
 	var icon := _idea_icon()
 	var cx := W * 0.5
-	var cy := HEADER + (H - HEADER) * 0.44
+	var cy := HEADER + (H - HEADER) * 0.5
 	draw_circle(Vector2(cx, cy), W * 0.252, Color("8f75bd"))
 	if icon != null:
 		var s := W * 0.46

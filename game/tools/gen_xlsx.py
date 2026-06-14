@@ -24,13 +24,13 @@ def load(name):
 # ---- build sheet rows (list of rows; each cell is str or number) ----
 def cards_rows():
     d = load("cards.json")
-    head = ["id", "name", "type", "workTags", "salary", "capacity", "value", "maxUses", "hp", "attack", "workRequired", "cost"]
+    head = ["id", "name", "type", "workTags", "salary", "capacity", "spaceCapacity", "value", "maxUses", "hp", "attack", "workRequired", "cost"]
     rows = [head]
     for cid, c in d.items():
         rows.append([
             cid, c.get("name", ""), c.get("type", ""),
             ",".join(c.get("workTags", [])),
-            c.get("salary", 0), c.get("capacity", 0), c.get("value", 0),
+            c.get("salary", 0), c.get("capacity", 0), c.get("spaceCapacity", 0), c.get("value", 0),
             c.get("maxUses", "") if "maxUses" in c else "",
             c.get("hp", "") if "hp" in c else "",
             c.get("attack", "") if "attack" in c else "",
@@ -48,7 +48,7 @@ def recipes_rows():
     output_head = []
     for i in range(1, 6):
         output_head += ["output%d" % i, "output%dCount" % i]
-    head = ["id", "name", "requiredIdeaId", "worker_tags", "duration"] + input_head + output_head + ["output_zone"]
+    head = ["id", "name", "requiredIdeaId", "worker_tags"] + input_head + output_head + ["output_zone", "packId"]
     rows = [head]
     for r in d:
         inputs = []
@@ -64,8 +64,7 @@ def recipes_rows():
         rows.append([
             r.get("id", ""), r.get("name", ""), r.get("requiredIdeaId", ""),
             ",".join(r.get("worker_tags", [])),
-            float(r.get("duration", 0)),
-        ] + inputs + outputs + [r.get("output_zone", "")])
+        ] + inputs + outputs + [r.get("output_zone", ""), r.get("packId", "")])
     return rows
 
 

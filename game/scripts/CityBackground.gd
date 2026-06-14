@@ -75,6 +75,9 @@ var card_root: Node3D    # 卡牌 3D 网格挂在这里（与城市同一世界�
 var _map_check_timer := 0.0
 var _loaded_map_path := ""
 var _loaded_map_signature := ""
+var _environment: Environment
+var _simple_frame_root: Node3D
+var background_mode: int = 0
 
 func world_card_root() -> Node3D:
 	return card_root
@@ -92,12 +95,16 @@ func _ready() -> void:
 	_build_environment()
 	_build_gridmap()
 	var center := _reload_map()
+	_build_simple_frame()
 	_build_camera(center)
 	card_root = Node3D.new()
 	card_root.name = "CardRoot"
 	_root3d.add_child(card_root)
+	set_background_mode(Settings.background_mode)
 
 func _process(delta: float) -> void:
+	if background_mode != 0:
+		return
 	_map_check_timer -= delta
 	if _map_check_timer > 0.0:
 		return
@@ -110,6 +117,7 @@ func _process(delta: float) -> void:
 
 func _build_environment() -> void:
 	var env := Environment.new()
+	_environment = env
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
@@ -176,6 +184,81 @@ func _build_gridmap() -> void:
 	_wallkit_gridmap.cell_center_z = false
 	_wallkit_gridmap.mesh_library = lib
 	_root3d.add_child(_wallkit_gridmap)
+
+func set_background_mode(value: int) -> void:
+	background_mode = clampi(value, 0, 1)
+	if _gridmap == null or _plot_gridmap == null or _wallkit_gridmap == null:
+		return
+	var city_mode := background_mode == 0
+	_gridmap.visible = city_mode
+	_wallkit_gridmap.visible = city_mode
+	if _simple_frame_root != null:
+		_simple_frame_root.visible = not city_mode
+	if city_mode:
+		_reload_map()
+	else:
+		_show_simple_board()
+	_apply_environment_mode()
+
+func _show_simple_board() -> void:
+	_plot_gridmap.clear()
+	_plot_gridmap.position = Vector3(-4.0, -0.04, -2.0)
+	_plot_gridmap.set_cell_item(Vector3i.ZERO, OFFICE_PLOT_INDEX, 0)
+
+func _apply_environment_mode() -> void:
+	if _environment == null:
+		return
+	if background_mode == 0:
+		_environment.background_mode = Environment.BG_SKY
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+		_environment.ambient_light_energy = 0.4
+	else:
+		_environment.background_mode = Environment.BG_COLOR
+		_environment.background_color = Color("b9c9d6")
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		_environment.ambient_light_color = Color("f6f5f1")
+		_environment.ambient_light_energy = 0.62
+
+func _build_simple_frame() -> void:
+	_simple_frame_root = Node3D.new()
+	_simple_frame_root.name = "SimpleBoardFrame"
+	_root3d.add_child(_simple_frame_root)
+	_simple_frame_root.add_child(_rounded_frame_plane(Vector2(9.42, 5.42), Color("171717"), 0.13, 0.002))
+	_simple_frame_root.add_child(_rounded_frame_plane(Vector2(9.24, 5.24), Color("fafafa"), 0.09, 0.004))
+	_simple_frame_root.visible = false
+
+func _rounded_frame_plane(frame_size: Vector2, color: Color, radius: float, y: float) -> MeshInstance3D:
+	var mesh_instance := MeshInstance3D.new()
+	var mesh := QuadMesh.new()
+	mesh.size = frame_size
+	mesh_instance.mesh = mesh
+	mesh_instance.position.y = y
+	mesh_instance.rotation_degrees.x = -90.0
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, depth_draw_opaque;
+uniform vec4 frame_color : source_color;
+uniform vec2 frame_size;
+uniform float corner_radius;
+
+void fragment() {
+	vec2 p = abs((UV - vec2(0.5)) * frame_size) - (frame_size * 0.5 - vec2(corner_radius));
+	float distance_to_edge = length(max(p, vec2(0.0))) + min(max(p.x, p.y), 0.0) - corner_radius;
+	if (distance_to_edge > 0.0) {
+		discard;
+	}
+	ALBEDO = frame_color.rgb;
+	ALPHA = frame_color.a;
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("frame_color", color)
+	material.set_shader_parameter("frame_size", frame_size)
+	material.set_shader_parameter("corner_radius", radius)
+	mesh_instance.material_override = material
+	return mesh_instance
 
 # ---- 外部世界统一褪色：变淡 30% + 降饱和 30%（白板/卡牌不受影响）----
 const FADE_DESAT := 0.6   # 饱和度降低比例（mix 到灰度的比例；0.6=保留约 40% 饱和度）

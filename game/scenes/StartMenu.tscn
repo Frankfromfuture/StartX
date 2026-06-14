@@ -323,12 +323,6 @@ layout_mode = 2
 mouse_default_cursor_shape = 2
 text = "DEV 开局"
 
-[node name="CityBuilderButton" type="Button" parent="DeveloperPanel/Margin/Content"]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-text = "打开 City Builder"
-
 [node name="Shortcut" type="Label" parent="DeveloperPanel/Margin/Content"]
 layout_mode = 2
 text = "快捷键  Ctrl / ⌘ + D"

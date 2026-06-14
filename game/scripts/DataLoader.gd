@@ -71,10 +71,11 @@ func _parse_cards(rows: Array) -> Dictionary:
 			continue
 		var c := {
 			"name": String(d.get("name", id)),
-			"type": String(d.get("type", "resource")),
+			"type": String(d.get("type", "tool")),
 			"workTags": _split_list(String(d.get("workTags", ""))),
 			"salary": String(d.get("salary", "0")).to_int(),
 			"capacity": String(d.get("capacity", "0")).to_int(),
+			"spaceCapacity": String(d.get("spaceCapacity", "0")).to_int(),
 			"value": String(d.get("value", "0")).to_int(),
 			"cost": String(d.get("cost", "0")).to_int(),
 		}
@@ -122,7 +123,6 @@ func _parse_recipes(rows: Array) -> Array:
 			"id": id,
 			"name": String(d.get("name", id)),
 			"worker_tags": _split_list(String(d.get("worker_tags", ""))),
-			"duration": String(d.get("duration", "0")).to_float(),
 			"inputs": _parse_inputs(d),
 			"outputs": _parse_outputs(d),
 		}
@@ -132,6 +132,9 @@ func _parse_recipes(rows: Array) -> Array:
 		var zone := String(d.get("output_zone", "")).strip_edges()
 		if zone != "":
 			r["output_zone"] = zone
+		var pack_id := String(d.get("packId", "")).strip_edges()
+		if pack_id != "":
+			r["packId"] = pack_id
 		out.append(r)
 	return out
 
@@ -148,6 +151,9 @@ func _validate_workbook_data() -> void:
 			_validate_card_reference(recipe_id, "输入", entry)
 		for entry in outputs:
 			_validate_card_reference(recipe_id, "产出", entry)
+			var output_id := String(entry.get("id", ""))
+			if output_id != "" and int(cards.get(output_id, {}).get("workRequired", 0)) <= 0:
+				push_error("DataLoader: 配方 %s 的产出卡 %s 未填写 workRequired" % [recipe_id, output_id])
 	for pack_id in packs:
 		var pack: Dictionary = packs[pack_id]
 		var min_cards := int(pack.get("minCards", 0))
@@ -305,7 +311,7 @@ func card_name(id: String) -> String:
 	return String(card_def(id).get("name", id))
 
 func card_type(id: String) -> String:
-	return String(card_def(id).get("type", "resource"))
+	return String(card_def(id).get("type", "tool"))
 
 func business_model_card_id(recipe_id: String) -> String:
 	return "bm_" + recipe_id

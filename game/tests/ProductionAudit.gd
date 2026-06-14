@@ -19,7 +19,7 @@ func _run() -> void:
 	assert(String(recipe["outputs"][0].get("id", "")) == "p1_youth", "配方产出不是小区青年")
 
 	var target = scene.productions[production_sid]["target"]
-	target.work_elapsed = float(recipe.get("duration", 0.0))
+	target.work_elapsed = scene._recipe_work_required(recipe)
 	scene._complete_production(production_sid)
 	await process_frame
 	await process_frame

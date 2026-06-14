@@ -47,8 +47,8 @@ vertical_alignment = 1
 
 [node name="ProgressGroup" type="Control" parent="TopBar"]
 mouse_filter = 2
-offset_left = 356.0
-offset_right = 626.0
+offset_left = 426.0
+offset_right = 696.0
 offset_bottom = 78.0
 
 [node name="MonthProgressSlot" type="Panel" parent="TopBar/ProgressGroup"]

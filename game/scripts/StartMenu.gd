@@ -31,11 +31,15 @@ const GOLD := Color("d9c79a")
 @onready var volume_value: Label = $SettingsPanel/Margin/Content/VolumeRow/Value
 @onready var fullscreen_toggle: CheckButton = $SettingsPanel/Margin/Content/Fullscreen
 @onready var reduce_motion_toggle: CheckButton = $SettingsPanel/Margin/Content/ReduceMotion
+var display_mode_btn: OptionButton = null
+var resolution_btn: OptionButton = null
+var clarity_btn: OptionButton = null
+var bias_btn: OptionButton = null
+var background_mode_btn: OptionButton = null
 
 @onready var developer_panel: PanelContainer = $DeveloperPanel
 @onready var developer_close: Button = $DeveloperPanel/Margin/Content/Header/CloseButton
 @onready var dev_button: Button = $DeveloperPanel/Margin/Content/DevButton
-@onready var city_builder_button: Button = $DeveloperPanel/Margin/Content/CityBuilderButton
 
 @onready var credits_panel: Control = $CreditsPanel
 @onready var credits_reel: VBoxContainer = $CreditsPanel/Reel
@@ -65,11 +69,15 @@ func _ready() -> void:
 	_steam_origins[steam_1] = steam_1.position
 	_steam_origins[steam_2] = steam_2.position
 	brand.pivot_offset = brand.size * 0.5
-	_setup_logo_gloss()
+	# _setup_logo_gloss()
+	# _setup_background_squiggllevision()
 
-	Settings.reduce_motion_changed.connect(_on_reduce_motion_changed)
-	Settings.fullscreen_changed.connect(_on_fullscreen_changed)
+	Settings.display_settings_changed.connect(_on_display_settings_changed)
 	Settings.sfx_volume_changed.connect(_on_sfx_volume_changed)
+	_build_extra_settings()
+	Settings.card_clarity_changed.connect(_on_card_clarity_changed)
+	Settings.mipmap_bias_changed.connect(_on_mipmap_bias_changed)
+	Settings.background_mode_changed.connect(_on_background_mode_changed)
 	_refresh_motion()
 	start_button.grab_focus.call_deferred()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
@@ -126,6 +134,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _style_interface() -> void:
+	$Menu.add_theme_constant_override("separation", 12)
 	_font($Footer, 20)
 	$Footer.add_theme_color_override("font_color", Color("6f675e"))
 
@@ -167,7 +176,6 @@ func _style_interface() -> void:
 	_prepare_button(developer_close, GOLD, 18)
 	_prepare_credits_skip()
 	_prepare_button(dev_button, SAGE, 22)
-	_prepare_button(city_builder_button, BLUE, 22)
 
 	for toggle in [fullscreen_toggle, reduce_motion_toggle]:
 		toggle.add_theme_color_override("font_color", INK)
@@ -211,10 +219,7 @@ func _connect_interface() -> void:
 	credits_skip.pressed.connect(_close_overlays)
 	credits_panel.gui_input.connect(_on_credits_input)
 	dev_button.pressed.connect(_start_game_dev)
-	city_builder_button.pressed.connect(_open_city_builder)
 	volume_slider.value_changed.connect(_on_volume_changed)
-	fullscreen_toggle.toggled.connect(_on_fullscreen_toggled)
-	reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 
 func _prepare_button(button: Button, fill: Color, font_size: int) -> void:
 	_font(button, font_size)
@@ -257,16 +262,7 @@ func _update_button_pivot(button: Button) -> void:
 	button.pivot_offset = button.size * 0.5
 
 func _set_button_emphasis(button: Button, emphasized: bool) -> void:
-	var target := Vector2.ONE * (1.025 if emphasized else 1.0)
-	var old: Tween = button.get_meta("menu_scale_tween") as Tween if button.has_meta("menu_scale_tween") else null
-	if old != null and old.is_valid():
-		old.kill()
-	if Settings.reduce_motion:
-		button.scale = target
-		return
-	var tw := create_tween()
-	button.set_meta("menu_scale_tween", tw)
-	tw.tween_property(button, "scale", target, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	button.scale = Vector2.ONE * (1.025 if emphasized else 1.0)
 
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -293,6 +289,8 @@ func _prepare_credits_skip() -> void:
 func _credits_font_apply(control: Control, size: int) -> void:
 	control.add_theme_font_override("font", _credits_ui_font())
 	control.add_theme_font_size_override("font_size", size)
+	if control is Label:
+		control.add_theme_constant_override("line_spacing", 6)
 
 func _credits_ui_font() -> Font:
 	if credits_font != null:
@@ -493,9 +491,64 @@ void fragment() {
 	material.set_shader_parameter("enabled", 0.0 if Settings.reduce_motion else 1.0)
 	logo_gloss.material = material
 
+func _setup_background_squiggllevision() -> void:
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+render_mode world_vertex_coords;
+
+uniform vec2 scale = vec2(1.0, 1.0);
+uniform float strength = 1.0;
+uniform float fps = 6.0;
+uniform sampler2D noise : filter_linear, repeat_enable;
+
+varying vec4 modulate;
+varying vec2 noise_uv;
+
+void vertex() {
+	modulate = COLOR;
+	ivec2 tex_size = textureSize(noise, 0);
+	vec2 size_vec = vec2(tex_size.x > 0 ? float(tex_size.x) : 512.0, tex_size.y > 0 ? float(tex_size.y) : 512.0);
+	noise_uv = (VERTEX - MODEL_MATRIX[3].xy) / (size_vec * scale);
+}
+
+#define offset_multiplier vec2(3.14159265, 2.71828182)
+
+void fragment() {
+	vec2 noise_offset = vec2(floor(TIME * fps)) * offset_multiplier;
+	float noise_sample = texture(noise, noise_uv + noise_offset).r * 4.0 * 3.14159265;
+	vec2 direction = vec2(cos(noise_sample), sin(noise_sample));
+	vec2 squiggle_uv = UV + direction * strength * 0.005;
+	
+	COLOR = texture(TEXTURE, squiggle_uv) * modulate;
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	
+	var noise_tex := NoiseTexture2D.new()
+	noise_tex.width = 512
+	noise_tex.height = 512
+	noise_tex.seamless = true
+	
+	var f_noise := FastNoiseLite.new()
+	f_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	f_noise.frequency = 0.015
+	noise_tex.noise = f_noise
+	
+	material.set_shader_parameter("noise", noise_tex)
+	material.set_shader_parameter("strength", 0.0 if Settings.reduce_motion else 0.1)
+	material.set_shader_parameter("fps", 6.0)
+	material.set_shader_parameter("scale", Vector2(1.0, 1.0))
+	
+	$Background.material = material
+
+
 func _font(control: Control, font_size: int) -> void:
 	control.add_theme_font_override("font", _ui_font())
 	control.add_theme_font_size_override("font_size", font_size)
+	if control is Label:
+		control.add_theme_constant_override("line_spacing", 8)
 
 func _ui_font() -> Font:
 	if pixel_font != null:
@@ -525,8 +578,27 @@ func _ui_font() -> Font:
 func _sync_settings() -> void:
 	volume_slider.set_value_no_signal(Settings.sfx_volume * 100.0)
 	volume_value.text = "%d%%" % roundi(Settings.sfx_volume * 100.0)
-	fullscreen_toggle.set_pressed_no_signal(Settings.fullscreen)
-	reduce_motion_toggle.set_pressed_no_signal(Settings.reduce_motion)
+	fullscreen_toggle.visible = false
+	reduce_motion_toggle.visible = false
+	var motion_hint := $SettingsPanel/Margin/Content/MotionHint
+	if motion_hint != null:
+		motion_hint.visible = false
+	if display_mode_btn != null:
+		display_mode_btn.selected = Settings.display_mode
+	if resolution_btn != null:
+		resolution_btn.selected = Settings.fullscreen_resolution
+		resolution_btn.disabled = (Settings.display_mode != 2)
+	if clarity_btn != null:
+		clarity_btn.selected = Settings.card_clarity
+	if bias_btn != null:
+		var selected_bias := 0
+		if is_equal_approx(Settings.mipmap_bias, -0.5):
+			selected_bias = 1
+		elif is_equal_approx(Settings.mipmap_bias, -1.0):
+			selected_bias = 2
+		bias_btn.selected = selected_bias
+	if background_mode_btn != null:
+		background_mode_btn.selected = Settings.background_mode
 
 func _toggle_settings() -> void:
 	var should_open := not settings_panel.visible
@@ -591,31 +663,14 @@ func _on_volume_changed(value: float) -> void:
 	volume_value.text = "%d%%" % roundi(value)
 	Settings.set_sfx_volume(value / 100.0)
 
-func _on_fullscreen_toggled(enabled: bool) -> void:
-	Settings.set_fullscreen(enabled)
-
-func _on_reduce_motion_toggled(enabled: bool) -> void:
-	Settings.set_reduce_motion(enabled)
-
 func _on_sfx_volume_changed(value: float) -> void:
 	volume_slider.set_value_no_signal(value * 100.0)
 	volume_value.text = "%d%%" % roundi(value * 100.0)
 
-func _on_fullscreen_changed(enabled: bool) -> void:
-	fullscreen_toggle.set_pressed_no_signal(enabled)
-
-func _on_reduce_motion_changed(enabled: bool) -> void:
-	reduce_motion_toggle.set_pressed_no_signal(enabled)
-	if logo_gloss.material is ShaderMaterial:
-		(logo_gloss.material as ShaderMaterial).set_shader_parameter("enabled", 0.0 if enabled else 1.0)
-	_refresh_motion()
-
 func _refresh_motion() -> void:
-	for tw in _motion_tweens:
-		if tw != null and tw.is_valid():
-			tw.kill()
-	_motion_tweens.clear()
+	_reset_ambient_static()
 
+func _reset_ambient_static() -> void:
 	brand.scale = Vector2.ONE
 	logo.modulate.a = 0.96
 	chart_a.modulate.a = 0.82
@@ -623,48 +678,6 @@ func _refresh_motion() -> void:
 	lamp_glow.modulate.a = 0.36
 	_reset_steam(steam_1, 0.30)
 	_reset_steam(steam_2, 0.24)
-
-	if Settings.reduce_motion:
-		return
-
-	var logo_tw := create_tween().set_loops()
-	logo_tw.tween_property(brand, "scale", Vector2.ONE * 1.018, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	logo_tw.parallel().tween_property(logo, "modulate:a", 1.0, 1.8)
-	logo_tw.tween_property(brand, "scale", Vector2.ONE, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	logo_tw.parallel().tween_property(logo, "modulate:a", 0.94, 1.8)
-	_motion_tweens.append(logo_tw)
-
-	var chart_tw := create_tween().set_loops()
-	chart_tw.tween_interval(2.6)
-	chart_tw.tween_property(chart_a, "modulate:a", 0.0, 0.7)
-	chart_tw.parallel().tween_property(chart_b, "modulate:a", 0.84, 0.7)
-	chart_tw.tween_interval(3.1)
-	chart_tw.tween_property(chart_b, "modulate:a", 0.0, 0.7)
-	chart_tw.parallel().tween_property(chart_a, "modulate:a", 0.82, 0.7)
-	_motion_tweens.append(chart_tw)
-
-	var lamp_tw := create_tween().set_loops()
-	lamp_tw.tween_property(lamp_glow, "modulate:a", 0.50, 2.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	lamp_tw.tween_property(lamp_glow, "modulate:a", 0.29, 2.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_motion_tweens.append(lamp_tw)
-
-	_motion_tweens.append(_steam_tween(steam_1, 0.2, 3.8))
-	_motion_tweens.append(_steam_tween(steam_2, 1.4, 4.4))
-
-func _steam_tween(steam: TextureRect, delay: float, duration: float) -> Tween:
-	var base: Vector2 = _steam_origins[steam]
-	var tw := create_tween().set_loops()
-	tw.tween_interval(delay)
-	tw.tween_callback(func() -> void:
-		steam.position = base
-		steam.modulate.a = 0.0
-	)
-	tw.tween_property(steam, "modulate:a", 0.56, 0.55)
-	tw.parallel().tween_property(steam, "position", base + Vector2(0, -8), 0.55)
-	tw.tween_property(steam, "position", base + Vector2(0, -30), duration - 0.55).set_trans(Tween.TRANS_SINE)
-	tw.parallel().tween_property(steam, "modulate:a", 0.0, duration - 0.55)
-	tw.tween_interval(0.6)
-	return tw
 
 func _reset_steam(steam: TextureRect, alpha: float) -> void:
 	if _steam_origins.has(steam):
@@ -683,14 +696,222 @@ func _start_game_dev() -> void:
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _open_city_builder() -> void:
-	var godot := OS.get_executable_path()
-	var project_path := (ProjectSettings.globalize_path("res://") + "../City-Builder").simplify_path()
-	if not DirAccess.dir_exists_absolute(project_path):
-		push_warning("未找到 City-Builder 工程：%s" % project_path)
-		return
-	var pid := OS.create_process(godot, ["--path", project_path])
-	if pid <= 0:
-		push_warning("启动 City Builder 失败（pid=%d）" % pid)
+	Settings.open_city_builder()
 
 func _quit() -> void:
 	get_tree().quit()
+
+func _build_extra_settings() -> void:
+	var content := $SettingsPanel/Margin/Content as VBoxContainer
+	if content == null:
+		return
+		
+	# 显示模式
+	var display_row := HBoxContainer.new()
+	display_row.add_theme_constant_override("separation", 12)
+	content.add_child(display_row)
+	
+	var display_label := Label.new()
+	display_label.text = "显示模式"
+	display_label.custom_minimum_size = Vector2(120, 48)
+	_font(display_label, 22)
+	display_label.add_theme_color_override("font_color", INK)
+	display_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	display_row.add_child(display_label)
+	
+	display_mode_btn = OptionButton.new()
+	display_mode_btn.custom_minimum_size = Vector2(240, 48)
+	_prepare_button(display_mode_btn, Color("f7f0e2"), 18)
+	display_mode_btn.add_item("1x窗口 (1280x720)", 0)
+	display_mode_btn.add_item("2x窗口 (1920x1080)", 1)
+	display_mode_btn.add_item("3x窗口 (2560x1440)", 2)
+	display_mode_btn.add_item("全屏", 3)
+	display_mode_btn.selected = Settings.display_mode
+	display_mode_btn.item_selected.connect(_on_display_mode_selected)
+	display_row.add_child(display_mode_btn)
+	_remove_popup_checkmarks(display_mode_btn)
+
+	# 全屏分辨率
+	var res_row := HBoxContainer.new()
+	res_row.add_theme_constant_override("separation", 12)
+	content.add_child(res_row)
+	
+	var res_label := Label.new()
+	res_label.text = "全屏分辨率"
+	res_label.custom_minimum_size = Vector2(120, 48)
+	_font(res_label, 22)
+	res_label.add_theme_color_override("font_color", INK)
+	res_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	res_row.add_child(res_label)
+	
+	resolution_btn = OptionButton.new()
+	resolution_btn.custom_minimum_size = Vector2(240, 48)
+	_prepare_button(resolution_btn, Color("f7f0e2"), 18)
+	resolution_btn.add_item("1920x1080", 0)
+	resolution_btn.add_item("2560x1440 (2K)", 1)
+	resolution_btn.add_item("3840x2160 (4K)", 2)
+	resolution_btn.add_item("1280x720", 3)
+	resolution_btn.add_item("1600x900", 4)
+	resolution_btn.selected = Settings.fullscreen_resolution
+	resolution_btn.item_selected.connect(_on_resolution_selected)
+	resolution_btn.disabled = (Settings.display_mode != 3)
+	res_row.add_child(resolution_btn)
+	_remove_popup_checkmarks(resolution_btn)
+		
+	# 卡牌过滤
+	var clarity_row := HBoxContainer.new()
+	clarity_row.add_theme_constant_override("separation", 12)
+	content.add_child(clarity_row)
+	
+	var clarity_label := Label.new()
+	clarity_label.text = "卡牌过滤"
+	clarity_label.custom_minimum_size = Vector2(120, 48)
+	_font(clarity_label, 22)
+	clarity_label.add_theme_color_override("font_color", INK)
+	clarity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	clarity_row.add_child(clarity_label)
+	
+	clarity_btn = OptionButton.new()
+	clarity_btn.custom_minimum_size = Vector2(240, 48)
+	_prepare_button(clarity_btn, Color("f7f0e2"), 18)
+	clarity_btn.add_item("标准平滑", 0)
+	clarity_btn.add_item("各向异性清晰", 1)
+	clarity_btn.add_item("像素点阵锐利", 2)
+	clarity_btn.selected = Settings.card_clarity
+	clarity_btn.item_selected.connect(_on_clarity_selected)
+	clarity_row.add_child(clarity_btn)
+	_remove_popup_checkmarks(clarity_btn)
+
+	# 细节锐化
+	var bias_row := HBoxContainer.new()
+	bias_row.add_theme_constant_override("separation", 12)
+	content.add_child(bias_row)
+	
+	var bias_label := Label.new()
+	bias_label.text = "细节锐化"
+	bias_label.custom_minimum_size = Vector2(120, 48)
+	_font(bias_label, 22)
+	bias_label.add_theme_color_override("font_color", INK)
+	bias_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bias_row.add_child(bias_label)
+	
+	bias_btn = OptionButton.new()
+	bias_btn.custom_minimum_size = Vector2(240, 48)
+	_prepare_button(bias_btn, Color("f7f0e2"), 18)
+	bias_btn.add_item("正常", 0)
+	bias_btn.add_item("清晰 (Bias -0.5)", 1)
+	bias_btn.add_item("极其清晰 (Bias -1.0)", 2)
+	
+	var selected_bias := 0
+	if is_equal_approx(Settings.mipmap_bias, -0.5):
+		selected_bias = 1
+	elif is_equal_approx(Settings.mipmap_bias, -1.0):
+		selected_bias = 2
+	bias_btn.selected = selected_bias
+	bias_btn.item_selected.connect(_on_bias_selected)
+	bias_row.add_child(bias_btn)
+	_remove_popup_checkmarks(bias_btn)
+
+	var background_row := HBoxContainer.new()
+	background_row.add_theme_constant_override("separation", 12)
+	content.add_child(background_row)
+
+	var background_label := Label.new()
+	background_label.text = "背景环境"
+	background_label.custom_minimum_size = Vector2(120, 48)
+	_font(background_label, 22)
+	background_label.add_theme_color_override("font_color", INK)
+	background_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	background_row.add_child(background_label)
+
+	background_mode_btn = OptionButton.new()
+	background_mode_btn.custom_minimum_size = Vector2(240, 48)
+	_prepare_button(background_mode_btn, Color("f7f0e2"), 18)
+	background_mode_btn.add_item("City Builder", 0)
+	background_mode_btn.add_item("简单环境", 1)
+	background_mode_btn.selected = Settings.background_mode
+	background_mode_btn.item_selected.connect(_on_background_mode_selected)
+	background_row.add_child(background_mode_btn)
+	_remove_popup_checkmarks(background_mode_btn)
+
+	var city_builder_button := Button.new()
+	city_builder_button.text = "编辑 City Builder"
+	city_builder_button.custom_minimum_size = Vector2(0, 58)
+	_prepare_button(city_builder_button, BLUE, 20)
+	city_builder_button.pressed.connect(_open_city_builder)
+	content.add_child(city_builder_button)
+
+func _on_display_mode_selected(idx: int) -> void:
+	Settings.set_display_mode(idx)
+
+func _on_resolution_selected(idx: int) -> void:
+	Settings.set_fullscreen_resolution(idx)
+
+func _on_clarity_selected(idx: int) -> void:
+	Settings.set_card_clarity(idx)
+
+func _on_bias_selected(idx: int) -> void:
+	var val := 0.0
+	match idx:
+		0: val = 0.0
+		1: val = -0.5
+		2: val = -1.0
+	Settings.set_mipmap_bias(val)
+
+func _on_background_mode_selected(idx: int) -> void:
+	Settings.set_background_mode(idx)
+
+func _on_background_mode_changed(val: int) -> void:
+	if background_mode_btn != null:
+		background_mode_btn.selected = val
+
+func _on_card_clarity_changed(val: int) -> void:
+	if clarity_btn != null:
+		clarity_btn.selected = val
+
+func _on_mipmap_bias_changed(val: float) -> void:
+	if bias_btn != null:
+		var selected_bias := 0
+		if is_equal_approx(val, -0.5):
+			selected_bias = 1
+		elif is_equal_approx(val, -1.0):
+			selected_bias = 2
+		bias_btn.selected = selected_bias
+
+func _on_display_settings_changed() -> void:
+	if display_mode_btn != null:
+		display_mode_btn.selected = Settings.display_mode
+	if resolution_btn != null:
+		resolution_btn.selected = Settings.fullscreen_resolution
+		resolution_btn.disabled = (Settings.display_mode != 3)
+
+func _remove_popup_checkmarks(btn: OptionButton) -> void:
+	if btn == null:
+		return
+	var popup := btn.get_popup()
+	popup.about_to_popup.connect(func():
+		var popup_style := StyleBoxFlat.new()
+		popup_style.bg_color = Color(0.98, 0.95, 0.89)
+		popup_style.border_color = INK
+		popup_style.set_border_width_all(3)
+		popup_style.set_corner_radius_all(8)
+		popup_style.content_margin_left = 10
+		popup_style.content_margin_right = 10
+		popup_style.content_margin_top = 8
+		popup_style.content_margin_bottom = 8
+		popup.add_theme_stylebox_override("panel", popup_style)
+		
+		var hover_style := StyleBoxFlat.new()
+		hover_style.bg_color = Color("aecbe0")
+		hover_style.set_corner_radius_all(4)
+		popup.add_theme_stylebox_override("hover", hover_style)
+		
+		popup.add_theme_font_override("font", _ui_font())
+		popup.add_theme_font_size_override("font_size", 18)
+		popup.add_theme_color_override("font_color", INK)
+		popup.add_theme_color_override("font_hover_color", INK)
+
+		for i in popup.get_item_count():
+			popup.set_item_as_radio_checkable(i, false)
+			popup.set_item_as_checkable(i, false)
+	)

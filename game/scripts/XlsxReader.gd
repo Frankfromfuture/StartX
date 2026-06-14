@@ -31,7 +31,7 @@ static func _sheet_map(zip: ZIPReader, files: PackedStringArray) -> Dictionary:
 		var p := XMLParser.new()
 		p.open_buffer(zip.read_file("xl/_rels/workbook.xml.rels"))
 		while p.read() == OK:
-			if p.get_node_type() == XMLParser.NODE_ELEMENT and p.get_node_name() == "Relationship":
+			if p.get_node_type() == XMLParser.NODE_ELEMENT and _local_name(p.get_node_name()) == "Relationship":
 				var rid := _attr(p, "Id")
 				var target := _attr(p, "Target")
 				if target.begins_with("/"):
@@ -45,7 +45,7 @@ static func _sheet_map(zip: ZIPReader, files: PackedStringArray) -> Dictionary:
 		p.open_buffer(zip.read_file("xl/workbook.xml"))
 		var idx := 0
 		while p.read() == OK:
-			if p.get_node_type() == XMLParser.NODE_ELEMENT and p.get_node_name() == "sheet":
+			if p.get_node_type() == XMLParser.NODE_ELEMENT and _local_name(p.get_node_name()) == "sheet":
 				idx += 1
 				var nm := _attr(p, "name")
 				var rid := _attr(p, "r:id")
@@ -66,7 +66,7 @@ static func _parse_shared_strings(zip: ZIPReader, files: PackedStringArray) -> P
 	while p.read() == OK:
 		var t := p.get_node_type()
 		if t == XMLParser.NODE_ELEMENT:
-			var n := p.get_node_name()
+			var n := _local_name(p.get_node_name())
 			if n == "si":
 				cur = ""
 			elif n == "t":
@@ -74,7 +74,7 @@ static func _parse_shared_strings(zip: ZIPReader, files: PackedStringArray) -> P
 		elif t == XMLParser.NODE_TEXT and in_t:
 			cur += p.get_node_data()
 		elif t == XMLParser.NODE_ELEMENT_END:
-			var n := p.get_node_name()
+			var n := _local_name(p.get_node_name())
 			if n == "t":
 				in_t = false
 			elif n == "si":
@@ -95,7 +95,7 @@ static func _parse_sheet(bytes: PackedByteArray, shared: PackedStringArray) -> A
 	while p.read() == OK:
 		var t := p.get_node_type()
 		if t == XMLParser.NODE_ELEMENT:
-			var n := p.get_node_name()
+			var n := _local_name(p.get_node_name())
 			if n == "row":
 				cells = {}
 				maxcol = -1
@@ -115,7 +115,7 @@ static func _parse_sheet(bytes: PackedByteArray, shared: PackedStringArray) -> A
 			if in_v or in_t:
 				val += p.get_node_data()
 		elif t == XMLParser.NODE_ELEMENT_END:
-			var n := p.get_node_name()
+			var n := _local_name(p.get_node_name())
 			if n == "v":
 				in_v = false
 			elif n == "t":
@@ -151,3 +151,7 @@ static func _attr(p: XMLParser, name: String) -> String:
 		if p.get_attribute_name(i) == name:
 			return p.get_attribute_value(i)
 	return ""
+
+static func _local_name(name: String) -> String:
+	var colon := name.rfind(":")
+	return name.substr(colon + 1) if colon >= 0 else name

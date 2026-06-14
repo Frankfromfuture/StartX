@@ -3313,18 +3313,8 @@ func _charge_product_cost_on_complete(sid: int, recipe: Dictionary) -> bool:
 		return false
 	return true
 
-func _product_output_cost(sid: int, recipe: Dictionary) -> int:
-	var mult := _output_mult(_stack_capacity(sid))
-	var total := 0
-	for outp in recipe.get("outputs", []):
-		if not outp.has("id"):
-			continue
-		var id := String(outp["id"])
-		if DataLoader.card_type(id) != "product":
-			continue
-		var cdef := DataLoader.card_def(id)
-		total += int(cdef.get("cost", 0)) * int(outp.get("count", 1)) * mult
-	return total
+func _product_output_cost(_sid: int, _recipe: Dictionary) -> int:
+	return 0
 
 func _recipe_matches(recipe: Dictionary, counts: Dictionary, arr: Array) -> bool:
 	for inp in recipe.get("inputs", []):

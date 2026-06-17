@@ -1,0 +1,2974 @@
+[gd_scene format=3 uid="uid://c3ylyfwss246n"]
+
+[ext_resource type="Texture2D" uid="uid://cp100rh5qjdpd" path="res://assets/backgrounds/root_background_assets/building5.png" id="3_cepi1"]
+[ext_resource type="Texture2D" uid="uid://cr3enltxt6gui" path="res://assets/backgrounds/root_background_assets/building4.png" id="4_7jq2q"]
+[ext_resource type="Texture2D" uid="uid://usehx4d8du2v" path="res://assets/backgrounds/root_background_assets/building1.png" id="5_7n5fl"]
+[ext_resource type="Texture2D" uid="uid://8uncpxn30l6l" path="res://assets/backgrounds/root_background_assets/building3.png" id="6_ixb5h"]
+[ext_resource type="Texture2D" uid="uid://bvkaxbrf1httr" path="res://assets/backgrounds/root_background_assets/building2.png" id="7_afjfc"]
+[ext_resource type="Texture2D" uid="uid://b48bwieyrcf0g" path="res://assets/backgrounds/root_background_assets/element5.png" id="8_m7dsh"]
+[ext_resource type="Texture2D" uid="uid://soj2t2k1pmh1" path="res://assets/backgrounds/root_background_assets/bush1.png" id="9_rgj3p"]
+[ext_resource type="Texture2D" uid="uid://c4vqtgruky3qn" path="res://assets/backgrounds/root_background_assets/element7.png" id="10_g4utj"]
+[ext_resource type="Texture2D" uid="uid://do3xbdbu30871" path="res://assets/backgrounds/root_background_assets/bush2.png" id="11_7464u"]
+[ext_resource type="Script" uid="uid://dtjkc0no845e4" path="res://scripts/EditableBattleBackground3D.gd" id="11_script"]
+[ext_resource type="Texture2D" uid="uid://dvp5j106rhk12" path="res://assets/backgrounds/backjpg.jpg" id="12_backjpg"]
+[ext_resource type="Texture2D" uid="uid://b162sn2orltcr" path="res://assets/backgrounds/root_background_assets/element4.png" id="12_qiyu4"]
+[ext_resource type="Texture2D" uid="uid://dccgo6ww1b7sl" path="res://assets/backgrounds/root_background_assets/bush4.png" id="13_guyqw"]
+[ext_resource type="Texture2D" uid="uid://cj5m0hxf1rhmd" path="res://assets/backgrounds/root_background_assets/element6.png" id="14_j3n3h"]
+[ext_resource type="Texture2D" uid="uid://bivwi2qw8h5j8" path="res://assets/backgrounds/root_background_assets/element3.png" id="15_6orx6"]
+[ext_resource type="Texture2D" uid="uid://buikuh4gqcksp" path="res://assets/backgrounds/root_background_assets/element2.png" id="16_apmk7"]
+[ext_resource type="Texture2D" uid="uid://bxkhvhy6df2rj" path="res://assets/backgrounds/root_background_assets/bush3.png" id="17_hhm02"]
+[ext_resource type="Texture2D" uid="uid://dtlcguytwwldn" path="res://assets/backgrounds/root_background_assets/element1.png" id="18_b0l05"]
+[ext_resource type="Texture2D" uid="uid://drwu21cbrdqx3" path="res://assets/backgrounds/root_background_assets/grass1.png" id="19_dntwa"]
+[ext_resource type="Texture2D" uid="uid://b21wuueexwh2e" path="res://assets/backgrounds/root_background_assets/grass2.png" id="20_ocii3"]
+[ext_resource type="Texture2D" uid="uid://dddg04canoj3y" path="res://assets/backgrounds/root_background_assets/grass3.png" id="21_xbo64"]
+[ext_resource type="Texture2D" uid="uid://bp21ywmmm53ew" path="res://assets/backgrounds/root_background_assets/grass4.png" id="22_v5wal"]
+[ext_resource type="Texture2D" uid="uid://b7qwyricthhvf" path="res://assets/backgrounds/root_background_assets/grass5.png" id="23_o3j2c"]
+[ext_resource type="Texture2D" uid="uid://bvoynh3w1el8o" path="res://assets/backgrounds/root_background_assets/grass6.png" id="24_rbx5a"]
+[ext_resource type="Texture2D" uid="uid://cgk3jbqhbpge1" path="res://assets/backgrounds/root_background_assets/grass7.png" id="25_ix3t2"]
+[ext_resource type="Texture2D" uid="uid://8nrvhf74dv5p" path="res://assets/backgrounds/root_background_assets/grass8.png" id="26_wjohv"]
+[ext_resource type="Texture2D" uid="uid://cedvidosx4eq8" path="res://assets/backgrounds/root_background_assets/tree1.png" id="27_sfvvl"]
+[ext_resource type="Texture2D" uid="uid://blnn0ht2jt5ll" path="res://assets/backgrounds/root_background_assets/tree2.png" id="28_vgwdt"]
+[ext_resource type="Texture2D" uid="uid://dtt1pon524xde" path="res://assets/backgrounds/root_background_assets/tree3.png" id="29_r2i57"]
+[ext_resource type="Texture2D" uid="uid://cu8mtanloekjm" path="res://assets/backgrounds/root_background_assets/tree4.png" id="30_rdn3a"]
+[ext_resource type="Texture2D" uid="uid://32rm15dqirwa" path="res://assets/backgrounds/root_background_assets/tree5.png" id="31_x61vx"]
+[ext_resource type="Texture2D" uid="uid://rw6i8un0vkf2" path="res://assets/backgrounds/root_background_assets/tree6.png" id="32_gmhjw"]
+
+[sub_resource type="Environment" id="Environment_edit"]
+background_mode = 1
+background_color = Color(1, 1, 1, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.86, 0.84, 0.78, 1)
+ambient_light_energy = 0.32
+
+[sub_resource type="StandardMaterial3D" id="Material_outer"]
+transparency = 1
+albedo_color = Color(0.686275, 0.74902, 0.796078, 0.7)
+albedo_texture = ExtResource("12_backjpg")
+roughness = 0.82
+
+[sub_resource type="PlaneMesh" id="Plane_outer"]
+size = Vector2(18, 10)
+
+[sub_resource type="Shader" id="Shader_cepi1"]
+code = "
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_mix, depth_draw_never, shadows_disabled;
+
+uniform vec4 shadow_color : source_color = vec4(0.33, 0.33, 0.33, 0.26);
+
+void fragment() {
+	vec2 p = (UV - vec2(0.5)) * 2.0;
+	float feather = smoothstep(1.0, 0.08, dot(p, p));
+	ALBEDO = shadow_color.rgb;
+	ALPHA = shadow_color.a * feather;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7jq2q"]
+render_priority = 0
+shader = SubResource("Shader_cepi1")
+shader_parameter/shadow_color = Color(0.33, 0.33, 0.33, 0.182)
+
+[sub_resource type="PlaneMesh" id="Mesh_decoration_shadow"]
+size = Vector2(1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_7n5fl"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ixb5h"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_afjfc"]
+
+[sub_resource type="Shader" id="Shader_m7dsh"]
+code = "
+shader_type spatial;
+render_mode cull_disabled, blend_mix, depth_draw_never;
+
+uniform sampler2D albedo_tex : source_color;
+uniform float sway_strength = 0.01;
+uniform float sway_speed = 0.5;
+uniform float sway_phase = 0.0;
+uniform float top_alpha = 0.35;
+uniform float fade_alpha = 0.7;
+
+void vertex() {
+	float top_weight = pow(clamp(1.0 - UV.y, 0.0, 1.0), 1.8);
+	float gust = sin(TIME * sway_speed + sway_phase) + 0.35 * sin(TIME * sway_speed * 1.73 + sway_phase * 0.61);
+	VERTEX.x += gust * sway_strength * top_weight;
+}
+
+void fragment() {
+	vec4 tex = texture(albedo_tex, UV);
+	float top_fade = smoothstep(0.28, 1.0, 1.0 - UV.y);
+	ALBEDO = tex.rgb;
+	ALPHA = tex.a * mix(1.0, top_alpha, top_fade) * fade_alpha;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rgj3p"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.050475087
+shader_parameter/sway_speed = 0.430757
+shader_parameter/sway_phase = 0.96870506
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g4utj"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.0272967048
+shader_parameter/sway_speed = 0.44579324
+shader_parameter/sway_phase = 2.8073444
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7464u"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.051473271
+shader_parameter/sway_speed = 0.5229444
+shader_parameter/sway_phase = 0.6581961
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qiyu4"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.04709898
+shader_parameter/sway_speed = 0.64645684
+shader_parameter/sway_phase = 2.524603
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_guyqw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("23_o3j2c")
+shader_parameter/sway_strength = 0.050630337
+shader_parameter/sway_speed = 0.40848637
+shader_parameter/sway_phase = 0.6783659
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j3n3h"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("24_rbx5a")
+shader_parameter/sway_strength = 0.038205006
+shader_parameter/sway_speed = 0.384295
+shader_parameter/sway_phase = 3.6010551
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6orx6"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("25_ix3t2")
+shader_parameter/sway_strength = 0.034134735
+shader_parameter/sway_speed = 0.5499743
+shader_parameter/sway_phase = 0.00017735509
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_apmk7"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("26_wjohv")
+shader_parameter/sway_strength = 0.05734371
+shader_parameter/sway_speed = 0.56730026
+shader_parameter/sway_phase = 4.6845245
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hhm02"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.040465128
+shader_parameter/sway_speed = 0.5416142
+shader_parameter/sway_phase = 0.065423556
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_b0l05"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.048441417
+shader_parameter/sway_speed = 0.69928575
+shader_parameter/sway_phase = 2.205954
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dntwa"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.042942615
+shader_parameter/sway_speed = 0.6432451
+shader_parameter/sway_phase = 5.5158596
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ocii3"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.04616598
+shader_parameter/sway_speed = 0.58905923
+shader_parameter/sway_phase = 5.282311
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xbo64"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("23_o3j2c")
+shader_parameter/sway_strength = 0.032054418
+shader_parameter/sway_speed = 0.6168789
+shader_parameter/sway_phase = 5.5774627
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_v5wal"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("24_rbx5a")
+shader_parameter/sway_strength = 0.048546198
+shader_parameter/sway_speed = 0.7128569
+shader_parameter/sway_phase = 5.6580734
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o3j2c"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("25_ix3t2")
+shader_parameter/sway_strength = 0.041251302
+shader_parameter/sway_speed = 0.56006324
+shader_parameter/sway_phase = 3.546906
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rbx5a"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("26_wjohv")
+shader_parameter/sway_strength = 0.032923902
+shader_parameter/sway_speed = 0.4075215
+shader_parameter/sway_phase = 2.0570612
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ix3t2"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.052209762
+shader_parameter/sway_speed = 0.6792998
+shader_parameter/sway_phase = 4.944473
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wjohv"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.0298717953
+shader_parameter/sway_speed = 0.7054032
+shader_parameter/sway_phase = 0.91982514
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sfvvl"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.030713151
+shader_parameter/sway_speed = 0.5465493
+shader_parameter/sway_phase = 4.211311
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vgwdt"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.032367684
+shader_parameter/sway_speed = 0.4118298
+shader_parameter/sway_phase = 3.9360728
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_r2i57"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("23_o3j2c")
+shader_parameter/sway_strength = 0.032001012
+shader_parameter/sway_speed = 0.5694084
+shader_parameter/sway_phase = 5.961426
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rdn3a"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("24_rbx5a")
+shader_parameter/sway_strength = 0.048545325
+shader_parameter/sway_speed = 0.60285383
+shader_parameter/sway_phase = 4.606229
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x61vx"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("25_ix3t2")
+shader_parameter/sway_strength = 0.034034367
+shader_parameter/sway_speed = 0.5829947
+shader_parameter/sway_phase = 1.4885532
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gmhjw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("26_wjohv")
+shader_parameter/sway_strength = 0.037978365
+shader_parameter/sway_speed = 0.6682259
+shader_parameter/sway_phase = 5.968173
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xd27c"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.05570721
+shader_parameter/sway_speed = 0.46972445
+shader_parameter/sway_phase = 0.9935728
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_s4726"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.041202747
+shader_parameter/sway_speed = 0.4124493
+shader_parameter/sway_phase = 2.3409982
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a0v36"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.043266681
+shader_parameter/sway_speed = 0.6286721
+shader_parameter/sway_phase = 5.090939
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2qjtu"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.05843934
+shader_parameter/sway_speed = 0.56649923
+shader_parameter/sway_phase = 4.5579157
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0teua"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("23_o3j2c")
+shader_parameter/sway_strength = 0.031183674
+shader_parameter/sway_speed = 0.4849948
+shader_parameter/sway_phase = 3.7906375
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_c48ny"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("24_rbx5a")
+shader_parameter/sway_strength = 0.044694783
+shader_parameter/sway_speed = 0.4904489
+shader_parameter/sway_phase = 2.3223047
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3uspl"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("25_ix3t2")
+shader_parameter/sway_strength = 0.033782484
+shader_parameter/sway_speed = 0.48197994
+shader_parameter/sway_phase = 1.1123137
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8r1aw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("26_wjohv")
+shader_parameter/sway_strength = 0.040702119
+shader_parameter/sway_speed = 0.57862747
+shader_parameter/sway_phase = 5.657761
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_r5ddw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.052570422
+shader_parameter/sway_speed = 0.48847067
+shader_parameter/sway_phase = 2.3126674
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sybg6"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.036140439
+shader_parameter/sway_speed = 0.38430887
+shader_parameter/sway_phase = 5.531931
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kyqv3"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.039398727
+shader_parameter/sway_speed = 0.45069513
+shader_parameter/sway_phase = 3.7943668
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xef77"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.028406061
+shader_parameter/sway_speed = 0.46048352
+shader_parameter/sway_phase = 1.1415186
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_c31l4"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("23_o3j2c")
+shader_parameter/sway_strength = 0.0273860706
+shader_parameter/sway_speed = 0.5981102
+shader_parameter/sway_phase = 3.7403944
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sar5p"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("24_rbx5a")
+shader_parameter/sway_strength = 0.035729613
+shader_parameter/sway_speed = 0.59944135
+shader_parameter/sway_phase = 1.8347714
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_io6nt"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("25_ix3t2")
+shader_parameter/sway_strength = 0.031386732
+shader_parameter/sway_speed = 0.4789707
+shader_parameter/sway_phase = 2.4789286
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_13ghs"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("26_wjohv")
+shader_parameter/sway_strength = 0.040520199
+shader_parameter/sway_speed = 0.710461
+shader_parameter/sway_phase = 4.5410237
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_as64u"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("19_dntwa")
+shader_parameter/sway_strength = 0.054536742
+shader_parameter/sway_speed = 0.67956924
+shader_parameter/sway_phase = 2.2950165
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_n6i4d"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("20_ocii3")
+shader_parameter/sway_strength = 0.055704729
+shader_parameter/sway_speed = 0.4734426
+shader_parameter/sway_phase = 0.503805
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_brj34"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("21_xbo64")
+shader_parameter/sway_strength = 0.036247635
+shader_parameter/sway_speed = 0.667552
+shader_parameter/sway_phase = 0.64809537
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7ps08"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("22_v5wal")
+shader_parameter/sway_strength = 0.05470578
+shader_parameter/sway_speed = 0.6855482
+shader_parameter/sway_phase = 0.40197933
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3s2gw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("27_sfvvl")
+shader_parameter/sway_strength = 0.065728341
+shader_parameter/sway_speed = 0.472409
+shader_parameter/sway_phase = 2.286475
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4mijg"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("28_vgwdt")
+shader_parameter/sway_strength = 0.109015482
+shader_parameter/sway_speed = 0.5240381
+shader_parameter/sway_phase = 5.5511
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jejyo"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("29_r2i57")
+shader_parameter/sway_strength = 0.067872585
+shader_parameter/sway_speed = 0.5580022
+shader_parameter/sway_phase = 4.7034683
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_as6jn"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("30_rdn3a")
+shader_parameter/sway_strength = 0.114263883
+shader_parameter/sway_speed = 0.7170668
+shader_parameter/sway_phase = 5.2112956
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iolwl"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("31_x61vx")
+shader_parameter/sway_strength = 0.092857743
+shader_parameter/sway_speed = 0.54646087
+shader_parameter/sway_phase = 3.8579543
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dlxbg"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("32_gmhjw")
+shader_parameter/sway_strength = 0.059459412
+shader_parameter/sway_speed = 0.3997659
+shader_parameter/sway_phase = 1.9504871
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_23kxd"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("27_sfvvl")
+shader_parameter/sway_strength = 0.10909917
+shader_parameter/sway_speed = 0.67445004
+shader_parameter/sway_phase = 6.1345253
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g5w4o"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("28_vgwdt")
+shader_parameter/sway_strength = 0.07709652
+shader_parameter/sway_speed = 0.45383927
+shader_parameter/sway_phase = 2.81764
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_axi2l"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("29_r2i57")
+shader_parameter/sway_strength = 0.071832492
+shader_parameter/sway_speed = 0.5157141
+shader_parameter/sway_phase = 0.40745762
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jayhd"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("30_rdn3a")
+shader_parameter/sway_strength = 0.062591529
+shader_parameter/sway_speed = 0.40911824
+shader_parameter/sway_phase = 1.4519469
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_n61aw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("31_x61vx")
+shader_parameter/sway_strength = 0.09255765
+shader_parameter/sway_speed = 0.44176817
+shader_parameter/sway_phase = 4.1646028
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jyuvr"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("32_gmhjw")
+shader_parameter/sway_strength = 0.113397648
+shader_parameter/sway_speed = 0.39358777
+shader_parameter/sway_phase = 5.831934
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nsppr"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("27_sfvvl")
+shader_parameter/sway_strength = 0.070981515
+shader_parameter/sway_speed = 0.53528696
+shader_parameter/sway_phase = 2.6388268
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hnjee"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("28_vgwdt")
+shader_parameter/sway_strength = 0.113744538
+shader_parameter/sway_speed = 0.4996639
+shader_parameter/sway_phase = 0.2437459
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nrx6m"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("29_r2i57")
+shader_parameter/sway_strength = 0.096820848
+shader_parameter/sway_speed = 0.63667804
+shader_parameter/sway_phase = 2.5140085
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ww0tc"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("30_rdn3a")
+shader_parameter/sway_strength = 0.115739028
+shader_parameter/sway_speed = 0.5285087
+shader_parameter/sway_phase = 6.090555
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5vbf2"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("31_x61vx")
+shader_parameter/sway_strength = 0.0553605
+shader_parameter/sway_speed = 0.6415932
+shader_parameter/sway_phase = 2.0539682
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vo0st"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("32_gmhjw")
+shader_parameter/sway_strength = 0.09274851
+shader_parameter/sway_speed = 0.70569825
+shader_parameter/sway_phase = 6.246045
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cskdb"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("27_sfvvl")
+shader_parameter/sway_strength = 0.093331287
+shader_parameter/sway_speed = 0.50230616
+shader_parameter/sway_phase = 0.27858436
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2xi65"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("28_vgwdt")
+shader_parameter/sway_strength = 0.055247547
+shader_parameter/sway_speed = 0.5660695
+shader_parameter/sway_phase = 1.1241436
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7cmwy"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("29_r2i57")
+shader_parameter/sway_strength = 0.057696351
+shader_parameter/sway_speed = 0.3896912
+shader_parameter/sway_phase = 4.0744653
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m6mcv"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("30_rdn3a")
+shader_parameter/sway_strength = 0.095898267
+shader_parameter/sway_speed = 0.5435737
+shader_parameter/sway_phase = 4.6353154
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fdsni"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("31_x61vx")
+shader_parameter/sway_strength = 0.072319602
+shader_parameter/sway_speed = 0.51800406
+shader_parameter/sway_phase = 0.29918036
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f8rlw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("32_gmhjw")
+shader_parameter/sway_strength = 0.10837095
+shader_parameter/sway_speed = 0.64446306
+shader_parameter/sway_phase = 5.3361144
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nu87h"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("27_sfvvl")
+shader_parameter/sway_strength = 0.069584397
+shader_parameter/sway_speed = 0.42403978
+shader_parameter/sway_phase = 2.8325677
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_reomr"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("28_vgwdt")
+shader_parameter/sway_strength = 0.065915523
+shader_parameter/sway_speed = 0.525467
+shader_parameter/sway_phase = 1.7242002
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1n1a3"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("29_r2i57")
+shader_parameter/sway_strength = 0.076371951
+shader_parameter/sway_speed = 0.59865266
+shader_parameter/sway_phase = 0.9198251
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cxe8c"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("30_rdn3a")
+shader_parameter/sway_strength = 0.093985767
+shader_parameter/sway_speed = 0.5866002
+shader_parameter/sway_phase = 0.39460045
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_56koc"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("9_rgj3p")
+shader_parameter/sway_strength = 0.063536031
+shader_parameter/sway_speed = 0.7120765
+shader_parameter/sway_phase = 3.7335
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qheyj"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("11_7464u")
+shader_parameter/sway_strength = 0.045806928
+shader_parameter/sway_speed = 0.6207495
+shader_parameter/sway_phase = 0.57236606
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d4ml4"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("17_hhm02")
+shader_parameter/sway_strength = 0.050164038
+shader_parameter/sway_speed = 0.60509515
+shader_parameter/sway_phase = 1.7563571
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nir8o"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("13_guyqw")
+shader_parameter/sway_strength = 0.046802823
+shader_parameter/sway_speed = 0.38606083
+shader_parameter/sway_phase = 4.52668
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rx46f"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("9_rgj3p")
+shader_parameter/sway_strength = 0.043254381
+shader_parameter/sway_speed = 0.48249733
+shader_parameter/sway_phase = 5.7123156
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5hrcc"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("11_7464u")
+shader_parameter/sway_strength = 0.058779552
+shader_parameter/sway_speed = 0.6876955
+shader_parameter/sway_phase = 4.0996275
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_03vov"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("17_hhm02")
+shader_parameter/sway_strength = 0.043862406
+shader_parameter/sway_speed = 0.7071893
+shader_parameter/sway_phase = 0.44895074
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pomk5"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("13_guyqw")
+shader_parameter/sway_strength = 0.0562365
+shader_parameter/sway_speed = 0.43471363
+shader_parameter/sway_phase = 1.9729589
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3um1s"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("9_rgj3p")
+shader_parameter/sway_strength = 0.064037814
+shader_parameter/sway_speed = 0.409217
+shader_parameter/sway_phase = 3.702802
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1q2pa"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("11_7464u")
+shader_parameter/sway_strength = 0.04363164
+shader_parameter/sway_speed = 0.67221475
+shader_parameter/sway_phase = 6.095864
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7ndou"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("17_hhm02")
+shader_parameter/sway_strength = 0.036221532
+shader_parameter/sway_speed = 0.62989575
+shader_parameter/sway_phase = 1.5253769
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xhe3s"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("13_guyqw")
+shader_parameter/sway_strength = 0.039286872
+shader_parameter/sway_speed = 0.38209572
+shader_parameter/sway_phase = 4.3929806
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hqd66"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("9_rgj3p")
+shader_parameter/sway_strength = 0.057281178
+shader_parameter/sway_speed = 0.64493245
+shader_parameter/sway_phase = 5.012919
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1gprw"]
+render_priority = 0
+shader = SubResource("Shader_m7dsh")
+shader_parameter/albedo_tex = ExtResource("11_7464u")
+shader_parameter/sway_strength = 0.064008789
+shader_parameter/sway_speed = 0.6999857
+shader_parameter/sway_phase = 0.51746005
+shader_parameter/top_alpha = 0.35
+shader_parameter/fade_alpha = 0.7
+
+[sub_resource type="StandardMaterial3D" id="Material_whiteboard"]
+albedo_color = Color(0.956863, 0.941176, 0.894118, 1)
+roughness = 0.72
+
+[sub_resource type="PlaneMesh" id="Plane_whiteboard"]
+size = Vector2(9, 5)
+
+[sub_resource type="StandardMaterial3D" id="Material_border"]
+albedo_color = Color(0.184314, 0.176471, 0.164706, 1)
+roughness = 0.68
+
+[sub_resource type="BoxMesh" id="Box_border_long"]
+size = Vector3(9.12, 0.04, 0.04)
+
+[sub_resource type="BoxMesh" id="Box_border_short"]
+size = Vector3(0.04, 0.04, 5.12)
+
+[node name="EditableBattleBackground3D" type="Node3D" unique_id=1229512970]
+script = ExtResource("11_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1060023350]
+environment = SubResource("Environment_edit")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1958226854]
+transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0.25202602, 5.0840263, 2.285746)
+light_energy = 1.65
+shadow_enabled = true
+shadow_opacity = 0.72
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2122111059]
+transform = Transform3D(1, 0, 0, 0, 0.390731, 0.920505, 0, -0.920505, 0.390731, 3.2316828, 5.800044, 5.881897)
+projection = 1
+current = true
+size = 9.2
+
+[node name="OuterBackgroundPlane" type="MeshInstance3D" parent="." unique_id=848003157]
+material_override = SubResource("Material_outer")
+mesh = SubResource("Plane_outer")
+
+[node name="DecorationShadows3D" type="Node3D" parent="." unique_id=1536465136]
+
+[node name="Shadow_Building01" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1099771057]
+transform = Transform3D(1.7159935, 0, 0, 0, 1, 0, 0, 0, 1.1849087, -6.812012, 0.031999998, -7.479939)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building03" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1614152375]
+transform = Transform3D(0.82352364, 0, 0, 0, 1, 0, 0, 0, 0.4695299, 7.0217547, 0.031999998, 2.3460217)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building02" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=479697596]
+transform = Transform3D(0.822625, 0, 0, 0, 1, 0, 0, 0, 0.33508256, -7.099431, 0.031999998, -2.608248)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building04" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1394311142]
+transform = Transform3D(0.77877027, 0, 0, 0, 1, 0, 0, 0, 0.44401383, -1.714869, 0.031999998, -4.833252)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=352596106]
+transform = Transform3D(0.7415948, 0, 0, 0, 1, 0, 0, 0, 0.3796931, -0.1316937, 0.031999998, -4.5863748)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building06" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1273872174]
+transform = Transform3D(0.8141511, 0, 0, 0, 1, 0, 0, 0, 0.4946459, 1.0102212, 0.031999998, -5.01331)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building07" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=954322837]
+transform = Transform3D(1.56538, 0, 0, 0, 1, 0, 0, 0, 1.0809088, 7.002563, 0.031999998, -4.9553895)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building08" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=408691360]
+transform = Transform3D(0.73485017, 0, 0, 0, 1, 0, 0, 0, 0.44646567, 3.113358, 0.031999998, -4.9613857)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building09" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=657569807]
+transform = Transform3D(0.733541, 0, 0, 0, 1, 0, 0, 0, 0.2987957, 6.348065, 0.031999998, -4.4559803)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Building10" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1554633390]
+transform = Transform3D(0.87589467, 0, 0, 0, 1, 0, 0, 0, 0.448454, -3.1201591, 0.031999998, 5.184622)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement01" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1219079864]
+transform = Transform3D(0.42465037, 0, 0, 0, 1, 0, 0, 0, 0.119406834, 5.8596435, 0.031999998, 2.2393208)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement02" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=2115825586]
+transform = Transform3D(1.2903508, 0, 0, 0, 1, 0, 0, 0, 0.10273211, 6.6868157, 0.031999998, 3.9592881)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement03" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1609769388]
+transform = Transform3D(0.85665095, 0, 0, 0, 1, 0, 0, 0, 0.09495676, 2.7020392, 0.031999998, -2.8438118)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement04" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=641460837]
+transform = Transform3D(1.0884483, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.2560587, 0.031999998, -0.62676203)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=128346181]
+transform = Transform3D(0.22, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.9970093, 0.031999998, -0.2998281)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement06" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=163993191]
+transform = Transform3D(1.3969107, 0, 0, 0, 1, 0, 0, 0, 0.13940942, 6.9541297, 0.031999998, 1.165673)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement07" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1347270870]
+transform = Transform3D(0.44586813, 0, 0, 0, 1, 0, 0, 0, 0.14119688, 4.127222, 0.031999998, -3.705975)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement08" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1607655385]
+transform = Transform3D(0.22, 0, 0, 0, 1, 0, 0, 0, 0.3325678, 5.5534625, 0.031999998, -1.7996815)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement09" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1454436361]
+transform = Transform3D(0.30739346, 0, 0, 0, 1, 0, 0, 0, 0.103831604, -5.594605, 0.031999998, 3.6494746)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement10" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1449679250]
+transform = Transform3D(1.006629, 0, 0, 0, 1, 0, 0, 0, 0.097372696, 7.052815, 0.031999998, -4.4456606)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement11" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=95261339]
+transform = Transform3D(0.5028031, 0, 0, 0, 1, 0, 0, 0, 0.08, 0.3784085, 0.031999998, -3.365676)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass01" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1078535887]
+transform = Transform3D(0.5800611, 0, 0, 0, 1, 0, 0, 0, 0.08, -5.751086, 0.031999998, 2.1929252)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass02" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1792057435]
+transform = Transform3D(0.79075325, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.223853, 0.031999998, 3.639743)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass03" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1087265034]
+transform = Transform3D(0.5160482, 0, 0, 0, 1, 0, 0, 0, 0.14223552, -7.025287, 0.031999998, 2.3077402)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass04" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=802173138]
+transform = Transform3D(0.64469725, 0, 0, 0, 1, 0, 0, 0, 0.08, -4.000153, 0.031999998, 3.602256)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=219526780]
+transform = Transform3D(0.57661825, 0, 0, 0, 1, 0, 0, 0, 0.08, 2.1924548, 0.031999998, -4.198122)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass06" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=236391898]
+transform = Transform3D(0.5409373, 0, 0, 0, 1, 0, 0, 0, 0.08, 6.612011, 0.031999998, 1.5861202)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass07" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1596523480]
+transform = Transform3D(0.67376953, 0, 0, 0, 1, 0, 0, 0, 0.08, -5.820243, 0.031999998, 1.80976)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass08" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=780589169]
+transform = Transform3D(0.61393225, 0, 0, 0, 1, 0, 0, 0, 0.08, -3.12943, 0.031999998, 4.094009)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass09" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=27526210]
+transform = Transform3D(0.567926, 0, 0, 0, 1, 0, 0, 0, 0.08, -7.500802, 0.031999998, 2.3309221)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass10" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1641555228]
+transform = Transform3D(0.5763954, 0, 0, 0, 1, 0, 0, 0, 0.08, -2.5541291, 0.031999998, 4.249163)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass11" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=321274551]
+transform = Transform3D(0.5291352, 0, 0, 0, 1, 0, 0, 0, 0.14584261, 7.0447297, 0.031999998, 1.919062)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass12" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=650157224]
+transform = Transform3D(0.59150803, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.76456, 0.031999998, 4.212973)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass13" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1069025550]
+transform = Transform3D(0.5273972, 0, 0, 0, 1, 0, 0, 0, 0.08, 3.449709, 0.031999998, 3.9675841)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass14" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1495259401]
+transform = Transform3D(0.5295043, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.9579641, 0.031999998, 3.933885)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass15" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=2054264773]
+transform = Transform3D(0.6595124, 0, 0, 0, 1, 0, 0, 0, 0.08, 3.1761448, 0.031999998, 3.644164)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass16" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=495573769]
+transform = Transform3D(0.6516552, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.358138, 0.031999998, 3.9975371)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass17" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=550907154]
+transform = Transform3D(0.5089333, 0, 0, 0, 1, 0, 0, 0, 0.08, -1.184729, 0.031999998, 3.739803)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass18" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=517440665]
+transform = Transform3D(0.6781907, 0, 0, 0, 1, 0, 0, 0, 0.08, 0.91250944, 0.031999998, 4.441708)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass19" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=544874885]
+transform = Transform3D(0.44015354, 0, 0, 0, 1, 0, 0, 0, 0.12131708, 5.8695707, 0.031999998, 1.552448)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass20" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=570361503]
+transform = Transform3D(0.6664692, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.832088, 0.031999998, 3.962121)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass21" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1547278548]
+transform = Transform3D(0.6603859, 0, 0, 0, 1, 0, 0, 0, 0.08, -2.1862311, 0.031999998, 4.677174)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass22" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=366324912]
+transform = Transform3D(0.44277653, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.095863, 0.031999998, 2.3657491)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass23" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1083390187]
+transform = Transform3D(0.6329581, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.10644, 0.031999998, 2.1405241)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass24" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=857928408]
+transform = Transform3D(0.61436373, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.508627, 0.031999998, 3.547794)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass25" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1065769221]
+transform = Transform3D(0.5055525, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.783625, 0.031999998, 3.862543)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass26" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1245977618]
+transform = Transform3D(0.6878817, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.699315, 0.031999998, 2.1976402)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass27" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1839010899]
+transform = Transform3D(0.54467726, 0, 0, 0, 1, 0, 0, 0, 0.15012638, 1.3914524, 0.031999998, 4.58)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass28" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1527252881]
+transform = Transform3D(0.66196877, 0, 0, 0, 1, 0, 0, 0, 0.08, -0.920735, 0.031999998, 3.5088952)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass29" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1814529953]
+transform = Transform3D(0.5733674, 0, 0, 0, 1, 0, 0, 0, 0.08, -0.7360353, 0.031999998, 3.5527022)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass30" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1454211547]
+transform = Transform3D(0.5052035, 0, 0, 0, 1, 0, 0, 0, 0.08, -7.281362, 0.031999998, 0.5655029)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass31" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1815570478]
+transform = Transform3D(0.70664835, 0, 0, 0, 1, 0, 0, 0, 0.08, 6.043233, 0.031999998, 3.633038)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass32" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=2073589997]
+transform = Transform3D(0.62875795, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.916838, 0.031999998, 4.4149303)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass33" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=992045992]
+transform = Transform3D(0.41659233, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.44274, 0.031999998, 3.000653)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass34" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1854296516]
+transform = Transform3D(0.6756932, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.6993, 0.031999998, 3.2579331)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass35" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1413466900]
+transform = Transform3D(0.48339447, 0, 0, 0, 1, 0, 0, 0, 0.13323535, -5.681249, 0.031999998, -1.7067903)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass36" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=618421213]
+transform = Transform3D(0.68152744, 0, 0, 0, 1, 0, 0, 0, 0.08, -0.2977902, 0.031999998, 4.2415743)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass37" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=346098013]
+transform = Transform3D(0.4827026, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.587938, 0.031999998, 2.093184)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass38" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=245006111]
+transform = Transform3D(0.4302782, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.832715, 0.031999998, 1.471222)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass39" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=786713291]
+transform = Transform3D(0.68092585, 0, 0, 0, 1, 0, 0, 0, 0.08, 5.9662533, 0.031999998, 4.2355022)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass40" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1603148981]
+transform = Transform3D(0.7329743, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.862637, 0.031999998, 3.142868)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass41" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=889988396]
+transform = Transform3D(0.5157772, 0, 0, 0, 1, 0, 0, 0, 0.08, 4.0053062, 0.031999998, 4.437396)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass42" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=802678425]
+transform = Transform3D(0.63985425, 0, 0, 0, 1, 0, 0, 0, 0.08, 3.733965, 0.031999998, 3.9584782)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass43" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1513184186]
+transform = Transform3D(0.4795016, 0, 0, 0, 1, 0, 0, 0, 0.13216238, 2.7491548, 0.031999998, 3.9736922)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Grass44" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1832799554]
+transform = Transform3D(0.7442305, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.728374, 0.031999998, 2.4630892)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree01" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=380167341]
+transform = Transform3D(1.1410482, 0, 0, 0, 1, 0, 0, 0, 0.31898108, 6.05375, 0.031999998, -0.4885506)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree02" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1198279142]
+transform = Transform3D(0.479842, 0, 0, 0, 1, 0, 0, 0, 0.45879772, 6.508741, 0.031999998, -2.0910022)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree03" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=106091784]
+transform = Transform3D(1.057965, 0, 0, 0, 1, 0, 0, 0, 0.16228606, 6.9903445, 0.031999998, -0.928018)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree04" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=246831835]
+transform = Transform3D(1.6496755, 0, 0, 0, 1, 0, 0, 0, 0.40134782, -3.4994051, 0.031999998, -5.2604785)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=905489725]
+transform = Transform3D(0.9644746, 0, 0, 0, 1, 0, 0, 0, 0.21119109, -0.040284537, 0.031999998, 4.4065776)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree06" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=704044024]
+transform = Transform3D(1.0053489, 0, 0, 0, 1, 0, 0, 0, 0.38278374, -5.716176, 0.031999998, -4.461343)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree07" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=381268840]
+transform = Transform3D(1.1346086, 0, 0, 0, 1, 0, 0, 0, 0.31718087, 3.8811688, 0.031999998, -5.215559)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree08" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1672081826]
+transform = Transform3D(0.46027103, 0, 0, 0, 1, 0, 0, 0, 0.44008505, -2.8188791, 0.031999998, -5.4351487)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree09" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=2087465618]
+transform = Transform3D(1.119855, 0, 0, 0, 1, 0, 0, 0, 0.17177963, -7.512453, 0.031999998, 4.259589)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree10" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=450385651]
+transform = Transform3D(1.6846706, 0, 0, 0, 1, 0, 0, 0, 0.40986174, -6.6240554, 0.031999998, 3.5490804)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree11" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1811561816]
+transform = Transform3D(1.047188, 0, 0, 0, 1, 0, 0, 0, 0.22930287, 0.4260606, 0.031999998, 3.995182)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree12" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1850787476]
+transform = Transform3D(0.8919497, 0, 0, 0, 1, 0, 0, 0, 0.3396073, -6.485104, 0.031999998, 0.22567666)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree13" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=383021608]
+transform = Transform3D(1.0057647, 0, 0, 0, 1, 0, 0, 0, 0.28116247, -6.816133, 0.031999998, 1.7614244)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree14" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=168346866]
+transform = Transform3D(0.59920055, 0, 0, 0, 1, 0, 0, 0, 0.5729216, -6.222722, 0.031999998, -0.103834696)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree15" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=900066416]
+transform = Transform3D(1.1079566, 0, 0, 0, 1, 0, 0, 0, 0.16995448, 7.806368, 0.031999998, -0.085040905)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree16" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1417140249]
+transform = Transform3D(1.7994262, 0, 0, 0, 1, 0, 0, 0, 0.43778053, 8.079951, 0.031999998, -1.6592604)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree17" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1158472104]
+transform = Transform3D(1.0331043, 0, 0, 0, 1, 0, 0, 0, 0.22621895, -6.064434, 0.031999998, -0.44750798)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree18" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1918376430]
+transform = Transform3D(0.81734526, 0, 0, 0, 1, 0, 0, 0, 0.31120187, -5.759205, 0.031999998, 4.16238)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree19" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=505704677]
+transform = Transform3D(1.0343772, 0, 0, 0, 1, 0, 0, 0, 0.28916112, -0.7703102, 0.031999998, 3.844986)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree20" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1325942641]
+transform = Transform3D(0.6021127, 0, 0, 0, 1, 0, 0, 0, 0.57570606, 2.003769, 0.031999998, -5.030595)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree21" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1251060228]
+transform = Transform3D(1.05806, 0, 0, 0, 1, 0, 0, 0, 0.16230062, -7.761345, 0.031999998, 0.7025155)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree22" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=9560909]
+transform = Transform3D(1.6375161, 0, 0, 0, 1, 0, 0, 0, 0.39838958, -0.7754506, 0.031999998, -5.8784437)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree23" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1310529978]
+transform = Transform3D(1.0983216, 0, 0, 0, 1, 0, 0, 0, 0.24049959, 6.260653, 0.031999998, 4.2364573)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree24" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1787948023]
+transform = Transform3D(0.8444847, 0, 0, 0, 1, 0, 0, 0, 0.3215351, 2.9331589, 0.031999998, 3.6405191)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree25" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=497202192]
+transform = Transform3D(0.95337105, 0, 0, 0, 1, 0, 0, 0, 0.26651576, -6.051157, 0.031999998, -1.9948081)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree26" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1673729298]
+transform = Transform3D(0.52491784, 0, 0, 0, 1, 0, 0, 0, 0.5018968, 7.239225, 0.031999998, 0.9645177)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree27" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1454608957]
+transform = Transform3D(1.2191703, 0, 0, 0, 1, 0, 0, 0, 0.18701404, 6.333172, 0.031999998, 0.8830537)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Tree28" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=577405934]
+transform = Transform3D(1.6012726, 0, 0, 0, 1, 0, 0, 0, 0.38957193, -7.125902, 0.031999998, -1.064584)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush01" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=415716427]
+transform = Transform3D(0.9875746, 0, 0, 0, 1, 0, 0, 0, 0.08, -3.055464, 0.031999998, 3.559292)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush02" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1026388769]
+transform = Transform3D(1.1206983, 0, 0, 0, 1, 0, 0, 0, 0.08, -6.054992, 0.031999998, 4.195212)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush03" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=136733029]
+transform = Transform3D(0.9820605, 0, 0, 0, 1, 0, 0, 0, 0.089540295, 3.6857765, 0.031999998, 4.6893735)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush04" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1729715951]
+transform = Transform3D(1.1779345, 0, 0, 0, 1, 0, 0, 0, 0.11080444, 8.026897, 0.031999998, 4.429457)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1359323090]
+transform = Transform3D(1.0853412, 0, 0, 0, 1, 0, 0, 0, 0.08144741, -0.38510612, 0.031999998, 3.912774)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush06" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1377969181]
+transform = Transform3D(0.96059436, 0, 0, 0, 1, 0, 0, 0, 0.08, 7.257545, 0.031999998, -0.6784371)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush07" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1410858207]
+transform = Transform3D(1.1725384, 0, 0, 0, 1, 0, 0, 0, 0.10690729, -2.875569, 0.031999998, 3.836672)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush08" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1736070971]
+transform = Transform3D(1.0042733, 0, 0, 0, 1, 0, 0, 0, 0.0944687, -6.166797, 0.031999998, 0.2745763)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush09" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=926257809]
+transform = Transform3D(0.83691674, 0, 0, 0, 1, 0, 0, 0, 0.08, 1.3633671, 0.031999998, -3.4021099)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush10" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=80692170]
+transform = Transform3D(1.0080436, 0, 0, 0, 1, 0, 0, 0, 0.08, 2.639503, 0.031999998, -3.4041119)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush11" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=139236749]
+transform = Transform3D(1.235609, 0, 0, 0, 1, 0, 0, 0, 0.112657815, -1.6554514, 0.031999998, 4.2792354)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush12" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1256055375]
+transform = Transform3D(0.98294497, 0, 0, 0, 1, 0, 0, 0, 0.09246241, -3.007612, 0.031999998, -3.8067262)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush13" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=698578318]
+transform = Transform3D(0.8799242, 0, 0, 0, 1, 0, 0, 0, 0.08, 4.168983, 0.031999998, 4.201805)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_Bush14" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1587526924]
+transform = Transform3D(1.046489, 0, 0, 0, 1, 0, 0, 0, 0.08, -0.92239296, 0.031999998, -3.421067)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement12" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=470343709]
+transform = Transform3D(0.5028031, 0, 0, 0, 1, 0, 0, 0, 0.08, -1.820557, 0.031999998, 3.674549)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement13" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1698213521]
+transform = Transform3D(0.5028031, 0, 0, 0, 1, 0, 0, 0, 0.08, -3.584969, 0.031999998, -3.365676)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement14" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1156571460]
+transform = Transform3D(0.5028031, 0, 0, 0, 1, 0, 0, 0, 0.08, 2.4065719, 0.031999998, 3.6617112)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement15" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=379404149]
+transform = Transform3D(0.5028031, 0, 0, 0, 1, 0, 0, 0, 0.08, 3.8793728, 0.031999998, 3.6617112)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement16" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=542595671]
+transform = Transform3D(0.44586807, 0, 0, 0, 1, 0, 0, 0, 0.14119688, -5.7067995, 0.031999998, 0.6466445)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("Mesh_decoration_shadow")
+metadata/startx_generated_soft_shadow = true
+
+[node name="Shadow_SideElement17" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1665326574]
+transform = Transform3D(0.22, 0, 0, 0, 1, 0, 0, 0, 0.3325678, 5.5534625, 0.031999998, 0.6554493)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_7n5fl")
+metadata/startx_generated_soft_shadow = true
+metadata/startx_generated_background_asset = true
+
+[node name="Shadow_SideElement18" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=2093178868]
+transform = Transform3D(0.22, 0, 0, 0, 1, 0, 0, 0, 0.33256775, -5.348515, 0.031999998, 0.6554493)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_ixb5h")
+metadata/startx_generated_soft_shadow = true
+metadata/startx_generated_background_asset = true
+
+[node name="Shadow_SideElement19" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=1140094146]
+transform = Transform3D(0.22, 0, 0, 0, 1, 0, 0, 0, 0.33256775, -5.348515, 0.031999998, -1.816074)
+material_override = SubResource("ShaderMaterial_7jq2q")
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_afjfc")
+metadata/startx_generated_soft_shadow = true
+metadata/startx_generated_background_asset = true
+
+[node name="OutsideDecorations3D" type="Node3D" parent="." unique_id=576509649]
+
+[node name="Building01" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1201260651]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.912012, 2.2594254, -7.609939)
+cast_shadow = 2
+pixel_size = 0.009811284
+texture = ExtResource("3_cepi1")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building03" type="Sprite3D" parent="OutsideDecorations3D" unique_id=463311482]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.921755, 0.90270805, 2.2160215)
+cast_shadow = 2
+pixel_size = 0.005058499
+texture = ExtResource("4_7jq2q")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building02" type="Sprite3D" parent="OutsideDecorations3D" unique_id=276610743]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.199431, 0.6444471, -2.738248)
+cast_shadow = 2
+pixel_size = 0.004985606
+texture = ExtResource("5_7n5fl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building04" type="Sprite3D" parent="OutsideDecorations3D" unique_id=35747763]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.814869, 0.85473835, -4.963252)
+cast_shadow = 2
+pixel_size = 0.004783601
+texture = ExtResource("4_7jq2q")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2133779286]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.2316937, 0.73294765, -4.716375)
+cast_shadow = 2
+pixel_size = 0.004307841
+texture = ExtResource("6_ixb5h")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building06" type="Sprite3D" parent="OutsideDecorations3D" unique_id=423681804]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.5, 0.8660256, 0, -0.8660256, 0.5, 0.9102213, 0.9508947, -5.14331)
+cast_shadow = 2
+pixel_size = 0.0050868555
+texture = ExtResource("7_afjfc")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building07" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1080713169]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.902563, 2.06287, -5.0853896)
+cast_shadow = 2
+pixel_size = 0.008950143
+texture = ExtResource("3_cepi1")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building08" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1602980413]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.013358, 0.8602224, -5.091386)
+cast_shadow = 2
+pixel_size = 0.004591379
+texture = ExtResource("7_afjfc")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building09" type="Sprite3D" parent="OutsideDecorations3D" unique_id=14032761]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.248065, 0.5768243, -4.5859804)
+cast_shadow = 2
+pixel_size = 0.0044457032
+texture = ExtResource("5_7n5fl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Building10" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2111586112]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.220159, 0.8620596, 5.0546217)
+cast_shadow = 2
+pixel_size = 0.0050879735
+texture = ExtResource("6_ixb5h")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement01" type="Sprite3D" parent="OutsideDecorations3D" unique_id=68560766]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.7596436, 0.2053457, 2.1093206)
+cast_shadow = 2
+pixel_size = 0.0024549102
+texture = ExtResource("8_m7dsh")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement02" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1880655913]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.586816, 0.1805189, 3.829288)
+cast_shadow = 2
+pixel_size = 0.0031629344
+texture = ExtResource("9_rgj3p")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement03" type="Sprite3D" parent="OutsideDecorations3D" unique_id=4577213]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.6020393, 0.1683699, -2.9738119)
+cast_shadow = 2
+pixel_size = 0.0023182803
+texture = ExtResource("10_g4utj")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement04" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1803017725]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.156059, 0.1403112, -0.756762)
+cast_shadow = 2
+pixel_size = 0.0024553312
+texture = ExtResource("11_7464u")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1933191056]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.097009, 0.1116052, -0.4298281)
+cast_shadow = 2
+pixel_size = 0.0021180392
+texture = ExtResource("12_qiyu4")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement06" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1481490395]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.85413, 0.2378272, 1.035673)
+cast_shadow = 2
+pixel_size = 0.0029337
+texture = ExtResource("13_guyqw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement07" type="Sprite3D" parent="OutsideDecorations3D" unique_id=768354397]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 4.027222, 0.2406201, -3.8359752)
+cast_shadow = 2
+pixel_size = 0.0022685872
+texture = ExtResource("14_j3n3h")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement08" type="Sprite3D" parent="OutsideDecorations3D" unique_id=100554365]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.4534626, 0.5396372, -1.9296815)
+cast_shadow = 2
+pixel_size = 0.0024863025
+texture = ExtResource("15_6orx6")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement09" type="Sprite3D" parent="OutsideDecorations3D" unique_id=6161008]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.694605, 0.1822369, 3.5194745)
+cast_shadow = 2
+pixel_size = 0.0025957902
+texture = ExtResource("16_apmk7")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement10" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1057717055]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.952815, 0.1721448, -4.5756607)
+cast_shadow = 2
+pixel_size = 0.0021504571
+texture = ExtResource("17_hhm02")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement11" type="Sprite3D" parent="OutsideDecorations3D" unique_id=666726626]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 0.2784085, 0.1099559, -3.495676)
+cast_shadow = 2
+pixel_size = 0.0018265152
+texture = ExtResource("18_b0l05")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass01" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1071877744]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.851086, 0.09730734, 2.062925)
+material_override = SubResource("ShaderMaterial_rgj3p")
+cast_shadow = 2
+pixel_size = 0.0018971126
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass02" type="Sprite3D" parent="OutsideDecorations3D" unique_id=89817525]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.123853, 0.1371549, 3.509743)
+material_override = SubResource("ShaderMaterial_g4utj")
+cast_shadow = 2
+pixel_size = 0.0018670096
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass03" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1784602617]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.125287, 0.242243, 2.17774)
+material_override = SubResource("ShaderMaterial_7464u")
+cast_shadow = 2
+pixel_size = 0.0017095614
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass04" type="Sprite3D" parent="OutsideDecorations3D" unique_id=679611253]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -4.100153, 0.1158941, 3.472256)
+material_override = SubResource("ShaderMaterial_qiyu4")
+cast_shadow = 2
+pixel_size = 0.0016049222
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=683371235]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.092455, 0.1067077, -4.328122)
+material_override = SubResource("ShaderMaterial_guyqw")
+cast_shadow = 2
+pixel_size = 0.0016283131
+texture = ExtResource("23_o3j2c")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass06" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1663259711]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.512011, 0.1101219, 1.4561203)
+material_override = SubResource("ShaderMaterial_j3n3h")
+cast_shadow = 2
+pixel_size = 0.0017166073
+texture = ExtResource("24_rbx5a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass07" type="Sprite3D" parent="OutsideDecorations3D" unique_id=133930856]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.920243, 0.1043283, 1.67976)
+material_override = SubResource("ShaderMaterial_6orx6")
+cast_shadow = 2
+pixel_size = 0.0017847255
+texture = ExtResource("25_ix3t2")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass08" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1198577970]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.22943, 0.1056542, 3.964009)
+material_override = SubResource("ShaderMaterial_apmk7")
+cast_shadow = 2
+pixel_size = 0.0015433189
+texture = ExtResource("26_wjohv")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass09" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1247403346]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.600802, 0.09569003, 2.200922)
+material_override = SubResource("ShaderMaterial_hhm02")
+cast_shadow = 2
+pixel_size = 0.001857424
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass10" type="Sprite3D" parent="OutsideDecorations3D" unique_id=692769942]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -2.654129, 0.1053964, 4.119163)
+material_override = SubResource("ShaderMaterial_b0l05")
+cast_shadow = 2
+pixel_size = 0.0013608995
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass11" type="Sprite3D" parent="OutsideDecorations3D" unique_id=407488694]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.94473, 0.2478791, 1.789062)
+material_override = SubResource("ShaderMaterial_dntwa")
+cast_shadow = 2
+pixel_size = 0.001752916
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass12" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1661822441]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.66456, 0.1079826, 4.082973)
+material_override = SubResource("ShaderMaterial_ocii3")
+cast_shadow = 2
+pixel_size = 0.0014725119
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass13" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1556510646]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.349709, 0.09930617, 3.837584)
+material_override = SubResource("ShaderMaterial_xbo64")
+cast_shadow = 2
+pixel_size = 0.0014893177
+texture = ExtResource("23_o3j2c")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass14" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1373140219]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.857964, 0.1082171, 3.803885)
+material_override = SubResource("ShaderMaterial_v5wal")
+cast_shadow = 2
+pixel_size = 0.0016803258
+texture = ExtResource("24_rbx5a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass15" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1620007772]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.076145, 0.1025439, 3.514164)
+material_override = SubResource("ShaderMaterial_o3j2c")
+cast_shadow = 2
+pixel_size = 0.0017469602
+texture = ExtResource("25_ix3t2")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass16" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1248974782]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.258138, 0.1109172, 3.867537)
+material_override = SubResource("ShaderMaterial_rbx5a")
+cast_shadow = 2
+pixel_size = 0.0016381477
+texture = ExtResource("26_wjohv")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass17" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1432018970]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.284729, 0.08782781, 3.609803)
+material_override = SubResource("ShaderMaterial_ix3t2")
+cast_shadow = 2
+pixel_size = 0.0016644862
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass18" type="Sprite3D" parent="OutsideDecorations3D" unique_id=381429987]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 0.8125094, 0.120478, 4.311708)
+material_override = SubResource("ShaderMaterial_wjohv")
+cast_shadow = 2
+pixel_size = 0.0016012436
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass19" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1803323556]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.769571, 0.2095579, 1.422448)
+material_override = SubResource("ShaderMaterial_sfvvl")
+cast_shadow = 2
+pixel_size = 0.001458138
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass20" type="Sprite3D" parent="OutsideDecorations3D" unique_id=804497753]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.732088, 0.1191325, 3.832121)
+material_override = SubResource("ShaderMaterial_vgwdt")
+cast_shadow = 2
+pixel_size = 0.0016591217
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass21" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1115179202]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -2.286231, 0.119304, 4.547174)
+material_override = SubResource("ShaderMaterial_r2i57")
+cast_shadow = 2
+pixel_size = 0.0018648647
+texture = ExtResource("23_o3j2c")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass22" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1881125269]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.195863, 0.09376799, 2.235749)
+material_override = SubResource("ShaderMaterial_rdn3a")
+cast_shadow = 2
+pixel_size = 0.0014051045
+texture = ExtResource("24_rbx5a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass23" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1111416610]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.20644, 0.09922036, 2.010524)
+material_override = SubResource("ShaderMaterial_x61vx")
+cast_shadow = 2
+pixel_size = 0.0016766214
+texture = ExtResource("25_ix3t2")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass24" type="Sprite3D" parent="OutsideDecorations3D" unique_id=71983027]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.408627, 0.1057144, 3.417794)
+material_override = SubResource("ShaderMaterial_gmhjw")
+cast_shadow = 2
+pixel_size = 0.0015444036
+texture = ExtResource("26_wjohv")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass25" type="Sprite3D" parent="OutsideDecorations3D" unique_id=50199806]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.683625, 0.08737724, 3.732543)
+material_override = SubResource("ShaderMaterial_xd27c")
+cast_shadow = 2
+pixel_size = 0.0016534291
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass26" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2121129081]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.599315, 0.1219138, 2.06764)
+material_override = SubResource("ShaderMaterial_s4726")
+cast_shadow = 2
+pixel_size = 0.0016241245
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass27" type="Sprite3D" parent="OutsideDecorations3D" unique_id=774158321]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.2914524, 0.2545725, 4.45)
+material_override = SubResource("ShaderMaterial_a0v36")
+cast_shadow = 2
+pixel_size = 0.0018044036
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass28" type="Sprite3D" parent="OutsideDecorations3D" unique_id=373022778]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.020735, 0.1184631, 3.378895)
+material_override = SubResource("ShaderMaterial_2qjtu")
+cast_shadow = 2
+pixel_size = 0.0016479183
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass29" type="Sprite3D" parent="OutsideDecorations3D" unique_id=563110316]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.8360353, 0.1062188, 3.422702)
+material_override = SubResource("ShaderMaterial_0teua")
+cast_shadow = 2
+pixel_size = 0.0016191332
+texture = ExtResource("23_o3j2c")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass30" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1880394176]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.381362, 0.1041685, 0.4355029)
+material_override = SubResource("ShaderMaterial_c48ny")
+cast_shadow = 2
+pixel_size = 0.0016032099
+texture = ExtResource("24_rbx5a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass31" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2036351469]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.943233, 0.1084433, 3.503038)
+material_override = SubResource("ShaderMaterial_3uspl")
+cast_shadow = 2
+pixel_size = 0.0018718169
+texture = ExtResource("25_ix3t2")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass32" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2134741584]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.816838, 0.1077226, 4.28493)
+material_override = SubResource("ShaderMaterial_8r1aw")
+cast_shadow = 2
+pixel_size = 0.0015805882
+texture = ExtResource("26_wjohv")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass33" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2063381069]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.54274, 0.07552112, 2.870653)
+material_override = SubResource("ShaderMaterial_r5ddw")
+cast_shadow = 2
+pixel_size = 0.0013624815
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass34" type="Sprite3D" parent="OutsideDecorations3D" unique_id=358039978]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.5993, 0.120108, 3.127933)
+material_override = SubResource("ShaderMaterial_sybg6")
+cast_shadow = 2
+pixel_size = 0.0015953468
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass35" type="Sprite3D" parent="OutsideDecorations3D" unique_id=783347877]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.781249, 0.2281802, -1.8367903)
+material_override = SubResource("ShaderMaterial_kyqv3")
+cast_shadow = 2
+pixel_size = 0.0016013863
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass36" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1594228435]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.3977902, 0.1213723, 4.111574)
+material_override = SubResource("ShaderMaterial_xef77")
+cast_shadow = 2
+pixel_size = 0.001696608
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass37" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1945008902]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.487938, 0.09258533, 1.963184)
+material_override = SubResource("ShaderMaterial_c31l4")
+cast_shadow = 2
+pixel_size = 0.0013631047
+texture = ExtResource("23_o3j2c")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass38" type="Sprite3D" parent="OutsideDecorations3D" unique_id=160109202]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.932715, 0.09168573, 1.341222)
+material_override = SubResource("ShaderMaterial_sar5p")
+cast_shadow = 2
+pixel_size = 0.0013654424
+texture = ExtResource("24_rbx5a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass39" type="Sprite3D" parent="OutsideDecorations3D" unique_id=849870638]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.8662534, 0.105224, 4.105502)
+material_override = SubResource("ShaderMaterial_io6nt")
+cast_shadow = 2
+pixel_size = 0.0018036815
+texture = ExtResource("25_ix3t2")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass40" type="Sprite3D" parent="OutsideDecorations3D" unique_id=274117257]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.962637, 0.1222626, 3.012868)
+material_override = SubResource("ShaderMaterial_13ghs")
+cast_shadow = 2
+pixel_size = 0.0018425698
+texture = ExtResource("26_wjohv")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass41" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1152306872]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.905306, 0.08873992, 4.307396)
+material_override = SubResource("ShaderMaterial_as64u")
+cast_shadow = 2
+pixel_size = 0.0016868693
+texture = ExtResource("19_dntwa")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass42" type="Sprite3D" parent="OutsideDecorations3D" unique_id=23861941]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.633965, 0.1147983, 3.828478)
+material_override = SubResource("ShaderMaterial_n6i4d")
+cast_shadow = 2
+pixel_size = 0.0015107292
+texture = ExtResource("20_ocii3")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass43" type="Sprite3D" parent="OutsideDecorations3D" unique_id=435860436]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.649155, 0.2265037, 3.843692)
+material_override = SubResource("ShaderMaterial_brj34")
+cast_shadow = 2
+pixel_size = 0.0015884901
+texture = ExtResource("21_xbo64")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Grass44" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1730808447]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.628374, 0.130699, 2.333089)
+material_override = SubResource("ShaderMaterial_7ps08")
+cast_shadow = 2
+pixel_size = 0.0018527023
+texture = ExtResource("22_v5wal")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree01" type="Sprite3D" parent="OutsideDecorations3D" unique_id=148818431]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.95375, 0.5644456, -0.6185506)
+material_override = SubResource("ShaderMaterial_3s2gw")
+cast_shadow = 2
+pixel_size = 0.0045751734
+texture = ExtResource("27_sfvvl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree02" type="Sprite3D" parent="OutsideDecorations3D" unique_id=201334434]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.408741, 0.81116897, -2.2210023)
+material_override = SubResource("ShaderMaterial_4mijg")
+cast_shadow = 2
+pixel_size = 0.0040160865
+texture = ExtResource("28_vgwdt")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree03" type="Sprite3D" parent="OutsideDecorations3D" unique_id=705050797]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.8903446, 0.2835508, -1.058018)
+material_override = SubResource("ShaderMaterial_jejyo")
+cast_shadow = 2
+pixel_size = 0.004374287
+texture = ExtResource("29_r2i57")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree04" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2145259615]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.599405, 0.7074398, -5.3904786)
+material_override = SubResource("ShaderMaterial_as6jn")
+cast_shadow = 2
+pixel_size = 0.004500424
+texture = ExtResource("30_rdn3a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1451290810]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.14028454, 0.37286732, 4.2765775)
+material_override = SubResource("ShaderMaterial_iolwl")
+cast_shadow = 2
+pixel_size = 0.0044108415
+texture = ExtResource("31_x61vx")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree06" type="Sprite3D" parent="OutsideDecorations3D" unique_id=969953157]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.816176, 0.6725895, -4.591343)
+material_override = SubResource("ShaderMaterial_dlxbg")
+cast_shadow = 2
+pixel_size = 0.0051588104
+texture = ExtResource("32_gmhjw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree07" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1494733394]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.781169, 0.561373, -5.345559)
+material_override = SubResource("ShaderMaterial_23kxd")
+cast_shadow = 2
+pixel_size = 0.004549353
+texture = ExtResource("27_sfvvl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree08" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1240718448]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -2.918879, 0.77890015, -5.565149)
+material_override = SubResource("ShaderMaterial_g5w4o")
+cast_shadow = 2
+pixel_size = 0.0038522852
+texture = ExtResource("28_vgwdt")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree09" type="Sprite3D" parent="OutsideDecorations3D" unique_id=22379289]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.612453, 0.2989683, 4.129589)
+material_override = SubResource("ShaderMaterial_axi2l")
+cast_shadow = 2
+pixel_size = 0.0046301787
+texture = ExtResource("29_r2i57")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree10" type="Sprite3D" parent="OutsideDecorations3D" unique_id=311751102]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.7240553, 0.7220227, 3.4190803)
+material_override = SubResource("ShaderMaterial_jayhd")
+cast_shadow = 2
+pixel_size = 0.004595893
+texture = ExtResource("30_rdn3a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree11" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1760514137]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 0.3260606, 0.40312925, 3.865182)
+material_override = SubResource("ShaderMaterial_n61aw")
+cast_shadow = 2
+pixel_size = 0.004789116
+texture = ExtResource("31_x61vx")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree12" type="Sprite3D" parent="OutsideDecorations3D" unique_id=161648206]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.585104, 0.5989801, 0.09567666)
+material_override = SubResource("ShaderMaterial_jyuvr")
+cast_shadow = 2
+pixel_size = 0.0045769177
+texture = ExtResource("32_gmhjw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree13" type="Sprite3D" parent="OutsideDecorations3D" unique_id=753594919]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.916133, 0.4998958, 1.6314244)
+material_override = SubResource("ShaderMaterial_nsppr")
+cast_shadow = 2
+pixel_size = 0.0040327376
+texture = ExtResource("27_sfvvl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree14" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1745310479]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.322722, 1.0079687, -0.2338347)
+material_override = SubResource("ShaderMaterial_hnjee")
+cast_shadow = 2
+pixel_size = 0.0050150696
+texture = ExtResource("28_vgwdt")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree15" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2008911259]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.706368, 0.2960042, -0.2150409)
+material_override = SubResource("ShaderMaterial_nrx6m")
+cast_shadow = 2
+pixel_size = 0.0045809834
+texture = ExtResource("29_r2i57")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree16" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1495303553]
+transform = Transform3D(0.9999939, 0.0034400513, -0.0005642511, -0.0012319549, 0.50015354, 0.86593586, 0.0032610765, -0.8659299, 0.5001548, 7.979951, 0.7700751, -1.7892604)
+material_override = SubResource("ShaderMaterial_ww0tc")
+cast_shadow = 2
+pixel_size = 0.0049089543
+texture = ExtResource("30_rdn3a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree17" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1031674723]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.164434, 0.3979765, -0.577508)
+material_override = SubResource("ShaderMaterial_5vbf2")
+cast_shadow = 2
+pixel_size = 0.0047247065
+texture = ExtResource("31_x61vx")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree18" type="Sprite3D" parent="OutsideDecorations3D" unique_id=617972273]
+transform = Transform3D(0.9999907, -0.004296141, 0.0003477945, 0.0018465577, 0.4999262, 0.866066, -0.0038946138, -0.8660574, 0.49992958, -5.859205, 0.5505531, 4.03238)
+material_override = SubResource("ShaderMaterial_vo0st")
+cast_shadow = 2
+pixel_size = 0.0041940953
+texture = ExtResource("32_gmhjw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree19" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1580432911]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.87031025, 0.5135481, 3.7149858)
+material_override = SubResource("ShaderMaterial_cskdb")
+cast_shadow = 2
+pixel_size = 0.004147463
+texture = ExtResource("27_sfvvl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree20" type="Sprite3D" parent="OutsideDecorations3D" unique_id=894873004]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.903769, 1.0127704, -5.160595)
+material_override = SubResource("ShaderMaterial_2xi65")
+cast_shadow = 2
+pixel_size = 0.0050394437
+texture = ExtResource("28_vgwdt")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree21" type="Sprite3D" parent="OutsideDecorations3D" unique_id=36333354]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.861345, 0.2835744, 0.5725155)
+material_override = SubResource("ShaderMaterial_7cmwy")
+cast_shadow = 2
+pixel_size = 0.0043746796
+texture = ExtResource("29_r2i57")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree22" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1123514028]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.8754506, 0.7023728, -6.008444)
+material_override = SubResource("ShaderMaterial_m6mcv")
+cast_shadow = 2
+pixel_size = 0.0044672526
+texture = ExtResource("30_rdn3a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree23" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2092110735]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.160653, 0.4218372, 4.106457)
+material_override = SubResource("ShaderMaterial_fdsni")
+cast_shadow = 2
+pixel_size = 0.0050229654
+texture = ExtResource("31_x61vx")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree24" type="Sprite3D" parent="OutsideDecorations3D" unique_id=176117827]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.833159, 0.56816965, 3.510519)
+material_override = SubResource("ShaderMaterial_f8rlw")
+cast_shadow = 2
+pixel_size = 0.0043333573
+texture = ExtResource("32_gmhjw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree25" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1576392212]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.151157, 0.4748964, -2.124808)
+material_override = SubResource("ShaderMaterial_nu87h")
+cast_shadow = 2
+pixel_size = 0.0038226587
+texture = ExtResource("27_sfvvl")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree26" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2061394210]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.5, 0.8660256, 0, -0.8660256, 0.5, 7.139225, 0.88549054, 0.8345177)
+material_override = SubResource("ShaderMaterial_reomr")
+cast_shadow = 2
+pixel_size = 0.0043933536
+texture = ExtResource("28_vgwdt")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree27" type="Sprite3D" parent="OutsideDecorations3D" unique_id=567359063]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 6.233172, 0.3237088, 0.7530537)
+material_override = SubResource("ShaderMaterial_1n1a3")
+cast_shadow = 2
+pixel_size = 0.00504081
+texture = ExtResource("29_r2i57")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Tree28" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2072686536]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -7.225902, 0.6872697, -1.194584)
+material_override = SubResource("ShaderMaterial_cxe8c")
+cast_shadow = 2
+pixel_size = 0.004368378
+texture = ExtResource("30_rdn3a")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush01" type="Sprite3D" parent="OutsideDecorations3D" unique_id=913670451]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.155464, 0.1229315, 3.429292)
+material_override = SubResource("ShaderMaterial_56koc")
+cast_shadow = 2
+pixel_size = 0.002028207
+texture = ExtResource("9_rgj3p")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush02" type="Sprite3D" parent="OutsideDecorations3D" unique_id=706783858]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.154992, 0.123788, 4.065212)
+material_override = SubResource("ShaderMaterial_qheyj")
+cast_shadow = 2
+pixel_size = 0.002118122
+texture = ExtResource("11_7464u")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush03" type="Sprite3D" parent="OutsideDecorations3D" unique_id=507459574]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.5857766, 0.1443615, 4.5593734)
+material_override = SubResource("ShaderMaterial_d4ml4")
+cast_shadow = 2
+pixel_size = 0.00175776
+texture = ExtResource("17_hhm02")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush04" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1735475374]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.926897, 0.1738951, 4.299457)
+material_override = SubResource("ShaderMaterial_nir8o")
+cast_shadow = 2
+pixel_size = 0.0020726607
+texture = ExtResource("13_guyqw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1377219790]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.4851061, 0.1331214, 3.782774)
+material_override = SubResource("ShaderMaterial_rx46f")
+cast_shadow = 2
+pixel_size = 0.002228993
+texture = ExtResource("9_rgj3p")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush06" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1741735524]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 7.157545, 0.1089607, -0.8084371)
+material_override = SubResource("ShaderMaterial_5hrcc")
+cast_shadow = 2
+pixel_size = 0.0018155251
+texture = ExtResource("11_7464u")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush07" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1348392718]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -2.975569, 0.1684824, 3.706672)
+material_override = SubResource("ShaderMaterial_03vov")
+cast_shadow = 2
+pixel_size = 0.0020986905
+texture = ExtResource("17_hhm02")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush08" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2049637936]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -6.266797, 0.1512065, 0.1445763)
+material_override = SubResource("ShaderMaterial_pomk5")
+cast_shadow = 2
+pixel_size = 0.0017670912
+texture = ExtResource("13_guyqw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush09" type="Sprite3D" parent="OutsideDecorations3D" unique_id=754871761]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 1.263367, 0.107229, -3.53211)
+material_override = SubResource("ShaderMaterial_3um1s")
+cast_shadow = 2
+pixel_size = 0.0017187973
+texture = ExtResource("9_rgj3p")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush10" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2026518306]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.539503, 0.113355, -3.534112)
+material_override = SubResource("ShaderMaterial_1q2pa")
+cast_shadow = 2
+pixel_size = 0.0019052044
+texture = ExtResource("11_7464u")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush11" type="Sprite3D" parent="OutsideDecorations3D" unique_id=465786049]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.7554514, 0.1764692, 4.1492352)
+material_override = SubResource("ShaderMaterial_7ndou")
+cast_shadow = 2
+pixel_size = 0.0022115787
+texture = ExtResource("17_hhm02")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush12" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1199713554]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.107612, 0.14842, -3.9367263)
+material_override = SubResource("ShaderMaterial_xhe3s")
+cast_shadow = 2
+pixel_size = 0.0017295625
+texture = ExtResource("13_guyqw")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush13" type="Sprite3D" parent="OutsideDecorations3D" unique_id=757475027]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 4.068983, 0.1117115, 4.071805)
+material_override = SubResource("ShaderMaterial_hqd66")
+cast_shadow = 2
+pixel_size = 0.0018071227
+texture = ExtResource("9_rgj3p")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="Bush14" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1883179192]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.022393, 0.1169154, -3.551067)
+material_override = SubResource("ShaderMaterial_1gprw")
+cast_shadow = 2
+pixel_size = 0.0019778663
+texture = ExtResource("11_7464u")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement12" type="Sprite3D" parent="OutsideDecorations3D" unique_id=77776321]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -1.920557, 0.1099559, 3.544549)
+cast_shadow = 2
+pixel_size = 0.0018265152
+texture = ExtResource("18_b0l05")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement13" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1739668309]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -3.684969, 0.1099559, -3.495676)
+cast_shadow = 2
+pixel_size = 0.0018265152
+texture = ExtResource("18_b0l05")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement14" type="Sprite3D" parent="OutsideDecorations3D" unique_id=376044119]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 2.306572, 0.1099559, 3.531711)
+cast_shadow = 2
+pixel_size = 0.0018265152
+texture = ExtResource("18_b0l05")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement15" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1163774357]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 3.779373, 0.1099559, 3.531711)
+cast_shadow = 2
+pixel_size = 0.0018265152
+texture = ExtResource("18_b0l05")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement16" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1399161911]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -5.8067994, 0.2406201, 0.5166445)
+cast_shadow = 2
+pixel_size = 0.0022685872
+texture = ExtResource("14_j3n3h")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement17" type="Sprite3D" parent="OutsideDecorations3D" unique_id=178630461]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, 5.4534626, 0.5396372, 0.5254493)
+cast_shadow = 2
+pixel_size = 0.0024863025
+texture = ExtResource("15_6orx6")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement18" type="Sprite3D" parent="OutsideDecorations3D" unique_id=1357152815]
+transform = Transform3D(-0.99226046, 0.07424963, 0.09952927, -0.039275162, 0.5727203, -0.8188093, -0.117798746, -0.8163811, -0.5653717, -5.448515, 0.6166115, 0.5254493)
+cast_shadow = 2
+pixel_size = 0.0024863025
+texture = ExtResource("15_6orx6")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="SideElement19" type="Sprite3D" parent="OutsideDecorations3D" unique_id=342732298]
+transform = Transform3D(-0.99226046, 0.07424963, 0.09952927, -0.039275162, 0.5727203, -0.8188093, -0.117798746, -0.8163811, -0.5653717, -5.448515, 0.6166115, -1.946074)
+cast_shadow = 2
+pixel_size = 0.0024863025
+texture = ExtResource("15_6orx6")
+modulate = Color(1, 1, 1, 0.7)
+transparency = 0.3
+metadata/startx_generated_background_asset = true
+
+[node name="ActiveCanvasWhiteboard" type="MeshInstance3D" parent="." unique_id=72594680]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+material_override = SubResource("Material_whiteboard")
+mesh = SubResource("Plane_whiteboard")
+
+[node name="WhiteboardBorder" type="Node3D" parent="." unique_id=393249351]
+
+[node name="Top" type="MeshInstance3D" parent="WhiteboardBorder" unique_id=933867661]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07, -2.52)
+material_override = SubResource("Material_border")
+mesh = SubResource("Box_border_long")
+
+[node name="Bottom" type="MeshInstance3D" parent="WhiteboardBorder" unique_id=1569162934]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07, 2.52)
+material_override = SubResource("Material_border")
+mesh = SubResource("Box_border_long")
+
+[node name="Left" type="MeshInstance3D" parent="WhiteboardBorder" unique_id=628545155]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.52, 0.07, 0)
+material_override = SubResource("Material_border")
+mesh = SubResource("Box_border_short")
+
+[node name="Right" type="MeshInstance3D" parent="WhiteboardBorder" unique_id=1192541004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.52, 0.07, 0)
+material_override = SubResource("Material_border")
+mesh = SubResource("Box_border_short")
+
+[node name="CanvasDecorations3D" type="Node3D" parent="." unique_id=784306616]
+
+[node name="ForegroundDecorations3D" type="Node3D" parent="." unique_id=600743593]
+
+[node name="CanvasDecorationShadows3D" type="Node3D" parent="." unique_id=1888669704]
+metadata/startx_generated_background_asset = true
+
+[node name="ForegroundDecorationShadows3D" type="Node3D" parent="." unique_id=1835343673]
+metadata/startx_generated_background_asset = true

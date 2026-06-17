@@ -1,63 +1,46 @@
 {
   "0": [
-    "idea_mvp",
-    "idea_auto",
-    "idea_hr",
-    "idea_costctrl",
-    "idea_contractlaw",
-    "idea_metrics"
+    "basic_onboarding",
+    "basic_cashflow",
+    "org_recruit",
+    "supply_source",
+    "comp_watch",
+    "cap_accounting"
   ],
   "1": [
-    "idea_quality",
-    "idea_prototype",
-    "idea_consult",
-    "idea_train",
-    "idea_policy",
-    "idea_finance",
-    "idea_legal",
-    "idea_bi"
+    "basic_recipe_a",
+    "basic_signal_b",
+    "org_training",
+    "supply_link",
+    "comp_response",
+    "cap_budget"
   ],
   "2": [
-    "idea_platform",
-    "idea_microservice",
-    "idea_growth",
-    "idea_brand",
-    "idea_riskcom",
-    "idea_raise",
-    "idea_dataroom",
-    "idea_subsidy",
-    "idea_license",
-    "idea_data",
-    "idea_valmodel"
+    "basic_board_a",
+    "basic_rhythm_b",
+    "org_sales_track",
+    "org_product_track",
+    "supply_capacity",
+    "supply_quality",
+    "comp_defense",
+    "comp_attack",
+    "cap_finance",
+    "cap_profit"
   ],
   "3": [
-    "idea_devops",
-    "idea_channel",
-    "idea_keyaccount",
-    "idea_autoflow",
-    "idea_culture",
-    "idea_seriesA",
-    "idea_govmarket",
-    "idea_audit",
-    "idea_investornet"
+    "basic_mastery_a",
+    "basic_dash_b",
+    "org_management",
+    "supply_network",
+    "comp_moat",
+    "cap_structure"
   ],
   "4": [
-    "idea_ai_rnd",
-    "idea_globalsales",
-    "idea_okr",
-    "idea_capital",
-    "idea_ma",
-    "idea_compliance",
-    "idea_pr",
-    "idea_marketcap"
+    "org_departments",
+    "supply_platform",
+    "comp_dominance",
+    "cap_ipo"
   ],
-  "5": [
-    "idea_rnd_org",
-    "idea_salesengine",
-    "idea_orgscale",
-    "idea_treasury",
-    "idea_pubco",
-    "idea_ipo"
-  ],
+  "5": [],
   "6": []
 }

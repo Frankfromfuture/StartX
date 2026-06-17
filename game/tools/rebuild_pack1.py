@@ -102,11 +102,9 @@ GARAGE_SLOTS = [
 ]
 
 DEVELOPMENT_SLOTS = [
-    [("p2_law_firm", 55), ("p2_contract", 45)],
-    [("p1_intern", 25), ("p2_grad", 20), ("p2_admin_management", 30), ("p2_orderly_workstation", 25)],
-    [("p1_survey", 34), ("p1_marketing", 33), ("p2_document", 33)],
-    [("p2_sales_course", 34), ("p2_product_course", 33), ("p2_legal_admin_course", 33)],
-    [("p2_sales_specialist", 34), ("p2_product_specialist", 33), ("p2_admin_specialist", 33)],
+    [("p1_neighborhood", 30), ("p1_wholesale", 30), ("p2_law_firm", 25), ("p1_university", 15)],
+    [("p2_document", 40), ("p1_intern", 25), ("p1_survey", 15), ("p1_marketing", 15), ("p2_admin_management", 5)],
+    [("p2_grad", 20), ("p2_sales_course", 20), ("p2_product_course", 20), ("p2_legal_admin_course", 20), ("p2_document", 20)],
 ]
 
 
@@ -219,7 +217,7 @@ def main():
     if dr:
         set_row(pw, dr, "price", 5)
         set_row(pw, dr, "minCards", 3)
-        set_row(pw, dr, "maxCards", 5)
+        set_row(pw, dr, "maxCards", 3)
         for si, cands in enumerate(DEVELOPMENT_SLOTS, start=1):
             for ci, (cid, prob) in enumerate(cands, start=1):
                 set_row(pw, dr, "slot%dCard%d" % (si, ci), cid)

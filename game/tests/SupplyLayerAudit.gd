@@ -15,14 +15,25 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var founder = main.spawn_card("founder", Vector2(420, 360))
+	var founder = main._founder_on_board()
+	if founder == null:
+		founder = main.spawn_card("founder", Vector2(420, 360))
 	var neighborhood = main.spawn_card("p1_neighborhood", Vector2(520, 360))
 	var production_sid: int = main._merge(founder.stack_id, neighborhood.stack_id)
 	var survey = main.spawn_card("p1_survey", Vector2(800, 360))
 
 	var source = main._supply_source_anchor(production_sid)
 	assert(main._stack_accepts_supply_outputs(source.stack_id, survey.stack_id))
+	var game_state = root.get_node("GameState")
+	game_state.stage = 0
+	assert(main._supply_chain_limit() == 0)
+	assert(not main._can_connect_supply_source(source))
+	game_state.stage = 2
+	assert(main._supply_chain_limit() == 1)
+	assert(main._can_connect_supply_source(source))
 	main._set_supply_chain(source, survey)
+	assert(main._supply_chain_count() == 1)
+	assert(main._can_connect_supply_source(source))
 	main._update_supply_arrow_mesh()
 
 	var arrow_mesh: MeshInstance3D = main.supply_arrow_mesh

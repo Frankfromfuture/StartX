@@ -11,7 +11,7 @@ crisp pixels. Drawn in code so shapes stay symmetric and consistent.
 import os
 
 N = 16
-OUT = os.path.join(os.path.dirname(__file__), "..", "assets", "cards")
+OUT = os.path.join(os.path.dirname(__file__), "..", "assets", "svg", "cards")
 
 # palette: letter -> hex (None = transparent)
 PAL = {
@@ -605,7 +605,7 @@ FOUNDER = {
 PALETTE_OVERRIDE = {"cash": GOLD, "founder": FOUNDER}
 
 
-PACKS_OUT = os.path.join(os.path.dirname(__file__), "..", "assets", "packs")
+PACKS_OUT = os.path.join(os.path.dirname(__file__), "..", "assets", "svg", "packs")
 PACKS = {"garage_pack": garage_pack}
 
 

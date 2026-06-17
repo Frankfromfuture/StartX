@@ -113,7 +113,7 @@ func _icon_tex() -> Texture2D:
 		return null
 	if _tex_cache.has(pack_id):
 		return _tex_cache[pack_id]
-	var path := "res://assets/packs/%s.svg" % pack_id
+	var path := "res://assets/svg/packs/%s.svg" % pack_id
 	if not FileAccess.file_exists(path):
 		# web 导出剥离了源文件 → 用导入的纹理（无法再染色，原色已是白/灰，可接受）
 		if ResourceLoader.exists(path):

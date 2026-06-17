@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <title>国际扩张</title>
+  <rect width="256" height="256" rx="24" fill="#6b547e"/>
+  <rect x="20" y="20" width="216" height="216" rx="18" fill="#fbf3e7" stroke="#151515" stroke-width="10"/>
+  <rect x="36" y="36" width="184" height="34" rx="8" fill="#6b547e"/>
+  <path d="M72 96 L128 64 L184 96 L184 166 L128 198 L72 166 Z" fill="#eee7f5" stroke="#151515" stroke-width="10" stroke-linejoin="round"/><path d="M72 96 L128 128 L184 96 M128 128 L128 198" fill="none" stroke="#151515" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M72 212 H184" stroke="#151515" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+</svg>

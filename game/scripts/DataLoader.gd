@@ -4,6 +4,7 @@ extends Node
 var cards: Dictionary = {}
 var recipes: Array = []
 var packs: Dictionary = {}
+var tasks: Array = []
 var balance: Dictionary = {}
 var research: Dictionary = {}
 var idea_pools: Dictionary = {}
@@ -29,8 +30,30 @@ func _load_workbook() -> void:
 	recipes = _parse_recipes(_rows_as_dicts(sheets.get("recipes", [])))
 	_add_business_model_cards()
 	packs = _parse_packs(_rows_as_dicts(sheets.get("packs", [])))
+	tasks = _parse_tasks(_rows_as_dicts(sheets.get("tasks", [])))
 	_validate_workbook_data()
-	print("DataLoader: 从 Excel 载入 %d 卡 / %d 配方 / %d 卡包" % [cards.size(), recipes.size(), packs.size()])
+	print("DataLoader: 从 Excel 载入 %d 卡 / %d 配方 / %d 卡包 / %d 任务" % [cards.size(), recipes.size(), packs.size(), tasks.size()])
+
+func _parse_tasks(rows: Array) -> Array:
+	var out: Array = []
+	for d in rows:
+		var task_id := String(d.get("id", "")).strip_edges()
+		if task_id == "":
+			continue
+		out.append({
+			"id": task_id,
+			"section": String(d.get("section", "主任务")).strip_edges(),
+			"group": String(d.get("group", "其他")).strip_edges(),
+			"title": String(d.get("title", task_id)).strip_edges(),
+			"content": String(d.get("content", "")).strip_edges(),
+			"triggerType": String(d.get("triggerType", "")).strip_edges(),
+			"targetId": String(d.get("targetId", "")).strip_edges(),
+			"targetCount": maxi(1, String(d.get("targetCount", "1")).to_int()),
+			"unlockPack": String(d.get("unlockPack", "")).strip_edges(),
+			"order": String(d.get("order", "0")).to_int(),
+		})
+	out.sort_custom(func(a, b): return int(a["order"]) < int(b["order"]))
+	return out
 
 # 用表头行把每行转成 { 列名: 字符串值 }
 func _rows_as_dicts(rows: Array) -> Array:
@@ -261,7 +284,7 @@ func _parse_pack_slots(d: Dictionary) -> Array:
 	var out: Array = []
 	for s in range(1, 6):
 		var slot: Array = []
-		for o in range(1, 5):
+		for o in range(1, 6):
 			var cid := String(d.get("slot%dCard%d" % [s, o], "")).strip_edges()
 			if cid == "":
 				continue

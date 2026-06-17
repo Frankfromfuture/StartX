@@ -14,7 +14,7 @@ var display_mode: int = 0  # 0 = 1x Window (1280x720), 1 = 2x Window (1920x1080)
 var fullscreen_resolution: int = 0 # 0 = 1920x1080, 1 = 2560x1440, 2 = 3840x2160, 3 = 1280x720, 4 = 1600x900
 var card_clarity: int = 1
 var mipmap_bias: float = 0.0
-var background_mode: int = 1 # 0 = City Builder, 1 = 简单环境
+var background_mode: int = 1 # 0 = Godot3D 标记, 1 = 简单环境
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -71,13 +71,14 @@ func set_background_mode(value: int) -> void:
 
 func open_city_builder() -> bool:
 	var godot := OS.get_executable_path()
-	var project_path := (ProjectSettings.globalize_path("res://") + "../City-Builder").simplify_path()
+	var project_path := ProjectSettings.globalize_path("res://").simplify_path()
+	var scene_path := "res://scenes/backgrounds/EditableBattleBackground3D.tscn"
 	if not DirAccess.dir_exists_absolute(project_path):
-		push_warning("未找到 City-Builder 工程：%s" % project_path)
+		push_warning("未找到当前工程：%s" % project_path)
 		return false
-	var pid := OS.create_process(godot, ["--path", project_path])
+	var pid := OS.create_process(godot, ["--path", project_path, "--editor", scene_path])
 	if pid <= 0:
-		push_warning("启动 City Builder 失败（pid=%d）" % pid)
+		push_warning("启动 Godot3D 背景编辑失败（pid=%d）" % pid)
 		return false
 	return true
 

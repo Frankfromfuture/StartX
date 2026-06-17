@@ -827,7 +827,7 @@ func _build_extra_settings() -> void:
 	background_mode_btn = OptionButton.new()
 	background_mode_btn.custom_minimum_size = Vector2(240, 48)
 	_prepare_button(background_mode_btn, Color("f7f0e2"), 18)
-	background_mode_btn.add_item("City Builder", 0)
+	background_mode_btn.add_item("Godot3D 标记", 0)
 	background_mode_btn.add_item("简单环境", 1)
 	background_mode_btn.selected = Settings.background_mode
 	background_mode_btn.item_selected.connect(_on_background_mode_selected)
@@ -835,7 +835,7 @@ func _build_extra_settings() -> void:
 	_remove_popup_checkmarks(background_mode_btn)
 
 	var city_builder_button := Button.new()
-	city_builder_button.text = "编辑 City Builder"
+	city_builder_button.text = "编辑 Godot3D 背景"
 	city_builder_button.custom_minimum_size = Vector2(0, 58)
 	_prepare_button(city_builder_button, BLUE, 20)
 	city_builder_button.pressed.connect(_open_city_builder)

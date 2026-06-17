@@ -2,12 +2,12 @@
 
 卡牌中心图案优先加载：
 
-1. `res://assets/cards/<卡牌显示名>.svg`
-2. `res://assets/cards/<卡牌显示名>.png`
-3. `res://assets/cards/<card_id>.svg`
-4. `res://assets/cards/<card_id>.png`
+1. `res://assets/svg/cards/<卡牌显示名>.svg`
+2. `res://assets/svg/cards/<卡牌显示名>.png`
+3. `res://assets/svg/cards/<card_id>.svg`
+4. `res://assets/svg/cards/<card_id>.png`
 
-也就是说，新 SVG 放在 `game/assets/cards/` 目录下，文件名直接用卡牌显示名即可，例如：
+也就是说，新 SVG 放在 `game/assets/svg/cards/` 目录下，文件名直接用卡牌显示名即可，例如：
 
 - `创始人.svg`
 - `客户资源.svg`

@@ -25,7 +25,10 @@ var total_revenue: int = 0           # cumulative recognised revenue
 var valuation: int = 0
 var stage: int = 0
 var monthly_expense: int = 0
-var dev_mode: bool = false
+var dev_mode: bool = true
+var task_unlocked_packs: Dictionary = {"garage_pack": true}
+var completed_tasks: Dictionary = {}
+var task_counters: Dictionary = {}
 var rng := RandomNumberGenerator.new()
 
 func reset() -> void:
@@ -43,6 +46,14 @@ func reset() -> void:
 	valuation = 0
 	stage = 0
 	monthly_expense = 0
+	task_unlocked_packs = {"garage_pack": true}
+	completed_tasks.clear()
+	task_counters.clear()
+
+func unlock_pack_from_task(pack_id: String) -> void:
+	if pack_id == "":
+		return
+	task_unlocked_packs[pack_id] = true
 
 func add_revenue(n: int) -> void:
 	total_revenue += n
@@ -73,6 +84,15 @@ func can_unlock(idea_id: String) -> bool:
 		return false
 	for pre in node.get("prereq", []):
 		if not unlocked_ideas.has(pre):
+			return false
+	var any_prereq: Array = node.get("anyPrereq", [])
+	if not any_prereq.is_empty():
+		var any_done := false
+		for pre in any_prereq:
+			if unlocked_ideas.has(pre):
+				any_done = true
+				break
+		if not any_done:
 			return false
 	return true
 

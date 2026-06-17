@@ -23,7 +23,7 @@ const HUD_H := 62.0
 const DRAW_Y0 := 52.0
 const DRAW_Y1 := 160.0          # 抽卡区压扁成一条工具栏（研发|卡包|出售同排）
 const MID_Y0 := 160.0           # 画布上边（锚定在 UI 区下方）
-# 活跃画布 = City-Builder 里 9×5 的白色标记板：CELL=168 单位/格，宽=9 格(1512)、高=5 格(840)
+# 活跃画布 = Godot3D 里 9×5 的白色标记板：CELL=168 单位/格，宽=9 格(1512)、高=5 格(840)
 const CITY_CELL := 168.0        # 每个 city-builder 格子对应的画布单位
 const MID_Y1 := 1000.0          # 画布下边 = MID_Y0 + 5*CITY_CELL = 160+840（高=5 格）
 const ORG_Y0 := 1000.0          # 组织/部门折叠区位于画布底部（跟随 MID_Y1）
@@ -38,6 +38,9 @@ const TOOLBAR_BUTTON_H := 72.0
 const TOP_LABEL_FONT_SIZE := 26
 const TOP_ICON_SIZE := 31.2
 const FIXED_MONTHLY_EXPENSE := 0
+const BUSINESS_MODEL_CHANCE := 0.50
+const START_PACK_GAP := CW * 0.5
+const SUPPLY_CHAIN_HUD_SHIFT := 105.0
 
 # ---- Perspective ----  (1.0 = OFF/flat)；0.9 = 轻微一点透视（顶窄底宽）
 const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
@@ -101,12 +104,20 @@ var bottom_info: Node2D     # 底部信息栏（HUD 层绘制，始终盖在卡�
 var book_tab_shadow: Node2D # 商业模式整体阴影背景
 var book_tab_seam: Node2D   # 商业模式弹窗与按钮的「文件夹标签」融合缝盖
 var book_btn: Button        # 商业模式按钮（作为弹窗的文件夹标签）
+var task_btn: Button
+var task_panel: PanelContainer
+var task_list: VBoxContainer
+var task_tab_shadow: Node2D
+var task_tab_seam: Node2D
+var task_collapsed: Dictionary = {}
+var max_space_capacity_seen: int = 0
 const PANEL_CREAM := Color(0.98, 0.95, 0.89, 0.97)   # 弹窗/标签共用奶白底
 var lbl_status: Label
 var lbl_month: Label
 var lbl_top_rp: Label
 var lbl_finance: Label
 var lbl_expense: Label
+var lbl_supply_chain: Label
 var lbl_val: Label
 var lbl_business: Label
 var hover_panel: Panel
@@ -116,6 +127,8 @@ var clarity_btn: OptionButton = null
 var bias_btn: OptionButton = null
 var background_mode_btn: OptionButton = null
 var hover_label: Label
+var hover_follows_mouse: bool = false
+var hovered_meta: String = ""
 var founder_bubble: Control = null
 var founder_bubble_anchor: Vector2 = Vector2.ZERO   # board-space topleft when bubble appeared; bubble dies if the card moves
 
@@ -159,6 +172,7 @@ var bank_button: Button
 var pixel_font: Font
 var pixel_regular_font: Font
 var battle_bold_font: Font
+var ui_bold_font_cached: Font
 var hint_text: String = DEFAULT_HINT
 var selected_card = null
 var toast_t: float = 0.0
@@ -174,7 +188,7 @@ const VIEW_ZOOM_MIN := 0.286
 const VIEW_ZOOM_MAX := 6.0
 const VIEW_ZOOM_STEP := 1.12
 
-# ---- 3D 相机驱动（Phase 1）：缩放/平移动 City Builder 的 3D 相机 ----
+# ---- 3D 相机驱动（Phase 1）：缩放/平移动 Godot3D 背景相机 ----
 # board 空间 [CANVAS_X0..X1]×[MID_Y0..MID_Y1] 线性映射到白板世界矩形（中心在世界原点）
 const BOARD_CX := (CANVAS_X0 + CANVAS_X1) * 0.5   # 960
 const BOARD_CY := (MID_Y0 + MID_Y1) * 0.5         # 580
@@ -182,6 +196,9 @@ const CARD3D_THICK := 0.05 / 3.0                    # 卡牌厚度（薄盒子�
 const CARD_PLANE_Y := 0.05 + CARD3D_THICK           # 卡顶高度（盒底正好贴白板）
 const CARD3D_RADIUS := 9.0 / 180.0 * (CW / CITY_CELL) # 与 Card.CARD_RADIUS 一致的轻微圆角
 const PACK3D_THICK := CARD3D_THICK * 2.5            # 卡包厚度（原厚度的一半）
+const BACKGROUND_HALF_W := 9.0                      # EditableBattleBackground3D 的 OuterBackgroundPlane: 18×10
+const BACKGROUND_HALF_D := 5.0
+const BACKGROUND_VIEW_PAD := 0.03                   # 留一点边，避免透视边缘露出白底
 const DEFAULT_CAM_PITCH_DEG := 77.0
 const DEFAULT_CAM_DIST := 2.31
 const VIEW_PREF_PATH := "user://startx_view.cfg"
@@ -192,8 +209,8 @@ const CAM_PITCH_MIN := 59.0
 const CAM_PITCH_MAX := 86.0
 const CAM_PITCH_STEP := 9.0
 const CAM_DIST_MIN := 1.6
-const CAM_DIST_MAX := 9.0
 const CAM_DIST_STEP := 1.12
+const CAM_DIST_MAX := 12.0
 const FLY_OUT_TIME := 0.43
 const FLY_OUT_ROT_TIME := 0.37
 
@@ -204,7 +221,7 @@ var research_rows: Array = []        # [{btn, id}]
 var pack_buttons: Array = []         # [{btn, id, pack}]
 var loose_packs: Array = []
 var recipe_panel: PanelContainer
-var recipe_list: RichTextLabel
+var recipe_list: VBoxContainer
 var codex_panel: PanelContainer
 var codex_grid: GridContainer
 var codex_preview: Node2D
@@ -261,6 +278,8 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_layout_responsive)
 	_layout_responsive()
 	_spawn_start_cards()
+	max_space_capacity_seen = _business_card_capacity()
+	_task_event("game_start")
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -331,6 +350,7 @@ func _apply_camera() -> void:
 	if city_bg == null:
 		return
 	city_bg.pitch_deg = cam_pitch_deg
+	cam_dist = minf(cam_dist, _max_background_safe_cam_dist())
 	city_bg.aim(cam_target, cam_dist)
 	_clamp_view_offset()
 	city_bg.aim(cam_target, cam_dist)
@@ -371,13 +391,38 @@ func _save_default_camera_pitch(value: float) -> void:
 		push_warning("保存默认视角角度失败：%s (err=%d)" % [VIEW_PREF_PATH, err])
 
 func _clamp_view_offset() -> void:
-	var canvas_half_w := (CANVAS_X1 - CANVAS_X0) / CITY_CELL * 0.5
-	var canvas_half_d := (MID_Y1 - MID_Y0) / CITY_CELL * 0.5
 	var visible_half := _visible_world_half_extents()
-	var half_w := canvas_half_w * 0.25 + maxf(0.0, canvas_half_w - visible_half.x)
-	var half_d := canvas_half_d + maxf(0.0, canvas_half_d - visible_half.y)
+	var half_w := maxf(0.0, BACKGROUND_HALF_W - BACKGROUND_VIEW_PAD - visible_half.x)
+	var half_d := maxf(0.0, BACKGROUND_HALF_D - BACKGROUND_VIEW_PAD - visible_half.y)
 	cam_target.x = clampf(cam_target.x, -half_w, half_w)
 	cam_target.z = clampf(cam_target.z, -half_d, half_d)
+
+func _max_background_safe_cam_dist() -> float:
+	if city_bg == null or _cam() == null:
+		return CAM_DIST_MAX
+	var original_dist: float = cam_dist
+	if _camera_dist_fits_background(CAM_DIST_MAX):
+		city_bg.aim(cam_target, original_dist)
+		return CAM_DIST_MAX
+	if not _camera_dist_fits_background(CAM_DIST_MIN):
+		city_bg.aim(cam_target, original_dist)
+		return CAM_DIST_MIN
+	var lo: float = CAM_DIST_MIN
+	var hi: float = CAM_DIST_MAX
+	for _i in 18:
+		var mid: float = (lo + hi) * 0.5
+		if _camera_dist_fits_background(mid):
+			lo = mid
+		else:
+			hi = mid
+	city_bg.aim(cam_target, original_dist)
+	return lo
+
+func _camera_dist_fits_background(dist: float) -> bool:
+	city_bg.aim(cam_target, dist)
+	var visible_half := _visible_world_half_extents()
+	return visible_half.x <= BACKGROUND_HALF_W - BACKGROUND_VIEW_PAD \
+		and visible_half.y <= BACKGROUND_HALF_D - BACKGROUND_VIEW_PAD
 
 func _visible_world_half_extents() -> Vector2:
 	if _cam() == null:
@@ -442,7 +487,7 @@ func clamp_to_zone(pos: Vector2, _zone: String = "") -> Vector2:
 	return Vector2(x, y)
 
 func _simple_environment_active() -> bool:
-	return Settings.background_mode == 1
+	return true
 
 func _clamp_stack_to_simple_board(pos: Vector2, sid: int) -> Vector2:
 	if not _simple_environment_active():
@@ -628,16 +673,24 @@ func _jit(amount: float) -> Vector2:
 	return Vector2(GameState.rng.randf_range(-amount, amount), GameState.rng.randf_range(-amount, amount))
 
 func _spawn_start_cards() -> void:
-	# 开局只有一个车库包（6 张牌，含创始人）；点一下跳一张，点完消失
+	# 创始人先在场上，随后车库创业包从画面顶部落下；卡包不再包含创始人。
 	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
-	var contents := ["founder", "p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
-	# 开局卡包直接弹到屏幕中央：以屏幕中心反投影到 board，再减去半张卡居中
-	var center_tl := _unproject(_screen_center() \
-		- Vector2(PACK_W, PACK_H) * 0.5 * view_zoom)
-	_spawn_loose_pack("garage_pack", pack, contents, center_tl, true)   # 直接 3D 出现在白板上
+	var contents := ["p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
+	var founder_screen := _screen_center()
+	var founder_pos := clamp_to_zone(
+		_unproject(founder_screen - Vector2(CW, CH) * 0.5 * view_zoom),
+		"office"
+	)
+	var founder := _spawn_card_pop("founder", founder_pos)
+	if is_instance_valid(founder):
+		founder.is_new_discovery = false
+	var pack_pos := _clamp_pack_to_simple_board(
+		founder_pos + Vector2(CW + START_PACK_GAP, (CH - PACK_H) * 0.5)
+	)
+	_spawn_loose_pack("garage_pack", pack, contents, pack_pos, false)
 
 	# 在活跃画布右侧生成一摞物理现金堆叠，资金完全由画布上的现金卡牌决定
-	var start_cash := int(DataLoader.balance.get("start_cash", 50))
+	var start_cash := int(DataLoader.balance.get("start_cash", 50)) if GameState.dev_mode else 0
 	if start_cash > 0:
 		var right_pos := clamp_to_zone(Vector2(CANVAS_X1 - CW - 80.0, (MID_Y0 + MID_Y1) * 0.5 - CH * 0.5))
 		var sid := next_stack_id
@@ -673,7 +726,7 @@ func spawn_card(id: String, pos: Vector2) -> Node2D:
 	var c = CardScript.new()
 	add_child(c)
 	c.setup(id)
-	c.is_new_discovery = first_appearance and c.ctype != "rival"
+	c.is_new_discovery = first_appearance and c.ctype != "rival" and id not in ["founder", "cash"]
 	if not is_person(c):
 		c.zone = _zone_for_center(pos + Vector2(CW * 0.5, CH * 0.5))
 	var sid := next_stack_id
@@ -756,7 +809,7 @@ func _ensure_face3d(c) -> void:
 	var fmat := StandardMaterial3D.new()
 	fmat.albedo_color = Color("141414")
 	frame.material_override = fmat
-	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cardroot.add_child(frame)
 	# 厚度涂色（奶白）：X/Z 略大盖住侧面中段、Y 内缩露出上下黑框线
 	var eb := 0.00867
@@ -843,7 +896,7 @@ func _add_new_card_badge(c, cardroot: Node3D) -> void:
 	material.alpha_scissor_threshold = 0.25
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_texture = load("res://assets/ui/new.svg")
+	material.albedo_texture = load("res://assets/svg/ui/new.svg")
 	mesh_instance.material_override = material
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	badge.add_child(mesh_instance)
@@ -860,7 +913,7 @@ func _add_new_card_badge(c, cardroot: Node3D) -> void:
 	shadow_material.alpha_scissor_threshold = 0.25
 	shadow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	shadow_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	shadow_material.albedo_texture = load("res://assets/ui/new.svg")
+	shadow_material.albedo_texture = load("res://assets/svg/ui/new.svg")
 	shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.35)
 	shadow_instance.material_override = shadow_material
 	shadow_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1140,25 +1193,47 @@ func _spend_cash_cards(amount: int, target = null) -> bool:
 	# 播放扣除现金的飞入和消散动画
 	for i in cash_to_animate.size():
 		var c = cash_to_animate[i]
-		var target_pos: Vector2 = c.position
-		if target is Vector2:
-			target_pos = _project(target)
-		elif target is Control:
-			target_pos = target.global_position + target.size * 0.5
-		elif target is Array and not target.is_empty():
-			var t = target[i % target.size()]
-			if is_instance_valid(t):
-				if t is Control:
-					target_pos = t.global_position + t.size * 0.5
-				else:
-					target_pos = t.position
-		elif is_instance_valid(target):
-			target_pos = target.global_position + target.size * 0.5 if target is Control else target.position
-			
+		var target_pos := _cash_spend_target_position(target, i, c.position)
 		_animate_cash_spend(c, target_pos, 0.05 * i)
+
+	if need > 0:
+		var account_offset := cash_to_animate.size()
+		for account in _accounts_with_cash():
+			if need <= 0:
+				break
+			var take := mini(need, account.stored_cash)
+			account.stored_cash -= take
+			_refresh_card_face(account)
+			for i in take:
+				var visual_cash = CardScript.new()
+				add_child(visual_cash)
+				visual_cash.setup("cash")
+				visual_cash.position = account.position
+				visual_cash.scale = account.scale
+				var target_pos := _cash_spend_target_position(
+					target,
+					account_offset + i,
+					account.position
+				)
+				_animate_cash_spend(visual_cash, target_pos, 0.05 * (account_offset + i))
+			account_offset += take
+			need -= take
 		
 	_sync_cash_state()
 	return true
+
+func _cash_spend_target_position(target, index: int, fallback: Vector2) -> Vector2:
+	if target is Vector2:
+		return _project(target)
+	if target is Control:
+		return target.global_position + target.size * 0.5
+	if target is Array and not target.is_empty():
+		var t = target[index % target.size()]
+		if is_instance_valid(t):
+			return t.global_position + t.size * 0.5 if t is Control else t.position
+	if is_instance_valid(target):
+		return target.global_position + target.size * 0.5 if target is Control else target.position
+	return fallback
 
 func _animate_cash_spend(c, target_pos: Vector2, delay: float) -> void:
 	if not is_instance_valid(c):
@@ -1268,8 +1343,7 @@ func _update_drop_shadow(c, lift: float, idx: int, dragging: bool) -> void:
 	if cardroot != null and cardroot.get_child_count() > 0:
 		var frame := cardroot.get_child(0) as MeshInstance3D
 		if frame != null:
-			frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if picked \
-				else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var target := DROP_SHADOW_ALPHA if (picked and idx == 0) else 0.0
 	if absf(float(pivot.get_meta("shadow_a", -1.0)) - target) < 0.001:
 		return
@@ -1328,8 +1402,21 @@ func _cash_card_count() -> int:
 			n += 1
 	return n
 
+func _accounts_with_cash() -> Array:
+	var accounts: Array = []
+	for c in all_cards:
+		if is_instance_valid(c) and c.card_id == "p3_account" and c.stored_cash > 0:
+			accounts.append(c)
+	return accounts
+
+func _account_cash_count() -> int:
+	var total := 0
+	for account in _accounts_with_cash():
+		total += account.stored_cash
+	return total
+
 func _sync_cash_state() -> void:
-	GameState.cash = _cash_card_count()
+	GameState.cash = _cash_card_count() + _account_cash_count()
 
 
 func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null) -> void:
@@ -1505,6 +1592,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					_set_cursor_state("pan")   # 用自定义“拖动画布”光标（原来这里误设系统光标→突然变大）
 		else:
 			panning_canvas = false
+			if not drag_cards.is_empty() and not press_moved \
+					and drag_cards[0].card_id == "p3_account":
+				var account = drag_cards[0]
+				_withdraw_account_cash(account)
+				_cancel_drag()
+				return
 			# 卡包：松开时若没移动=拆一张；移动过=留在新位置
 			if drag_pack != null:
 				var p := drag_pack
@@ -1578,8 +1671,11 @@ func _end_supply_drag(wp: Vector2) -> void:
 	supply_drag_mouse = wp
 	var target = _supply_target_at(wp)
 	if target != null:
-		_set_supply_chain(supply_drag_source, target)
-		_show_toast("供应链已连接：产出将直接叠到下游")
+		if _can_connect_supply_source(supply_drag_source):
+			_set_supply_chain(supply_drag_source, target)
+			_show_toast("供应链已连接：产出将直接叠到下游")
+		else:
+			_show_toast("目前允许供应链的数量不足")
 	supply_drag_source = null
 	supply_drag_target = null
 	queue_redraw()
@@ -1618,8 +1714,133 @@ func _set_supply_chain(source, target) -> void:
 	for chain in supply_chains:
 		if chain.get("source") == source:
 			chain["target"] = target
+			_task_event("supply_nodes", "", _supply_chain_node_count())
 			return
 	supply_chains.append({"source": source, "target": target})
+	_task_event("supply_chain_created")
+	_task_event("supply_nodes", "", _supply_chain_node_count())
+
+func _supply_chain_node_count() -> int:
+	var nodes: Dictionary = {}
+	for chain in supply_chains:
+		for key in ["source", "target"]:
+			var card = chain.get(key)
+			if is_instance_valid(card):
+				nodes[card.get_instance_id()] = true
+	return nodes.size()
+
+func _supply_chain_limit() -> int:
+	return 1 if GameState.stage >= 2 else 0
+
+func _supply_chain_count() -> int:
+	_cleanup_supply_chains()
+	var unique_sources: Dictionary = {}
+	for chain in supply_chains:
+		var source = chain.get("source")
+		if is_instance_valid(source):
+			unique_sources[source.get_instance_id()] = true
+	return unique_sources.size()
+
+func _source_has_supply_chain(source) -> bool:
+	if source == null or not is_instance_valid(source):
+		return false
+	for chain in supply_chains:
+		if chain.get("source") == source:
+			return true
+	return false
+
+func _can_connect_supply_source(source) -> bool:
+	return _source_has_supply_chain(source) or _supply_chain_count() < _supply_chain_limit()
+
+func _limited_location_ids() -> Array:
+	return ["p3_large_neighborhood", "p3_wholesale_city"]
+
+func _card_count(card_id: String) -> int:
+	var count := 0
+	for c in all_cards:
+		if is_instance_valid(c) and c.card_id == card_id:
+			count += 1
+	return count
+
+func _bank_reserved() -> bool:
+	if _card_count("p3_bank") > 0:
+		return true
+	for pack in loose_packs:
+		if is_instance_valid(pack) and pack.contents.has("p3_bank"):
+			return true
+	return false
+
+func _account_at_stack(sid: int):
+	if not stacks.has(sid):
+		return null
+	for c in stacks[sid]:
+		if is_instance_valid(c) and c.card_id == "p3_account":
+			return c
+	return null
+
+func _stack_is_all_cash(sid: int) -> bool:
+	if not stacks.has(sid) or stacks[sid].is_empty():
+		return false
+	for c in stacks[sid]:
+		if c.card_id != "cash":
+			return false
+	return true
+
+func _deposit_cash_into_account(cash_sid: int, account) -> bool:
+	if not _stack_is_all_cash(cash_sid) or account == null or not is_instance_valid(account):
+		return false
+	var room := maxi(0, 50 - account.stored_cash)
+	if room <= 0:
+		_show_toast("账户已存满 50 个现金")
+		return true
+	var deposited := mini(room, stacks[cash_sid].size())
+	for i in deposited:
+		if stacks.has(cash_sid) and not stacks[cash_sid].is_empty():
+			destroy_card(stacks[cash_sid].back())
+	account.stored_cash += deposited
+	_refresh_card_face(account)
+	_sync_cash_state()
+	_show_toast("存入 %d 个现金，账户余额 %d/50" % [deposited, account.stored_cash])
+	if stacks.has(cash_sid):
+		stack_base[cash_sid] += Vector2(CW * 0.65, 0)
+		relayout(cash_sid)
+	return true
+
+func _withdraw_account_cash(account) -> void:
+	if account == null or not is_instance_valid(account):
+		return
+	if account.stored_cash <= 0:
+		_show_toast("账户中没有现金")
+		return
+	var amount := mini(5, account.stored_cash)
+	account.stored_cash -= amount
+	_refresh_card_face(account)
+	_spawn_cash_cards(amount, _board_topleft(account), account.zone if account.zone != "" else "office")
+	_show_toast("账户取出 %d 个现金，余额 %d/50" % [amount, account.stored_cash])
+
+func _recipe_count_id(card_id: String) -> String:
+	return {
+		"p3_large_neighborhood": "p1_neighborhood",
+		"p3_wholesale_city": "p1_wholesale",
+	}.get(card_id, card_id)
+
+func _recipe_limited_output_at_capacity(recipe: Dictionary) -> String:
+	for output in recipe.get("outputs", []):
+		var output_id := String(output.get("id", ""))
+		if _limited_location_ids().has(output_id) \
+				and _card_count(output_id) >= _supply_chain_limit():
+			return output_id
+	return ""
+
+func _can_start_limited_location_recipe(recipe: Dictionary, show_hint: bool = true) -> bool:
+	var blocked_id := _recipe_limited_output_at_capacity(recipe)
+	if blocked_id == "":
+		return true
+	if show_hint:
+		_show_toast("%s的场上数量已达到供应链上限" % String(
+			DataLoader.card_def(blocked_id).get("name", blocked_id)
+		))
+	return false
 
 func _supply_delete_chain_at(display_pt: Vector2):
 	if supply_hover_chain == null or not supply_chains.has(supply_hover_chain):
@@ -1646,7 +1867,8 @@ func _output_id_interacts_with_stack(output_id: String, target_sid: int) -> bool
 	var first_id := output_id
 	var has_worker := DataLoader.card_type(output_id) == "employee"
 	for c in stacks[target_sid]:
-		counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
+		var count_id := _recipe_count_id(c.card_id)
+		counts[count_id] = int(counts.get(count_id, 0)) + 1
 		if c.card_id != first_id:
 			all_same = false
 		if c.ctype == "employee":
@@ -1886,9 +2108,9 @@ func _update_stack_hint(_delta: float) -> void:
 				stack_hint_sids.append(sid)
 	elif not drag_cards.is_empty() and stacks.has(drag_sid):
 		for sid in stacks.keys():
-			if sid == drag_sid:
+			if int(sid) == drag_sid:
 				continue
-			if _would_interact(drag_sid, sid):
+			if _would_interact(drag_sid, int(sid)):
 				stack_hint_sids.append(sid)
 	_ensure_stack_hint_quads(stack_hint_sids.size())
 	for i in stack_hint_quads.size():
@@ -2071,6 +2293,8 @@ func _card_func_text(c) -> String:
 		return "价值 $%d、空间容量 +%d" % [
 			int(d.get("value", 0)), int(d.get("spaceCapacity", 0))
 		]
+	if c.card_id == "p3_account":
+		return "账户余额 $%d/50、点击取出最多 5 个现金" % c.stored_cash
 	var parts: Array = []
 	match c.ctype:
 		"employee", "department":
@@ -2205,6 +2429,9 @@ func _resolve_overlap(sid: int) -> int:
 				best_d = d
 				target = c
 	if target != null and _would_interact(sid, target.stack_id):
+		var account = _account_at_stack(target.stack_id)
+		if account != null and _deposit_cash_into_account(sid, account):
+			return target.stack_id
 		return _merge(sid, target.stack_id)
 	if target != null:
 		_dodge_overlaps(sid)   # 无互动：把压住的牌推开
@@ -2215,6 +2442,9 @@ func _resolve_overlap(sid: int) -> int:
 func _would_interact(a: int, b: int) -> bool:
 	if not stacks.has(a) or not stacks.has(b):
 		return false
+	if (_stack_is_all_cash(a) and _account_at_stack(b) != null) \
+			or (_stack_is_all_cash(b) and _account_at_stack(a) != null):
+		return true
 	var counts: Dictionary = {}
 	var has_worker := false
 	var all_emp := true
@@ -2222,7 +2452,8 @@ func _would_interact(a: int, b: int) -> bool:
 	for src in [a, b]:
 		for c in stacks[src]:
 			arr.append(c)
-			counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
+			var count_id := _recipe_count_id(c.card_id)
+			counts[count_id] = int(counts.get(count_id, 0)) + 1
 			if c.ctype == "employee":
 				has_worker = true
 			else:
@@ -2234,6 +2465,8 @@ func _would_interact(a: int, b: int) -> bool:
 	if _can_stack_as_cards(arr, counts):
 		return true
 	if not _basic_resource_recipe(counts, arr).is_empty():
+		return true
+	if _is_partial_recipe_stack(counts, arr):
 		return true
 	for recipe in DataLoader.recipes:
 		var gate := String(recipe.get("requiredIdeaId", ""))
@@ -2268,16 +2501,28 @@ func _can_stack_as_cards(arr: Array, counts: Dictionary) -> bool:
 		return true
 	if has_worker:
 		return false
-	return _is_partial_recipe_stack(counts)
+	return _is_partial_recipe_stack(counts, arr)
 
-func _is_partial_recipe_stack(counts: Dictionary) -> bool:
+func _is_partial_recipe_stack(counts: Dictionary, arr: Array = []) -> bool:
 	for recipe in DataLoader.recipes:
+		var gate := String(recipe.get("requiredIdeaId", ""))
+		if gate != "" and not GameState.idea_done(gate):
+			continue
 		var matched_any := false
 		var input_needs: Dictionary = {}
 		for inp in recipe.get("inputs", []):
 			input_needs[String(inp.get("id", ""))] = int(input_needs.get(String(inp.get("id", "")), 0)) + int(inp.get("count", 1))
 		for id in counts.keys():
 			if not input_needs.has(String(id)):
+				var card_is_valid_worker := false
+				for c in arr:
+					if c.card_id == String(id) and c.ctype == "employee" \
+							and _employee_matches_recipe_tags(c, recipe.get("worker_tags", [])):
+						card_is_valid_worker = true
+						break
+				if card_is_valid_worker:
+					matched_any = true
+					continue
 				matched_any = false
 				break
 			if int(counts[id]) > int(input_needs[String(id)]):
@@ -2285,6 +2530,15 @@ func _is_partial_recipe_stack(counts: Dictionary) -> bool:
 				break
 			matched_any = true
 		if matched_any:
+			return true
+	return false
+
+func _employee_matches_recipe_tags(employee, required_tags: Array) -> bool:
+	if required_tags.is_empty():
+		return false
+	var employee_tags: Array = employee.cdef.get("workTags", [])
+	for tag in required_tags:
+		if tag == "any" or employee_tags.has(tag):
 			return true
 	return false
 
@@ -3075,11 +3329,19 @@ func _finish_battle() -> void:
 	var player_dead := battle_hp_right <= 0.0
 	var rival_ref = battle_rival
 	var emp_ref = battle_employee
+	var team_size := 0
+	if is_instance_valid(emp_ref) and stacks.has(emp_ref.stack_id):
+		for c in stacks[emp_ref.stack_id]:
+			if is_person(c):
+				team_size += 1
 	_end_battle()
 	# 败者消失（对手优先）
 	if rival_dead and is_instance_valid(rival_ref):
 		_dissolve_node(rival_ref)
 		_show_toast("击退了 %s！" % String(rival_ref.cdef.get("name", "对手")))
+		_task_event("rival_defeated")
+		if team_size >= 2:
+			_task_event("team_rival_defeated")
 	elif player_dead and is_instance_valid(emp_ref):
 		_dissolve_node(emp_ref)
 		_show_toast("%s 被击败了…" % String(emp_ref.cdef.get("name", "员工")))
@@ -3107,6 +3369,7 @@ func _sell_stack(sid: int, sale_origin: Vector2, sale_display: Vector2) -> bool:
 		_spawn_cash_cards(cleanup_total, sale_origin, "office", sale_display)
 		_float_text_screen("+$" + str(cleanup_total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
 		_try_finish_capacity_cleanup()
+		_task_event("card_sold")
 		return true
 	for c in arr:
 		if c.ctype in ["facility", "employee", "resource"]:
@@ -3122,6 +3385,7 @@ func _sell_stack(sid: int, sale_origin: Vector2, sale_display: Vector2) -> bool:
 		destroy_card(c)
 	_spawn_cash_cards(total, sale_origin, "office", sale_display)
 	_float_text_screen("+$" + str(total), _bank_rect().position + Vector2(60, 0), Color("ffe66d"))
+	_task_event("card_sold")
 	return true
 
 func _can_sell_stack(sid: int) -> bool:
@@ -3197,10 +3461,13 @@ func evaluate_stack(sid: int) -> void:
 	var arr: Array = stacks[sid]
 	var counts: Dictionary = {}
 	for c in arr:
-		counts[c.card_id] = int(counts.get(c.card_id, 0)) + 1
+		var count_id := _recipe_count_id(c.card_id)
+		counts[count_id] = int(counts.get(count_id, 0)) + 1
 	var basic_recipe := _basic_resource_recipe(counts, arr)
 	if not basic_recipe.is_empty():
 		var target = _work_target(arr, basic_recipe)
+		if not _can_start_limited_location_recipe(basic_recipe):
+			return
 		if not _can_afford_product_cost(sid, basic_recipe):
 			return
 		productions[sid] = { "recipe": basic_recipe, "target": target }
@@ -3217,6 +3484,8 @@ func evaluate_stack(sid: int) -> void:
 			continue
 		if _recipe_matches(recipe, counts, arr):
 			var target = _work_target(arr, recipe)
+			if not _can_start_limited_location_recipe(recipe):
+				return
 			if not _can_afford_product_cost(sid, recipe):
 				return
 			productions[sid] = { "recipe": recipe, "target": target }
@@ -3388,6 +3657,13 @@ func _complete_production(sid: int) -> void:
 		return
 	var rec: Dictionary = productions[sid]["recipe"]
 	var target = productions[sid].get("target")
+	if not _can_start_limited_location_recipe(rec):
+		if is_instance_valid(target):
+			target.work_elapsed = 0.0
+			target.set_work(0.0)
+		_set_stack_workbar(sid, 0.0)
+		productions.erase(sid)
+		return
 	var supply_chain = _supply_chain_for_source_stack(sid)
 	var supply_target = supply_chain.get("target") if supply_chain != null else null
 	
@@ -3407,6 +3683,11 @@ func _complete_production(sid: int) -> void:
 	if not stacks.has(sid):
 		return
 	var arr: Array = stacks[sid]
+	var production_has_founder := false
+	for c in arr:
+		if c.card_id == "founder":
+			production_has_founder = true
+			break
 	var base: Vector2 = stack_base[sid]
 	var mult := _output_mult(_stack_capacity(sid))
 	for inp in rec.get("inputs", []):
@@ -3422,6 +3703,7 @@ func _complete_production(sid: int) -> void:
 				need -= 1
 	if supply_chain != null and _recipe_can_route_to_target(rec, supply_target):
 		await _animate_supply_transfer(supply_chain)
+		_task_event("supply_production")
 	var made_card := false
 	for outp in rec.get("outputs", []):
 		if outp.has("cash"):
@@ -3445,11 +3727,20 @@ func _complete_production(sid: int) -> void:
 				var zone := forced if forced != "" else _zone_for_center(base + Vector2(CW * 0.5, CH * 0.5))
 				for i in n:
 					_drop_output(oid, base, zone, supply_target)
+				_task_event("card_produced", oid, n)
 				made_card = true
 	if made_card:
 		_wiggle_top_card(sid)            # 产出时生产堆顶卡轻微扭动
 	_consume_node_uses(sid, rec)
 	GameState.discover(String(rec.get("id", "")))
+	_task_event("recipe_complete", String(rec.get("id", "")))
+	if production_has_founder:
+		_task_event("founder_recipe", String(rec.get("id", "")))
+	_task_check_card_state()
+	var current_space := _business_card_capacity()
+	if current_space > max_space_capacity_seen:
+		max_space_capacity_seen = current_space
+		_task_event("space_increased")
 	if is_instance_valid(target):       # 完成后重置被工作对象的进度（若未被消耗销毁）
 		target.work_elapsed = 0.0
 		target.set_work(0.0)
@@ -3558,6 +3849,10 @@ func _drop_output(id: String, from_pos: Vector2, zone: String, supplied_target =
 		nc.zone = zone
 		var merged_sid := _merge(nc.stack_id, target_sid)
 		_fly_out_card(nc, _project(from_pos + Vector2(CW, CH) * 0.5))
+		get_tree().create_timer(FLY_OUT_TIME).timeout.connect(func():
+			if is_instance_valid(nc):
+				_play_drop_sound(nc)
+		)
 		if stacks.has(merged_sid):
 			relayout(merged_sid)
 		return
@@ -3577,6 +3872,10 @@ func _drop_output(id: String, from_pos: Vector2, zone: String, supplied_target =
 	if best != null:
 		_merge(nc.stack_id, best.stack_id)
 	_fly_out_card(nc, _project(origin_center))
+	get_tree().create_timer(FLY_OUT_TIME).timeout.connect(func():
+		if is_instance_valid(nc):
+			_play_drop_sound(nc)
+	)
 
 # 产出卡顺滑飞出：从生产堆中心放大着滑到落点（无回弹，cubic 缓出）
 func _fly_out_card(c, from_display: Vector2) -> void:
@@ -3886,6 +4185,8 @@ func _department_output(d: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if is_instance_valid(bottom_info):
 		bottom_info.queue_redraw()   # 底部信息栏随 hover/hint 实时刷新
+	if hover_follows_mouse and is_instance_valid(hover_panel) and hover_panel.visible:
+		_update_hover_position_to_mouse()
 	_update_workbars()
 	_relayout_loose_packs()   # 确保卡包就绪后转 3D（含开局卡包）并跟随
 	_update_battle(delta)
@@ -4223,9 +4524,10 @@ func buy_pack(pack_id: String) -> void:
 	var contents: Array = []
 	for i in got:
 		contents.append(_pick_pack_card(pack_id, slots[i], contents))
-	var bm := _pick_business_model_card(pack_id, contents)
-	if bm != "":
-		contents.append(bm)
+	if GameState.rng.randf() < BUSINESS_MODEL_CHANCE:
+		var bm := _pick_business_model_card(pack_id, contents)
+		if bm != "":
+			contents.append(bm)
 	contents = _sanitize_pack_contents(pack_id, contents)
 	_spawn_loose_pack(pack_id, pack, contents)
 	_show_toast("%s 已弹出，点击画布上的卡包拆开" % String(pack.get("name", "卡包")))
@@ -4233,12 +4535,17 @@ func buy_pack(pack_id: String) -> void:
 func _sanitize_pack_contents(pack_id: String, contents: Array) -> Array:
 	var out: Array = []
 	var founder_reserved := _founder_on_board() != null
+	var bank_reserved := _bank_reserved()
 	for idv in contents:
 		var id := String(idv)
 		if id == "founder":
 			if pack_id != "garage_pack" or founder_reserved:
 				continue
 			founder_reserved = true
+		if id == "p3_bank":
+			if bank_reserved:
+				continue
+			bank_reserved = true
 		if _is_business_model_card(id) and _business_model_pack_id(id) != pack_id:
 			continue
 		out.append(id)
@@ -4374,7 +4681,7 @@ func _ensure_pack3d(p) -> void:
 	fmat.albedo_color = Color(0.1, 0.1, 0.1)
 	fmat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	frame.material_override = fmat
-	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cardroot.add_child(frame)
 	# 卡包封面：烘焙图贴在盒子顶面
 	var m := MeshInstance3D.new()
@@ -4444,6 +4751,9 @@ func _open_loose_pack(p) -> void:
 	if p.contents.is_empty():
 		_dissolve_pack(p)
 		return
+	if not bool(p.get_meta("task_open_recorded", false)):
+		p.set_meta("task_open_recorded", true)
+		_task_event("pack_opened", p.pack_id)
 	_sfx("unpack")                     # 拆包点击音效
 	var id := String(p.contents.pop_front())
 	while _skip_pack_card(id):
@@ -4506,7 +4816,7 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 		GameState.unlock_business_model(DataLoader.business_model_recipe_id(id))
 		_refresh_recipe_book()
 	var origin_center := _unproject(origin_display)
-	var landing := _nearby_output_landing(origin_center, zone)
+	var landing := _pack_card_landing(id, origin_center, zone)
 	var c := spawn_card(id, landing)
 	if c == null:
 		return
@@ -4523,6 +4833,74 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 		if stacks.has(sid):
 			evaluate_stack(sid)
 	)
+
+func _pack_card_landing(id: String, origin_center: Vector2, zone: String) -> Vector2:
+	const DROP_MIN := 1.15
+	const DROP_MAX := 2.65
+	var half := Vector2(CW, CH) * 0.5
+	var candidates: Array = []
+	for sidv in stack_base.keys():
+		var sid := int(sidv)
+		if _stack_all_card_id(sid, id):
+			candidates.append(stack_base[sid])
+	for attempt in 44:
+		var ring: float = 1.0 + floorf(float(attempt) / 14.0) * 0.28
+		var ang := GameState.rng.randf() * TAU
+		var dist := GameState.rng.randf_range(CW * DROP_MIN, CW * DROP_MAX * ring)
+		candidates.append(clamp_to_zone(origin_center + Vector2(cos(ang), sin(ang)) * dist - half, zone))
+	var step := CW + GAP
+	var gy := MID_Y0 + 2.0
+	while gy <= MID_Y1 - CH:
+		var gx := CANVAS_X0 + GAP
+		while gx <= CANVAS_X1 - GAP - CW:
+			candidates.append(Vector2(gx, gy))
+			gx += step
+		gy += step
+	var best_corner := clamp_to_zone(origin_center - half, zone)
+	var best_score := -INF
+	var best_free_corner := Vector2.ZERO
+	var best_free_distance := INF
+	var has_free_corner := false
+	for candidate in candidates:
+		var corner := clamp_to_zone(candidate, zone)
+		var score := _pack_landing_clearance_score(corner, id)
+		if score >= 0.0:
+			var distance := (corner + half).distance_squared_to(origin_center)
+			if distance < best_free_distance:
+				best_free_distance = distance
+				best_free_corner = corner
+				has_free_corner = true
+			continue
+		if score > best_score:
+			best_score = score
+			best_corner = corner
+	if has_free_corner:
+		return best_free_corner
+	return best_corner
+
+func _stack_all_card_id(sid: int, id: String) -> bool:
+	if not stacks.has(sid):
+		return false
+	for c in stacks[sid]:
+		if not is_instance_valid(c) or c.card_id != id:
+			return false
+	return true
+
+func _pack_landing_clearance_score(corner: Vector2, id: String) -> float:
+	var rect := Rect2(corner, Vector2(CW, CH))
+	var nearest_gap := INF
+	for sidv in stack_base.keys():
+		var sid := int(sidv)
+		var other_rect := Rect2(stack_base[sid], Vector2(CW, CH))
+		if rect.intersects(other_rect):
+			if _stack_all_card_id(sid, id):
+				nearest_gap = minf(nearest_gap, 0.0)
+				continue
+			return -rect.intersection(other_rect).get_area()
+		var dx := maxf(maxf(other_rect.position.x - rect.end.x, rect.position.x - other_rect.end.x), 0.0)
+		var dy := maxf(maxf(other_rect.position.y - rect.end.y, rect.position.y - other_rect.end.y), 0.0)
+		nearest_gap = minf(nearest_gap, Vector2(dx, dy).length())
+	return nearest_gap
 
 func _weighted_pick(options: Array) -> String:
 	var total := 0
@@ -4622,13 +5000,19 @@ func _recompute_valuation() -> void:
 	GameState.set_valuation(int(val * mult))
 
 func _refresh_packs() -> void:
+	var completed_count := GameState.completed_tasks.size()
 	for row in pack_buttons:
 		var pack: Dictionary = row["pack"]
 		var btn: Button = row["btn"]
-		# Test mode bypass: unlock and enable all pack buttons
-		btn.disabled = false
+		var pack_id := String(row["id"])
+		var unlocked := GameState.dev_mode or GameState.task_unlocked_packs.has(pack_id)
+		if pack_id == "Developemnt_pack":
+			unlocked = GameState.dev_mode or completed_count >= 8
+		elif pack_id == "channel_pack":
+			unlocked = GameState.dev_mode or completed_count >= 13
+		btn.disabled = not unlocked
 		var label := String(pack.get("name", ""))
-		_style_pack_button(btn, label, int(pack.get("price", 0)), false)
+		_style_pack_button(btn, label, int(pack.get("price", 0)), not unlocked)
 
 func _on_stage_changed(_stage: int) -> void:
 	_refresh_packs()
@@ -4786,6 +5170,15 @@ func _battle_font() -> Font:
 	battle_bold_font = variation
 	return battle_bold_font
 
+func _ui_bold_font() -> Font:
+	if ui_bold_font_cached != null:
+		return ui_bold_font_cached
+	var variation := FontVariation.new()
+	variation.base_font = _ui_font()
+	variation.variation_embolden = 0.75
+	ui_bold_font_cached = variation
+	return ui_bold_font_cached
+
 func _apply_battle_font(c: Control, size: int) -> void:
 	c.add_theme_font_override("font", _battle_font())
 	c.add_theme_font_size_override("font_size", size)
@@ -4794,9 +5187,9 @@ func _apply_battle_font(c: Control, size: int) -> void:
 func _ui_icon(name: String) -> Texture2D:
 	if ui_icon_cache.has(name):
 		return ui_icon_cache[name]
-	var path := "res://assets/ui/%s.svg" % name
+	var path := "res://assets/svg/ui/%s.svg" % name
 	if name.begins_with("streamline/"):
-		path = "res://assets/ui/%s.svg" % name
+		path = "res://assets/svg/ui/%s.svg" % name
 	var tex := ResourceLoader.load(path) as Texture2D
 	ui_icon_cache[name] = tex
 	return tex
@@ -5235,6 +5628,18 @@ func _build_hud() -> void:
 		if not expense_group.mouse_exited.is_connected(_hide_hover):
 			expense_group.mouse_exited.connect(_hide_hover)
 
+	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "chain", 970, 140, TOP_ICON_SIZE, true)
+	var initial_supply_group := lbl_supply_chain.get_parent() as Control
+	if initial_supply_group != null:
+		initial_supply_group.position.x -= 40.0
+	var supply_chain_group := lbl_supply_chain.get_parent() as Control
+	if supply_chain_group != null:
+		supply_chain_group.mouse_filter = Control.MOUSE_FILTER_STOP
+		if not supply_chain_group.mouse_entered.is_connected(_on_supply_chain_hover):
+			supply_chain_group.mouse_entered.connect(_on_supply_chain_hover)
+		if not supply_chain_group.mouse_exited.is_connected(_hide_hover):
+			supply_chain_group.mouse_exited.connect(_hide_hover)
+
 	lbl_business = _top_stat_label("BusinessGroup", "development", 1450, 180, TOP_ICON_SIZE, true)
 	var business_group := lbl_business.get_parent() as Control
 	if business_group != null:
@@ -5297,10 +5702,10 @@ func _build_hud() -> void:
 	if not book_btn.pressed.is_connected(_toggle_recipe_book):
 		book_btn.pressed.connect(_toggle_recipe_book)
 
-	# 公司任务：同款样式，深蓝色；按钮大小不变，右边界对齐「商业模式」弹窗右边界
+	# 公司任务：与商业模式一致的文件夹标签样式。
 	var book_panel_right := 30.0 + 310.0   # recipe_panel: position.x 30 + size.x 310
 	var task_w := 130.0
-	var task_btn := hud.get_node_or_null("Buttons/CompanyTaskButton") as Button
+	task_btn = hud.get_node_or_null("Buttons/CompanyTaskButton") as Button
 	if task_btn == null:
 		task_btn = Button.new()
 		task_btn.name = "CompanyTaskButton"
@@ -5309,9 +5714,8 @@ func _build_hud() -> void:
 	task_btn.position = Vector2(book_panel_right - task_w, INFO_Y - 88)
 	task_btn.text = "公司任务"
 	_apply_pixel_font(task_btn, 26)
-	_style_button(task_btn, Color("2c3e63"))
-	# 深蓝底配浅色字，保证可读
-	var task_fg := Color("f3ead7")
+	_style_button(task_btn, PANEL_CREAM)
+	var task_fg := INK
 	task_btn.add_theme_color_override("font_color", task_fg)
 	task_btn.add_theme_color_override("font_hover_color", task_fg)
 	task_btn.add_theme_color_override("font_pressed_color", task_fg)
@@ -5396,6 +5800,7 @@ func _build_hud() -> void:
 	_refresh_packs()
 	_build_research_panel()
 	_build_recipe_book_panel()
+	_build_company_task_panel()
 	_build_codex_panel()
 	_build_settings_panel()
 	_build_gear_menu()
@@ -5430,6 +5835,9 @@ func _layout_responsive() -> void:
 	if recipe_panel != null:
 		var panel_h := recipe_panel.size.y
 		recipe_panel.position.y = (bottom - 88.0) - 22.0 - panel_h
+	if task_panel != null:
+		var panel_h := task_panel.size.y
+		task_panel.position.y = (bottom - 88.0) - 22.0 - panel_h
 
 	if bank_button != null:
 		bank_button.position.x = screen.x - 182.0
@@ -5507,7 +5915,7 @@ func _build_zoom_buttons() -> void:
 		plus_btn.pressed.connect(_zoom_view_center.bind(VIEW_ZOOM_STEP * VIEW_ZOOM_STEP))
 	plus_btn.position = Vector2(right_x, plus_y)
 	plus_btn.size = Vector2(bs, bs)
-	_style_zoom_button(plus_btn, "res://assets/ui/zoom_in.svg")
+	_style_zoom_button(plus_btn, "res://assets/svg/ui/zoom_in.svg")
 
 	var minus_btn := hud.get_node_or_null("ZoomOut") as Button
 	if minus_btn == null:
@@ -5517,7 +5925,7 @@ func _build_zoom_buttons() -> void:
 		minus_btn.pressed.connect(_zoom_view_center.bind(1.0 / (VIEW_ZOOM_STEP * VIEW_ZOOM_STEP)))
 	minus_btn.position = Vector2(right_x, minus_y)
 	minus_btn.size = Vector2(bs, bs)
-	_style_zoom_button(minus_btn, "res://assets/ui/zoom_out.svg")
+	_style_zoom_button(minus_btn, "res://assets/svg/ui/zoom_out.svg")
 
 	# 两个视角键（在 + 之上，同样大小与间距）：向前下=更前倾、向后下=更俯视
 	var back_y := plus_y - gap - bs              # 紧挨 + 之上
@@ -5530,7 +5938,7 @@ func _build_zoom_buttons() -> void:
 		front_btn.pressed.connect(_tilt_view.bind(-CAM_PITCH_STEP))
 	front_btn.position = Vector2(right_x, front_y)
 	front_btn.size = Vector2(bs, bs)
-	_style_zoom_button(front_btn, "res://assets/ui/view_front.svg")
+	_style_zoom_button(front_btn, "res://assets/svg/ui/view_front.svg")
 
 	var back_btn := hud.get_node_or_null("ViewBack") as Button
 	if back_btn == null:
@@ -5540,7 +5948,7 @@ func _build_zoom_buttons() -> void:
 		back_btn.pressed.connect(_tilt_view.bind(CAM_PITCH_STEP))
 	back_btn.position = Vector2(right_x, back_y)
 	back_btn.size = Vector2(bs, bs)
-	_style_zoom_button(back_btn, "res://assets/ui/view_back.svg")
+	_style_zoom_button(back_btn, "res://assets/svg/ui/view_back.svg")
 
 func _zoom_view_center(factor: float) -> void:
 	# 以播放区中心为锚点缩放视角
@@ -5627,7 +6035,7 @@ func _build_hover_panel() -> void:
 		hover_label.name = "HoverLabel"
 		hover_label.position = Vector2(12, 8)
 		hover_panel.add_child(hover_label)
-	_apply_pixel_font(hover_label, 18)
+	_apply_pixel_font(hover_label, 20)
 	hover_label.add_theme_color_override("font_color", INK)
 	hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -5637,7 +6045,7 @@ func _show_hover(text: String, anchor: Control, centered: bool = false) -> void:
 	hover_label.text = text
 	hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	
-	var w := 230.0
+	var w := 280.0 if hover_follows_mouse else 230.0
 	hover_label.custom_minimum_size = Vector2(w - 24, 0)
 	var content_h := hover_label.get_minimum_size().y
 	var h := maxf(content_h + 16.0, 40.0)
@@ -5653,16 +6061,43 @@ func _show_hover(text: String, anchor: Control, centered: bool = false) -> void:
 		hover_label.size = Vector2(w - 24, h - 16)
 		hover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	var x := clampf(anchor.global_position.x, 8.0, BASE_W - w - 8.0)
-	var y := anchor.global_position.y + anchor.size.y + 6.0
-	if y + h > BASE_H:
-		y = anchor.global_position.y - h - 6.0
-	hover_panel.position = Vector2(x, y)
+		
+	if hover_follows_mouse:
+		_update_hover_position_to_mouse()
+	else:
+		var x := clampf(anchor.global_position.x, 8.0, BASE_W - w - 8.0)
+		var y := anchor.global_position.y + anchor.size.y + 6.0
+		if y + h > BASE_H:
+			y = anchor.global_position.y - h - 6.0
+		hover_panel.position = Vector2(x, y)
 	hover_panel.visible = true
+
+func _update_hover_position_to_mouse() -> void:
+	if hover_panel == null or not hover_panel.visible:
+		return
+	var mouse_pos := get_viewport().get_mouse_position()
+	var w := hover_panel.size.x
+	var h := hover_panel.size.y
+	var x := mouse_pos.x + 15.0
+	var y := mouse_pos.y + 15.0
+	if x + w > BASE_W:
+		x = mouse_pos.x - w - 15.0
+	if y + h > BASE_H:
+		y = mouse_pos.y - h - 15.0
+	x = clampf(x, 8.0, BASE_W - w - 8.0)
+	y = clampf(y, 8.0, BASE_H - h - 8.0)
+	hover_panel.position = Vector2(x, y)
 
 func _hide_hover() -> void:
 	if hover_panel:
 		hover_panel.visible = false
+	hover_follows_mouse = false
+	if hovered_meta != "":
+		hovered_meta = ""
+		_refresh_recipe_book()
+		_refresh_company_tasks()
+	if hover_label != null:
+		_apply_pixel_font(hover_label, 20)
 
 func _on_pack_hover(pid: String) -> void:
 	var btn: Control = null
@@ -5672,7 +6107,7 @@ func _on_pack_hover(pid: String) -> void:
 			break
 	if btn != null:
 		var pack: Dictionary = DataLoader.packs.get(pid, {})
-		var locked := GameState.stage < int(pack.get("stage", 0))
+		var locked := not GameState.dev_mode and not GameState.task_unlocked_packs.has(pid)
 		if locked:
 			# Locked pack: hide its real contents, just show a left-aligned "？？".
 			_show_hover("？？", btn)
@@ -5767,6 +6202,14 @@ func _on_expense_hover() -> void:
 	var expense_group := lbl_expense.get_parent() as Control
 	_show_hover(_expense_hover_text(), expense_group if expense_group != null else lbl_expense)
 
+func _on_supply_chain_hover() -> void:
+	var group := lbl_supply_chain.get_parent() as Control
+	var txt := "供应链：%d/%d\n每个起点计算为一条供应链，不受连接长度和经过卡牌数量影响。" % [
+		_supply_chain_count(),
+		_supply_chain_limit(),
+	]
+	_show_hover(txt, group if group != null else lbl_supply_chain)
+
 func _expense_hover_text() -> String:
 	var office_lines: Array = []
 	var employee_lines: Array = []
@@ -5828,6 +6271,36 @@ func _show_toast(txt: String) -> void:
 	toast_t = 6.0   # 高亮 6s 后回落为常态信息色
 
 # ---------------------------------------------------------------- recipe book
+func _create_row_label(bbcode: String) -> RichTextLabel:
+	var rtl := RichTextLabel.new()
+	rtl.bbcode_enabled = true
+	rtl.fit_content = true
+	rtl.scroll_active = false
+	rtl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rtl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rtl.mouse_filter = Control.MOUSE_FILTER_STOP
+	rtl.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	
+	rtl.add_theme_font_override("normal_font", _ui_font())
+	rtl.add_theme_font_override("bold_font", _ui_bold_font())
+	rtl.add_theme_font_override("italics_font", _ui_font())
+	rtl.add_theme_font_size_override("normal_font_size", 20)
+	rtl.add_theme_font_size_override("bold_font_size", 20)
+	rtl.add_theme_font_size_override("italics_font_size", 20)
+	rtl.add_theme_color_override("default_color", INK)
+	rtl.meta_underlined = false
+	
+	rtl.text = bbcode
+	return rtl
+
+func _create_separator(color: Color) -> HSeparator:
+	var sep := HSeparator.new()
+	var sb := StyleBoxLine.new()
+	sb.color = color
+	sb.thickness = 2
+	sep.add_theme_stylebox_override("separator", sb)
+	return sep
+
 func _build_recipe_book_panel() -> void:
 	# 阴影层：添加在最底层以绘制整体阴影
 	book_tab_shadow = Node2D.new()
@@ -5837,8 +6310,6 @@ func _build_recipe_book_panel() -> void:
 	book_tab_shadow.draw.connect(_draw_book_tab_shadow)
 
 	recipe_panel = PanelContainer.new()
-	# 弹窗坐落在「商业模式」按钮上方、左对齐；底边内缩（recessed）到按钮顶边之上，
-	# 由 book_tab_seam 用圆弧把内缩的底边自然下接到按钮（文件夹标签效果）。
 	var panel_h := 700.0
 	var y_recess := (INFO_Y - 88.0) - 22.0   # 弹窗底边：按钮顶边再往上缩 22px
 	recipe_panel.position = Vector2(30, y_recess - panel_h)
@@ -5846,7 +6317,6 @@ func _build_recipe_book_panel() -> void:
 	recipe_panel.visible = false
 	var psb := StyleBoxFlat.new()
 	psb.bg_color = PANEL_CREAM
-	# 顶部圆角，底部直角；底边线交给 seam 画（这里关掉），与按钮无缝拼接
 	psb.corner_radius_top_left = 8
 	psb.corner_radius_top_right = 8
 	psb.corner_radius_bottom_left = 0
@@ -5854,7 +6324,6 @@ func _build_recipe_book_panel() -> void:
 	psb.border_color = INK
 	psb.set_border_width_all(4)        # 与按钮边框同粗
 	psb.border_width_bottom = 0        # 底边交给 seam 画
-	# 弹窗自身的默认 shadow size 设为 0，因为其阴影由底层的 book_tab_shadow 统一绘制
 	psb.shadow_color = Color(0, 0, 0, 0.28)
 	psb.shadow_size = 0
 	psb.shadow_offset = Vector2(4, 5)
@@ -5863,9 +6332,14 @@ func _build_recipe_book_panel() -> void:
 	psb.content_margin_top = 16
 	psb.content_margin_bottom = 16
 	recipe_panel.add_theme_stylebox_override("panel", psb)
+	# 拦截所有鼠标点击、释放和滚动事件，防止影响平移/缩放画布
+	recipe_panel.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton or event is InputEventMouseMotion:
+			recipe_panel.accept_event()
+	)
 	hud.add_child(recipe_panel)
 
-	# 缝盖：用按钮色抹掉「面板底边 + 按钮顶边」之间的墨线，使两者融合成文件夹标签
+	# 缝盖
 	book_tab_seam = Node2D.new()
 	book_tab_seam.name = "BookTabSeam"
 	book_tab_seam.visible = false
@@ -5893,21 +6367,19 @@ func _build_recipe_book_panel() -> void:
 	close.pressed.connect(_toggle_recipe_book)
 	head.add_child(close)
 
-	recipe_list = RichTextLabel.new()
-	recipe_list.bbcode_enabled = true
-	recipe_list.fit_content = false
-	recipe_list.scroll_active = true
-	recipe_list.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton or event is InputEventMouseMotion:
+			scroll.accept_event()
+	)
+	box.add_child(scroll)
+
+	recipe_list = CustomListContainer.new()
 	recipe_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	recipe_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	recipe_list.add_theme_font_override("normal_font", _ui_font())
-	recipe_list.add_theme_font_override("bold_font", _ui_font())
-	recipe_list.add_theme_font_override("italics_font", _ui_font())
-	recipe_list.add_theme_font_size_override("normal_font_size", 20)
-	recipe_list.add_theme_font_size_override("bold_font_size", 20)
-	recipe_list.add_theme_font_size_override("italics_font_size", 20)
-	recipe_list.add_theme_color_override("default_color", INK)
-	box.add_child(recipe_list)
+	recipe_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(recipe_list)
 	_refresh_recipe_book()
 
 # 弹窗（文件夹）+ 按钮（标签）整体只画一条连续墨线：
@@ -6034,6 +6506,8 @@ func _set_book_tab_open(open: bool) -> void:
 func _toggle_recipe_book() -> void:
 	if recipe_panel == null:
 		return
+	if not recipe_panel.visible and task_panel != null and task_panel.visible:
+		_toggle_company_tasks()
 	recipe_panel.visible = not recipe_panel.visible
 	_set_book_tab_open(recipe_panel.visible)
 	if book_tab_shadow != null:
@@ -6045,9 +6519,272 @@ func _toggle_recipe_book() -> void:
 	if recipe_panel.visible:
 		_refresh_recipe_book()
 
+func _build_company_task_panel() -> void:
+	task_tab_shadow = Node2D.new()
+	task_tab_shadow.visible = false
+	task_tab_shadow.draw.connect(_draw_task_tab_shadow)
+	hud.add_child(task_tab_shadow)
+
+	task_panel = PanelContainer.new()
+	var panel_h := 700.0
+	var y_recess := (INFO_Y - 88.0) - 22.0
+	task_panel.position = Vector2(30, y_recess - panel_h)
+	task_panel.size = Vector2(310, panel_h)
+	task_panel.visible = false
+	var psb := StyleBoxFlat.new()
+	psb.bg_color = PANEL_CREAM
+	psb.corner_radius_top_left = 8
+	psb.corner_radius_top_right = 8
+	psb.border_color = INK
+	psb.set_border_width_all(4)
+	psb.border_width_bottom = 0
+	psb.content_margin_left = 18
+	psb.content_margin_right = 18
+	psb.content_margin_top = 16
+	psb.content_margin_bottom = 16
+	task_panel.add_theme_stylebox_override("panel", psb)
+	# 拦截所有鼠标点击、释放和滚动事件，防止影响平移/缩放画布
+	task_panel.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton or event is InputEventMouseMotion:
+			task_panel.accept_event()
+	)
+	hud.add_child(task_panel)
+
+	task_tab_seam = Node2D.new()
+	task_tab_seam.visible = false
+	task_tab_seam.draw.connect(_draw_task_tab_seam)
+	hud.add_child(task_tab_seam)
+
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	task_panel.add_child(box)
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var title := Label.new()
+	title.text = "公司任务"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_apply_pixel_font(title, 30)
+	title.add_theme_color_override("font_color", INK)
+	head.add_child(title)
+	var close := Button.new()
+	close.text = "关闭"
+	close.size = Vector2(90, 42)
+	_apply_pixel_font(close, 18)
+	_style_button(close, Color("e0c39a"))
+	close.pressed.connect(_toggle_company_tasks)
+	head.add_child(close)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton or event is InputEventMouseMotion:
+			scroll.accept_event()
+	)
+	box.add_child(scroll)
+
+	task_list = CustomListContainer.new()
+	task_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	task_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(task_list)
+	_refresh_company_tasks()
+
+func _refresh_company_tasks() -> void:
+	if task_list == null:
+		return
+	for child in task_list.get_children():
+		child.queue_free()
+		
+	for section in ["主任务", "支线任务"]:
+		var section_tasks := _tasks_in_section(section)
+		var section_done := 0
+		for task in section_tasks:
+			if GameState.completed_tasks.has(String(task["id"])):
+				section_done += 1
+				
+		# Section title
+		var title := Label.new()
+		title.text = "%s %d/%d" % [section, section_done, section_tasks.size()]
+		title.add_theme_font_override("font", _ui_bold_font())
+		title.add_theme_font_size_override("font_size", 20)
+		title.add_theme_color_override("font_color", INK)
+		task_list.add_child(title)
+		
+		# Separator
+		task_list.add_child(_create_separator(Color("9d9386")))
+		
+		var groups: Array = []
+		for task in section_tasks:
+			var group := String(task["group"])
+			if not groups.has(group):
+				groups.append(group)
+				
+		for group in groups:
+			# Spacer (创业啦、公司发展等二级标题前加大行距)
+			var spacer := Control.new()
+			spacer.custom_minimum_size = Vector2(0, 16)
+			task_list.add_child(spacer)
+			
+			var fold_key := "%s/%s" % [section, group]
+			var collapsed := bool(task_collapsed.get(fold_key, false))
+			
+			var base_bbcode := "[b]%s  %s[/b]" % [group, "▸" if collapsed else "▾"]
+			var rtl := _create_row_label(base_bbcode)
+			rtl.gui_input.connect(func(event: InputEvent):
+				if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+					_on_task_meta_clicked(fold_key)
+			)
+			# Group titles are already bold, when hovered we highlight color
+			var hover_bbcode := "[b][color=#2f2a25]%s  %s[/color][/b]" % [group, "▸" if collapsed else "▾"]
+			rtl.mouse_entered.connect(func():
+				rtl.text = hover_bbcode
+			)
+			rtl.mouse_exited.connect(func():
+				rtl.text = base_bbcode
+			)
+			task_list.add_child(rtl)
+			
+			if collapsed:
+				continue
+				
+			for task in section_tasks:
+				if String(task["group"]) != group:
+					continue
+				var done := GameState.completed_tasks.has(String(task["id"]))
+				var mark := "☑" if done else "☐"
+				var task_title := String(task["title"])
+				var task_content := String(task.get("content", ""))
+				
+				var base_item_bbcode := ""
+				var hover_item_bbcode := ""
+				if done:
+					base_item_bbcode = "%s [s]%s[/s]" % [mark, task_title]
+					hover_item_bbcode = "%s [s][b]%s[/b][/s]" % [mark, task_title]
+				else:
+					base_item_bbcode = "%s %s" % [mark, task_title]
+					hover_item_bbcode = "%s [b]%s[/b]" % [mark, task_title]
+					
+				var item_rtl := _create_row_label(base_item_bbcode)
+				item_rtl.mouse_entered.connect(func():
+					item_rtl.text = hover_item_bbcode
+					hover_follows_mouse = true
+					_apply_pixel_font(hover_label, 20)
+					_show_hover(task_content, item_rtl)
+				)
+				item_rtl.mouse_exited.connect(func():
+					item_rtl.text = base_item_bbcode
+					_hide_hover()
+				)
+				task_list.add_child(item_rtl)
+				
+		# Add bottom spacing for the section
+		var section_spacer := Control.new()
+		section_spacer.custom_minimum_size = Vector2(0, 16)
+		task_list.add_child(section_spacer)
+
+func _tasks_in_section(section: String) -> Array:
+	var out: Array = []
+	for task in DataLoader.tasks:
+		if String(task.get("section", "")) == section:
+			out.append(task)
+	return out
+
+func _on_task_meta_clicked(meta) -> void:
+	var fold_key := String(meta)
+	task_collapsed[fold_key] = not bool(task_collapsed.get(fold_key, false))
+	_refresh_company_tasks()
+
+func _task_event(trigger_type: String, target_id: String = "", amount: int = 1) -> void:
+	var counter_key := "%s|%s" % [trigger_type, target_id]
+	if trigger_type == "supply_nodes":
+		GameState.task_counters[counter_key] = maxi(
+			int(GameState.task_counters.get(counter_key, 0)), amount
+		)
+	else:
+		GameState.task_counters[counter_key] = int(
+			GameState.task_counters.get(counter_key, 0)
+		) + amount
+	for task in DataLoader.tasks:
+		var task_id := String(task.get("id", ""))
+		if GameState.completed_tasks.has(task_id):
+			continue
+		if String(task.get("triggerType", "")) != trigger_type:
+			continue
+		var wanted_target := String(task.get("targetId", ""))
+		if wanted_target != "" and wanted_target != target_id:
+			continue
+		var task_counter_key := "%s|%s" % [trigger_type, wanted_target]
+		var progress := int(GameState.task_counters.get(task_counter_key, 0))
+		if wanted_target == "":
+			progress = int(GameState.task_counters.get("%s|" % trigger_type, 0))
+		if progress >= int(task.get("targetCount", 1)):
+			_complete_task(task)
+	_refresh_company_tasks()
+
+func _complete_task(task: Dictionary) -> void:
+	var task_id := String(task.get("id", ""))
+	if task_id == "" or GameState.completed_tasks.has(task_id):
+		return
+	GameState.completed_tasks[task_id] = true
+	var unlock_pack := String(task.get("unlockPack", ""))
+	if unlock_pack != "":
+		GameState.unlock_pack_from_task(unlock_pack)
+	_refresh_packs()
+	_show_founder_bubble("完成 %s 啦！" % String(task.get("title", task_id)))
+
+func _task_check_card_state() -> void:
+	var ids := ["p2_sales_specialist", "p2_product_specialist", "p2_admin_specialist"]
+	for id in ids:
+		if _card_count(id) <= 0:
+			return
+	_task_event("card_state", "specialists_all")
+
+func _draw_task_tab_shadow() -> void:
+	if task_panel == null or not task_panel.visible:
+		return
+	var rect := Rect2(task_panel.position + Vector2(4, 5), task_panel.size)
+	task_tab_shadow.draw_rect(rect, Color(0, 0, 0, 0.28), true)
+
+func _draw_task_tab_seam() -> void:
+	if task_panel == null or not task_panel.visible or task_btn == null:
+		return
+	var top := task_btn.position.y
+	task_tab_seam.draw_rect(
+		Rect2(task_btn.position.x + 4, top - 24, task_btn.size.x - 8, 30),
+		PANEL_CREAM,
+		true
+	)
+	task_tab_seam.draw_line(
+		Vector2(task_panel.position.x + 2, top - 22),
+		Vector2(task_btn.position.x + 2, top - 22),
+		INK,
+		4
+	)
+
+func _set_task_tab_open(open: bool) -> void:
+	if task_btn == null:
+		return
+	var width := 0 if open else 4
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var sb := task_btn.get_theme_stylebox(state) as StyleBoxFlat
+		if sb != null:
+			sb.set_border_width_all(width)
+			sb.shadow_size = 0 if open else 4
+
 func _toggle_company_tasks() -> void:
-	# TODO: 公司任务面板待实现
-	pass
+	if task_panel == null:
+		return
+	if not task_panel.visible and recipe_panel != null and recipe_panel.visible:
+		_toggle_recipe_book()
+	task_panel.visible = not task_panel.visible
+	_set_task_tab_open(task_panel.visible)
+	task_tab_shadow.visible = task_panel.visible
+	task_tab_seam.visible = task_panel.visible
+	if task_panel.visible:
+		_refresh_company_tasks()
+	task_tab_shadow.queue_redraw()
+	task_tab_seam.queue_redraw()
 
 # ---------------------------------------------------------------- gear menu
 func _panel_stylebox() -> StyleBoxFlat:
@@ -6114,6 +6851,25 @@ func _build_gear_menu() -> void:
 		b.pressed.connect(it["f"])
 		box.add_child(b)
 
+	var dev_toggle := CheckButton.new()
+	dev_toggle.text = "开发模式"
+	dev_toggle.button_pressed = GameState.dev_mode
+	dev_toggle.custom_minimum_size = Vector2(0, 72)
+	dev_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_apply_pixel_font(dev_toggle, 34)
+	dev_toggle.add_theme_constant_override("icon_max_width", 36)
+	dev_toggle.add_theme_color_override("font_color", INK)
+	dev_toggle.add_theme_color_override("font_pressed_color", INK)
+	dev_toggle.toggled.connect(_on_dev_mode_toggled)
+	box.add_child(dev_toggle)
+
+	var dev_note := Label.new()
+	dev_note.text = "关闭后卡包按任务进度解锁"
+	dev_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_apply_pixel_font(dev_note, 18)
+	dev_note.add_theme_color_override("font_color", Color("746b60"))
+	box.add_child(dev_note)
+
 func _toggle_gear_menu() -> void:
 	if gear_menu == null:
 		return
@@ -6144,6 +6900,18 @@ func _gear_recipes() -> void:
 func _gear_settings() -> void:
 	_close_gear_menu()
 	_toggle_settings()
+
+func _on_dev_mode_toggled(enabled: bool) -> void:
+	var was_enabled := GameState.dev_mode
+	GameState.dev_mode = enabled
+	if enabled and not was_enabled:
+		_spawn_cash_cards(50, _unproject(_screen_center()), "office", _screen_center())
+	_refresh_packs()
+	_show_toast(
+		"开发模式已开启：已增加 50 资金，所有卡包解锁"
+		if enabled else
+		"开发模式已关闭：卡包由公司任务进度解锁"
+	)
 
 func _gear_main_menu() -> void:
 	get_tree().paused = false
@@ -6550,7 +7318,7 @@ func _build_settings_panel() -> void:
 	background_mode_btn.custom_minimum_size = Vector2(240, 48)
 	background_mode_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_style_button(background_mode_btn, Color("faf5ec"))
-	background_mode_btn.add_item("City Builder", 0)
+	background_mode_btn.add_item("Godot3D 标记", 0)
 	background_mode_btn.add_item("简单环境", 1)
 	background_mode_btn.selected = Settings.background_mode
 	background_mode_btn.item_selected.connect(_on_background_mode_selected)
@@ -6558,7 +7326,7 @@ func _build_settings_panel() -> void:
 	_remove_popup_checkmarks(background_mode_btn)
 
 	var city_builder_button := Button.new()
-	city_builder_button.text = "编辑 City Builder"
+	city_builder_button.text = "编辑 Godot3D 背景"
 	city_builder_button.custom_minimum_size = Vector2(0, 52)
 	_apply_pixel_font(city_builder_button, 20)
 	_style_button(city_builder_button, Color("aecbe0"))
@@ -6664,7 +7432,9 @@ func _remove_popup_checkmarks(btn: OptionButton) -> void:
 func _refresh_recipe_book() -> void:
 	if recipe_list == null:
 		return
-	var lines: Array = []
+	for child in recipe_list.get_children():
+		child.queue_free()
+		
 	var by_stage := _business_models_by_stage()
 	var stages := by_stage.keys()
 	stages.sort()
@@ -6672,16 +7442,52 @@ func _refresh_recipe_book() -> void:
 		var stage := int(stages[si])
 		var recipes: Array = by_stage[stage]
 		var known := _known_business_models(recipes)
-		lines.append("[b]阶段「%s」[/b]" % GameState.STAGE_NAMES[clampi(stage, 0, GameState.STAGE_NAMES.size() - 1)])
-		lines.append("[color=#5b5145]已解锁 商业模式：%d/%d[/color]" % [known.size(), recipes.size()])
+		
+		# Section title
+		var title := Label.new()
+		title.text = "阶段「%s」" % GameState.STAGE_NAMES[clampi(stage, 0, GameState.STAGE_NAMES.size() - 1)]
+		title.add_theme_font_override("font", _ui_bold_font())
+		title.add_theme_font_size_override("font_size", 20)
+		title.add_theme_color_override("font_color", INK)
+		recipe_list.add_child(title)
+		
+		# Stats
+		var stats := Label.new()
+		stats.text = "已解锁 商业模式：%d/%d" % [known.size(), recipes.size()]
+		stats.add_theme_font_override("font", _ui_font())
+		stats.add_theme_font_size_override("font_size", 20)
+		stats.add_theme_color_override("font_color", Color("5b5145"))
+		recipe_list.add_child(stats)
+		
 		for recipe in known:
-			lines.append("[color=#2f2a25]• %s：%s[/color]" % [
-				String(recipe.get("name", "")), DataLoader.recipe_formula_text(String(recipe.get("id", "")))])
+			var recipe_id := String(recipe.get("id", ""))
+			var recipe_name := String(recipe.get("name", ""))
+			var formula_text := DataLoader.recipe_formula_text(recipe_id)
+			var base_bbcode := "[color=#2f2a25]• %s[/color]" % recipe_name
+			
+			var rtl := _create_row_label(base_bbcode)
+			rtl.mouse_entered.connect(func():
+				rtl.text = "[b]" + base_bbcode + "[/b]"
+				hover_follows_mouse = true
+				_apply_pixel_font(hover_label, 20)
+				_show_hover(formula_text, rtl)
+			)
+			rtl.mouse_exited.connect(func():
+				rtl.text = base_bbcode
+				_hide_hover()
+			)
+			recipe_list.add_child(rtl)
+			
 		for i in range(maxi(0, recipes.size() - known.size())):
-			lines.append("[color=#777067]• ？？[/color]")
+			var lbl := Label.new()
+			lbl.text = "• ？？"
+			lbl.add_theme_font_override("font", _ui_font())
+			lbl.add_theme_font_size_override("font_size", 20)
+			lbl.add_theme_color_override("font_color", Color("777067"))
+			recipe_list.add_child(lbl)
+			
 		if si < stages.size() - 1:
-			lines.append("[color=#b9ad9c]────────────────────────[/color]")
-	recipe_list.text = _join_text(lines, "\n")
+			recipe_list.add_child(_create_separator(Color("b9ad9c")))
 
 func _business_models_by_stage() -> Dictionary:
 	var out := {}
@@ -6830,6 +7636,12 @@ func _prereq_ok(node: Dictionary) -> bool:
 	for pre in node.get("prereq", []):
 		if not GameState.idea_done(pre):
 			return false
+	var any_prereq: Array = node.get("anyPrereq", [])
+	if not any_prereq.is_empty():
+		for pre in any_prereq:
+			if GameState.idea_done(pre):
+				return true
+		return false
 	return true
 
 func _on_idea_unlocked(idea_id: String) -> void:
@@ -6854,7 +7666,7 @@ func _stage_pack_name(stage: int) -> String:
 func _layout_top_right_stats() -> void:
 	var right_edge := _screen_size().x - 100.0
 	var visible_gap := 10.0
-	for label in [lbl_finance, lbl_business, lbl_expense]:
+	for label in [lbl_finance, lbl_business, lbl_supply_chain, lbl_expense]:
 		if label == null or not is_instance_valid(label):
 			continue
 		var font: Font = label.get_theme_font("font")
@@ -6878,8 +7690,8 @@ func _layout_top_right_stats() -> void:
 		var shift := 0.0
 		if label == lbl_business:
 			shift = 30.0
-		elif label == lbl_expense:
-			shift = 65.0
+		elif label == lbl_supply_chain:
+			shift = SUPPLY_CHAIN_HUD_SHIFT
 			
 		group.position.x = right_edge - total_width - shift
 		group.size.x = total_width
@@ -6919,6 +7731,8 @@ func _update_hud() -> void:
 		lbl_finance.text = "$%d" % GameState.cash
 	if lbl_expense:
 		lbl_expense.text = "$%d" % _current_expense()
+	if lbl_supply_chain:
+		lbl_supply_chain.text = "%d/%d" % [_supply_chain_count(), _supply_chain_limit()]
 	_layout_top_right_stats()
 	if lbl_val:
 		lbl_val.text = "估值 $%d" % GameState.valuation
@@ -7481,8 +8295,7 @@ func _draw_bottom_info() -> void:
 		_draw_italic(bottom_info, f, Vector2(0, baseline_y), hint_text, font_size, hint_col)
 
 func _on_business_model_unlocked(recipe_id: String) -> void:
-	var bm_name := DataLoader.card_name(DataLoader.business_model_card_id(recipe_id))
-	_show_founder_bubble("发现了 %s！" % bm_name)
+	_refresh_recipe_book()
 
 # Anchor where the speech tail originates: the founder's "mouth",
 # upper-right inside the card. Mapped through the card's own transform so it
@@ -7661,3 +8474,14 @@ func _reposition_founder_bubble(bubble: Control, founder: Node2D) -> void:
 	if shadow != null:
 		shadow.queue_redraw()
 	bubble.queue_redraw()
+
+class CustomListContainer extends VBoxContainer:
+	var text: String:
+		get:
+			var lines := []
+			for child in get_children():
+				if child is Label:
+					lines.append(child.text)
+				elif child is RichTextLabel:
+					lines.append(child.text)
+			return "\n".join(lines)

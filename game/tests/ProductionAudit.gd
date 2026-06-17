@@ -9,7 +9,9 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var founder = scene.spawn_card("founder", Vector2(500, 400))
+	var founder = scene._founder_on_board()
+	if founder == null:
+		founder = scene.spawn_card("founder", Vector2(500, 400))
 	var neighborhood = scene.spawn_card("p1_neighborhood", Vector2(500, 400))
 	var production_sid: int = scene._merge(founder.stack_id, neighborhood.stack_id)
 	assert(scene.productions.has(production_sid), "居住小区配方没有开始生产")

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <title>产品专员</title>
+  <rect width="256" height="256" rx="24" fill="#b86f6f"/>
+  <rect x="20" y="20" width="216" height="216" rx="18" fill="#fbf3e7" stroke="#151515" stroke-width="10"/>
+  <rect x="36" y="36" width="184" height="34" rx="8" fill="#b86f6f"/>
+  <circle cx="128" cy="120" r="54" fill="#ffe6e2" stroke="#151515" stroke-width="10"/><path d="M92 142 C110 104 146 104 164 142" fill="none" stroke="#151515" stroke-width="12" stroke-linecap="round"/><circle cx="108" cy="111" r="8" fill="#151515"/><circle cx="148" cy="111" r="8" fill="#151515"/>
+  <path d="M72 212 H184" stroke="#151515" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+</svg>

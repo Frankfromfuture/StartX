@@ -9,14 +9,20 @@ func _run() -> void:
 	var pack: Dictionary = data_loader.packs.get("Developemnt_pack", {})
 	assert(not pack.is_empty(), "第二卡包不存在")
 	assert(int(pack.get("minCards", 0)) == 3, "第二卡包最少应开出 3 张")
-	assert(int(pack.get("maxCards", 0)) == 5, "第二卡包最多应开出 5 张")
-	assert((pack.get("slots", []) as Array).size() == 5, "第二卡包应有 5 个抽卡槽")
+	assert(int(pack.get("maxCards", 0)) == 3, "第二卡包最多应开出 3 张")
+	assert((pack.get("slots", []) as Array).size() == 3, "第二卡包应有 3 个抽卡槽")
 	var has_workstation := false
+	var has_advanced_specialist := false
 	for slot in pack.get("slots", []):
 		for option in slot:
 			if String(option.get("id", "")) == "p2_orderly_workstation":
 				has_workstation = true
-	assert(has_workstation, "第二卡包应包含井井有条的工位")
+			if String(option.get("id", "")) in [
+				"p2_sales_specialist", "p2_product_specialist", "p2_admin_specialist"
+			]:
+				has_advanced_specialist = true
+	assert(not has_workstation, "井井有条的工位应鼓励玩家生产，不应直接抽到")
+	assert(not has_advanced_specialist, "各专员应鼓励玩家生产，不应直接抽到")
 
 	var law_firm: Dictionary = data_loader.card_def("p2_law_firm")
 	assert(String(law_firm.get("type", "")) == "resource", "律师事务所应归类为 resource")
@@ -91,8 +97,16 @@ func _run() -> void:
 		String(scene.productions[contract_sid]["recipe"].get("id", "")) == "p2_make_contract",
 		"文书 + 律师事务所应匹配起草合同配方"
 	)
-	assert(scene._recipe_work_required(scene.productions[contract_sid]["recipe"]) == 20.0, "合同工作量应为 20")
-	assert(scene._production_duration(contract_sid, scene.productions[contract_sid]["recipe"]) == 20.0, "合同应需 20 秒")
+	var contract_work_required := float(data_loader.card_def("p2_contract").get("workRequired", 0))
+	assert(contract_work_required > 0.0, "合同应填写工作量")
+	assert(
+		scene._recipe_work_required(scene.productions[contract_sid]["recipe"]) == contract_work_required,
+		"合同配方应读取合同卡的工作量"
+	)
+	assert(
+		scene._production_duration(contract_sid, scene.productions[contract_sid]["recipe"]) == contract_work_required,
+		"零产能时合同生产时间应等于合同工作量"
+	)
 	scene._complete_production(contract_sid)
 	await process_frame
 	await process_frame
@@ -142,6 +156,7 @@ func _run() -> void:
 				scene._business_model_pack_id(business_card_id) == pack_id,
 				"%s 抽到了其它卡包的商业模式 %s" % [pack_id, business_card_id]
 			)
+	assert(scene.BUSINESS_MODEL_CHANCE == 0.50, "商业模式出现概率应为 50%")
 	var wrong_business_card: String = data_loader.business_model_card_id("p2_make_document")
 	assert(
 		not scene._sanitize_pack_contents("garage_pack", [wrong_business_card]).has(wrong_business_card),
@@ -204,10 +219,34 @@ func _run() -> void:
 	var product_specialist = scene.spawn_card("p2_product_specialist", Vector2(900, 420))
 	var wholesale = scene.spawn_card("p1_wholesale", Vector2(900, 420))
 	wholesale.uses_left = 3
-	scene.spawn_card("cash", Vector2(1100, 420))
+	var recipe_cash = scene.spawn_card("cash", Vector2(1100, 420))
 	scene.spawn_card("cash", Vector2(1160, 420))
+	assert(
+		scene._would_interact(product_specialist.stack_id, wholesale.stack_id),
+		"三元素配方中，任意两个已有元素应显示交互提示"
+	)
+	assert(
+		scene._would_interact(product_specialist.stack_id, recipe_cash.stack_id),
+		"点击产品专员时，配方所需现金应显示交互提示"
+	)
+	var product_recipe: Dictionary = {}
+	for candidate in data_loader.recipes:
+		if String(candidate.get("id", "")) == "p2_specialist_package_product":
+			product_recipe = candidate
+			break
+	assert(not product_recipe.is_empty(), "产品专员配方不存在")
+	assert(
+		scene._recipe_matches(
+			product_recipe,
+			{"p2_product_specialist": 1, "p1_wholesale": 1, "cash": 1},
+			[wholesale, product_specialist, recipe_cash]
+		),
+		"产品专员 + 批发市场 + 现金应满足配方输入"
+	)
 	var product_sid: int = scene._merge(product_specialist.stack_id, wholesale.stack_id)
-	assert(scene.productions.has(product_sid), "产品专员 + 批发市场没有开始带包装产品配方")
+	assert(not scene.productions.has(product_sid), "三元素配方缺少现金时不应提前开工")
+	product_sid = scene._merge(recipe_cash.stack_id, product_sid)
+	assert(scene.productions.has(product_sid), "产品专员 + 批发市场 + 现金没有开始带包装产品配方")
 	assert(String(scene.productions[product_sid]["recipe"].get("id", "")) == "p2_specialist_package_product")
 	scene._complete_production(product_sid)
 	await create_timer(1.0).timeout
@@ -230,8 +269,19 @@ func _run() -> void:
 	assert(base_capacity == 30, "场上一个创始人办公桌时空间上限应为 30，实际为 %d" % base_capacity)
 	var office = scene.spawn_card("p1_office", Vector2(1050, 520))
 	var admin_management = scene.spawn_card("p2_admin_management", Vector2(1050, 520))
+	var workstation_cash = scene.spawn_card("cash", Vector2(1050, 520))
+	assert(
+		scene._would_interact(office.stack_id, admin_management.stack_id),
+		"三元素工位配方中，办公桌与行政管理应显示交互提示"
+	)
+	assert(
+		scene._would_interact(admin_management.stack_id, workstation_cash.stack_id),
+		"三元素工位配方中，行政管理与现金应显示交互提示"
+	)
 	var workstation_sid: int = scene._merge(office.stack_id, admin_management.stack_id)
-	assert(scene.productions.has(workstation_sid), "办公室 + 行政管理没有开始工位配方")
+	assert(not scene.productions.has(workstation_sid), "工位配方缺少现金时不应提前开工")
+	workstation_sid = scene._merge(workstation_cash.stack_id, workstation_sid)
+	assert(scene.productions.has(workstation_sid), "办公室 + 行政管理 + 现金没有开始工位配方")
 	assert(String(scene.productions[workstation_sid]["recipe"].get("id", "")) == "p2_build_orderly_workstation")
 	scene._complete_production(workstation_sid)
 	await process_frame

@@ -19,6 +19,7 @@ var stack_id: int = -1
 var stack_pos: int = 0
 var zone: String = ""
 var uses_left: int = -1       # -1 = unlimited; >=0 = remaining uses (nodes)
+var stored_cash: int = 0      # 账户内保存的现金；不计入场上流动现金
 var cap_cur: int = 0          # 当前产能（类 HP；battle 拼产能会消耗后缓慢恢复，现在 == capacity）
 var funds_max: int = 0        # 资金（战斗 HP）上限。对手卡自带，默认 = 产能 × 3
 var funds_cur: int = 0        # 当前资金（战斗 HP）
@@ -47,7 +48,7 @@ var cost_icon_tex: Texture2D
 var star_icon_tex: Texture2D
 var idea_icon_tex: Texture2D
 
-# 每张卡的像素美术：优先 res://assets/cards/<卡牌名>.svg，其次兼容旧 <id>.svg / png。
+# 每张卡的像素美术：优先 res://assets/svg/cards/<卡牌名>.svg，其次兼容旧 <id>.svg / png。
 static var _art_cache: Dictionary = {}
 
 const INK := Color("141414")     # 黑描边 / 分割线 / 图标 / 数字圈
@@ -102,7 +103,6 @@ func setup(id: String) -> void:
 		funds_cur = funds_max
 	is_cash = (id == "cash")
 	set_process(false)                  # 仅现金卡 hover 时才逐帧动
-	queue_redraw()
 
 func _draw() -> void:
 	var head := _header_color()
@@ -242,7 +242,9 @@ func _draw_dither_gloss(_picked: bool) -> void:
 	# 卡面烘焙高光已去除（保持纯平涂，不受光照影响）
 	# 底部角标：左下 = 月薪，右下 = 产能；名称区右上 = 剩余次数
 	var salary := int(cdef.get("salary", 0))
-	if salary > 0:
+	if card_id == "p3_account":
+		_draw_value_badge(Vector2(28, H - 29), str(stored_cash))
+	elif salary > 0:
 		_draw_salary_badge(Vector2(28, H - 29), str(salary))
 	elif ctype in ["tool", "customer", "product"]:
 		var value := int(cdef.get("value", 0))
@@ -435,8 +437,8 @@ func _card_art_paths() -> Array:
 		names.append(card_id)
 	var paths: Array = []
 	for n in names:
-		paths.append("res://assets/cards/%s.svg" % n)
-		paths.append("res://assets/cards/%s.png" % n)
+		paths.append("res://assets/svg/cards/%s.svg" % n)
+		paths.append("res://assets/svg/cards/%s.png" % n)
 	return paths
 
 func _capacity_icon() -> Texture2D:

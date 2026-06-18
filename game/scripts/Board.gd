@@ -4846,44 +4846,59 @@ func _pack_card_landing(id: String, origin_center: Vector2, zone: String) -> Vec
 	const DROP_MIN := 1.5
 	const DROP_MAX := 3.0
 	var half := Vector2(CW, CH) * 0.5
-	var candidates: Array = []
+	
+	# 1. 优先尝试叠放到相同卡牌的既有牌堆上
 	for sidv in stack_base.keys():
 		var sid := int(sidv)
 		if _stack_all_card_id(sid, id):
-			candidates.append(stack_base[sid])
+			var corner := clamp_to_zone(stack_base[sid], zone)
+			if _pack_landing_clearance_score(corner, id) >= 0.0:
+				return corner
+
+	# 2. 尝试随机散射位置，寻找完全不重叠的空位
+	var free_random_candidates: Array = []
 	for attempt in 44:
 		var ring: float = 1.0 + floorf(float(attempt) / 14.0) * 0.28
 		var ang := GameState.rng.randf() * TAU
 		var dist := GameState.rng.randf_range(CW * DROP_MIN, CW * DROP_MAX * ring)
-		candidates.append(clamp_to_zone(origin_center + Vector2(cos(ang), sin(ang)) * dist - half, zone))
+		var candidate := clamp_to_zone(origin_center + Vector2(cos(ang), sin(ang)) * dist - half, zone)
+		if _pack_landing_clearance_score(candidate, id) >= 0.0:
+			free_random_candidates.append(candidate)
+	
+	# 如果有多个不重叠的随机空位，随机选一个，实现均匀分布散射！
+	if not free_random_candidates.is_empty():
+		var idx := GameState.rng.randi() % free_random_candidates.size()
+		return free_random_candidates[idx]
+
+	# 3. 如果没找到完美空位，则遍历网格备选点与随机点，寻找重叠度（重叠面积）最小的位置
+	var grid_candidates: Array = []
 	var step := CW + GAP
 	var gy := MID_Y0 + 2.0
 	while gy <= MID_Y1 - CH:
 		var gx := CANVAS_X0 + GAP
 		while gx <= CANVAS_X1 - GAP - CW:
-			candidates.append(Vector2(gx, gy))
+			grid_candidates.append(Vector2(gx, gy))
 			gx += step
 		gy += step
+
 	var best_corner := clamp_to_zone(origin_center - half, zone)
 	var best_score := -INF
-	var best_free_corner := Vector2.ZERO
-	var best_free_distance := INF
-	var has_free_corner := false
-	for candidate in candidates:
+	
+	var all_fallback: Array = []
+	for attempt in 44:
+		var ring: float = 1.0 + floorf(float(attempt) / 14.0) * 0.28
+		var ang := GameState.rng.randf() * TAU
+		var dist := GameState.rng.randf_range(CW * DROP_MIN, CW * DROP_MAX * ring)
+		all_fallback.append(origin_center + Vector2(cos(ang), sin(ang)) * dist - half)
+	all_fallback.append_array(grid_candidates)
+	
+	for candidate in all_fallback:
 		var corner := clamp_to_zone(candidate, zone)
 		var score := _pack_landing_clearance_score(corner, id)
-		if score >= 0.0:
-			var distance := (corner + half).distance_squared_to(origin_center)
-			if distance < best_free_distance:
-				best_free_distance = distance
-				best_free_corner = corner
-				has_free_corner = true
-			continue
 		if score > best_score:
 			best_score = score
 			best_corner = corner
-	if has_free_corner:
-		return best_free_corner
+			
 	return best_corner
 
 func _stack_all_card_id(sid: int, id: String) -> bool:

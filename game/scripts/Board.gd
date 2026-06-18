@@ -4843,8 +4843,8 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 	)
 
 func _pack_card_landing(id: String, origin_center: Vector2, zone: String) -> Vector2:
-	const DROP_MIN := 1.5
-	const DROP_MAX := 3.0
+	const DROP_MIN := 0.8
+	const DROP_MAX := 1.5
 	var half := Vector2(CW, CH) * 0.5
 	
 	# 1. 优先尝试叠放到相同卡牌的既有牌堆上

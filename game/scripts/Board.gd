@@ -5247,7 +5247,7 @@ func _set_button_icon(b: Button, icon_name: String) -> void:
 		tr.name = "ButtonIcon"
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(tr)
-	var icon_size := TOP_ICON_SIZE
+	var icon_size := TOP_ICON_SIZE * 1.5
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tr.custom_minimum_size = Vector2(icon_size, icon_size)

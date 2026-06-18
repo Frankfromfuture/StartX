@@ -19,6 +19,9 @@ boot_splash/image="res://assets/menu/intro_splash.png"
 
 [autoload]
 
+
+
+
 DataLoader="*res://scripts/DataLoader.gd"
 GameState="*res://scripts/GameState.gd"
 Settings="*res://scripts/Settings.gd"
@@ -35,6 +38,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/size/min_width=960
 window/size/min_height=540
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/funplay_mcp/plugin.cfg")
 
 [rendering]
 

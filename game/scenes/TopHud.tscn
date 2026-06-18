@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/svg/ui/streamline/icon_stage.svg" id="1_stage"]
-[ext_resource type="Texture2D" path="res://assets/svg/ui/streamline/icon_settings.svg" id="7_settings"]
+[ext_resource type="Texture2D" path="res://assets/svg/ui/milestone.svg" id="1_stage"]
+[ext_resource type="Texture2D" path="res://assets/svg/ui/option.svg" id="7_settings"]
 
 [node name="HUD" type="CanvasLayer"]
 
@@ -112,10 +112,10 @@ offset_bottom = 61.0
 
 [node name="ButtonIcon" type="TextureRect" parent="TopBar/GearButton"]
 mouse_filter = 2
-offset_left = 20.0
-offset_top = 10.0
-offset_right = 44.0
-offset_bottom = 34.0
+offset_left = 13.0
+offset_top = 3.0
+offset_right = 51.0
+offset_bottom = 41.0
 texture = ExtResource("7_settings")
 expand_mode = 1
 stretch_mode = 5

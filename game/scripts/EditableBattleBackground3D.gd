@@ -11,7 +11,16 @@ const SWAY_STRENGTH_TREE := Vector2(0.012, 0.026)
 const SWAY_STRENGTH_MULTIPLIER := 4.5
 const SWAY_SPEED := Vector2(0.38, 0.72)
 const SWAY_TOP_ALPHA := 0.35
-const BACKGROUND_FADE_ALPHA := 0.7
+const BACKGROUND_MODULATE_ALPHA := 0.7
+const BACKGROUND_TRANSPARENCY := 0.0
+const SWAY_SHADER_BASE_ALPHA := 1.0
+const BACKGROUND_ALPHA_SCISSOR := 0.08
+const BACKGROUND_RENDER_CULL_MARGIN := 64.0
+const BACKGROUND_TEXTURE_FILTER := BaseMaterial3D.TEXTURE_FILTER_LINEAR
+const SIDE_ELEMENT_03_NAME := "SideElement03"
+const SIDE_ELEMENT_03_SPEED := 0.1
+const SIDE_ELEMENT_03_LEFT_WRAP_X := -10.4
+const SIDE_ELEMENT_03_RIGHT_START_X := 10.4
 
 @onready var camera: Camera3D = $Camera3D
 @onready var decorations: Node3D = $OutsideDecorations3D
@@ -20,6 +29,8 @@ const BACKGROUND_FADE_ALPHA := 0.7
 var _sway_shader: Shader = null
 var _soft_shadow_material: ShaderMaterial = null
 var _visible_bottom_cache := {}
+var _side_element_03: Sprite3D = null
+var _side_element_03_home := Vector3.ZERO
 
 func _ready() -> void:
 	if decorations != null and decorations.get_child_count() > 0:
@@ -28,14 +39,13 @@ func _ready() -> void:
 		return
 	else:
 		_rebuild_decorations()
+	_setup_side_element_03_motion()
 
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
-		_pin_decoration_bottoms()
 		_sync_decoration_shadows()
 		return
-	_update_decoration_angles()
-	_pin_decoration_bottoms()
+	_update_side_element_03_motion(_delta)
 	_sync_decoration_shadows()
 
 func _rebuild_decorations() -> void:
@@ -57,11 +67,9 @@ func _prepare_existing_decorations() -> void:
 		_mark_editor_owned(child)
 		_prepare_existing_decoration_visuals(child)
 	if Engine.is_editor_hint():
-		_pin_decoration_bottoms()
 		_sync_decoration_shadows()
 		return
-	_update_decoration_angles()
-	_pin_decoration_bottoms()
+	_setup_side_element_03_motion()
 	_sync_decoration_shadows()
 
 func _prepare_existing_decoration_visuals(node: Node) -> void:
@@ -69,8 +77,13 @@ func _prepare_existing_decoration_visuals(node: Node) -> void:
 	if sprite == null:
 		return
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
-	sprite.modulate = Color(1, 1, 1, BACKGROUND_FADE_ALPHA)
-	sprite.transparency = 1.0 - BACKGROUND_FADE_ALPHA
+	sprite.ignore_occlusion_culling = true
+	sprite.texture_filter = BACKGROUND_TEXTURE_FILTER
+	sprite.extra_cull_margin = BACKGROUND_RENDER_CULL_MARGIN
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	sprite.alpha_scissor_threshold = BACKGROUND_ALPHA_SCISSOR
+	sprite.modulate = Color(1, 1, 1, BACKGROUND_MODULATE_ALPHA)
+	sprite.transparency = BACKGROUND_TRANSPARENCY
 	if _is_sway_decoration(sprite.name) and sprite.texture != null:
 		var material := sprite.material_override as ShaderMaterial
 		var strength := 0.012
@@ -91,9 +104,15 @@ func _add_decoration(data: Dictionary) -> void:
 	sprite.name = String(data["name"])
 	sprite.texture = tex
 	sprite.pixel_size = float(data.get("pixel", 0.002)) * _pixel_multiplier(String(data["path"]))
-	sprite.modulate = Color(1, 1, 1, BACKGROUND_FADE_ALPHA)
-	sprite.transparency = 1.0 - BACKGROUND_FADE_ALPHA
+	sprite.modulate = Color(1, 1, 1, BACKGROUND_MODULATE_ALPHA)
+	sprite.transparency = BACKGROUND_TRANSPARENCY
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+	sprite.ignore_occlusion_culling = true
+	sprite.texture_filter = BACKGROUND_TEXTURE_FILTER
+	sprite.extra_cull_margin = BACKGROUND_RENDER_CULL_MARGIN
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	sprite.alpha_scissor_threshold = BACKGROUND_ALPHA_SCISSOR
+	sprite.rotation_degrees = Vector3(-DECORATION_LEAN_DEG, 0.0, 0.0)
 	sprite.position = data["pos"]
 	_pin_sprite_bottom_to_canvas(sprite)
 	if bool(data.get("sway", false)):
@@ -115,6 +134,26 @@ func _mark_editor_owned(node: Node) -> void:
 		scene_root = self
 	node.owner = scene_root
 
+func _setup_side_element_03_motion() -> void:
+	if decorations == null:
+		return
+	_side_element_03 = decorations.get_node_or_null(SIDE_ELEMENT_03_NAME) as Sprite3D
+	if _side_element_03 != null:
+		_side_element_03_home = _side_element_03.position
+
+func _update_side_element_03_motion(delta: float) -> void:
+	if _side_element_03 == null or not is_instance_valid(_side_element_03):
+		_setup_side_element_03_motion()
+		if _side_element_03 == null:
+			return
+	var next_position := _side_element_03.position
+	next_position.x -= SIDE_ELEMENT_03_SPEED * delta
+	if next_position.x <= SIDE_ELEMENT_03_LEFT_WRAP_X:
+		next_position.x = SIDE_ELEMENT_03_RIGHT_START_X
+	next_position.y = _side_element_03_home.y
+	next_position.z = _side_element_03_home.z
+	_side_element_03.position = next_position
+
 func _sway_material(tex: Texture2D, strength: float, speed: float, phase: float) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = _get_sway_shader()
@@ -123,7 +162,8 @@ func _sway_material(tex: Texture2D, strength: float, speed: float, phase: float)
 	material.set_shader_parameter("sway_speed", speed)
 	material.set_shader_parameter("sway_phase", phase)
 	material.set_shader_parameter("top_alpha", SWAY_TOP_ALPHA)
-	material.set_shader_parameter("fade_alpha", BACKGROUND_FADE_ALPHA)
+	material.set_shader_parameter("fade_alpha", SWAY_SHADER_BASE_ALPHA)
+	material.set_shader_parameter("alpha_scissor_threshold", BACKGROUND_ALPHA_SCISSOR)
 	return material
 
 func _get_sway_shader() -> Shader:
@@ -132,14 +172,15 @@ func _get_sway_shader() -> Shader:
 	_sway_shader = Shader.new()
 	_sway_shader.code = """
 shader_type spatial;
-render_mode cull_disabled, blend_mix, depth_draw_never;
+render_mode cull_disabled, depth_draw_opaque;
 
-uniform sampler2D albedo_tex : source_color;
+uniform sampler2D albedo_tex : source_color, filter_linear;
 uniform float sway_strength = 0.01;
 uniform float sway_speed = 0.5;
 uniform float sway_phase = 0.0;
 uniform float top_alpha = 0.35;
-uniform float fade_alpha = 0.7;
+uniform float fade_alpha = 1.0;
+uniform float alpha_scissor_threshold = 0.08;
 
 void vertex() {
 	float top_weight = pow(clamp(1.0 - UV.y, 0.0, 1.0), 1.8);
@@ -149,9 +190,13 @@ void vertex() {
 
 void fragment() {
 	vec4 tex = texture(albedo_tex, UV);
-	float top_fade = smoothstep(0.28, 1.0, 1.0 - UV.y);
+	float top_fade = smoothstep(0.12, 1.0, 1.0 - UV.y);
 	ALBEDO = tex.rgb;
-	ALPHA = tex.a * mix(1.0, top_alpha, top_fade) * fade_alpha;
+	float visible_alpha = tex.a * mix(1.0, top_alpha, top_fade) * fade_alpha;
+	if (visible_alpha < alpha_scissor_threshold) {
+		discard;
+	}
+	ALPHA = 1.0;
 }
 """
 	return _sway_shader
@@ -306,6 +351,8 @@ func _update_decoration_angles() -> void:
 		var sprite := child as Sprite3D
 		if sprite == null:
 			continue
+		if sprite.has_meta("startx_generated_background_asset"):
+			continue
 		sprite.rotation_degrees = Vector3(-DECORATION_LEAN_DEG, 0.0, 0.0)
 
 func _sync_decoration_shadows() -> void:
@@ -335,6 +382,8 @@ func _sync_shadow_group(source_root: Node3D, shadow_root_name: String) -> void:
 			shadow.mesh = PlaneMesh.new()
 			shadow.material_override = _get_soft_shadow_material()
 			shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			shadow.ignore_occlusion_culling = true
+			shadow.extra_cull_margin = BACKGROUND_RENDER_CULL_MARGIN
 			shadow.set_meta("startx_generated_soft_shadow", true)
 			shadow_root.add_child(shadow)
 			_mark_editor_owned(shadow)
@@ -365,6 +414,8 @@ func _update_shadow_for_sprite(shadow: MeshInstance3D, sprite: Sprite3D) -> void
 	var basis := Basis().scaled(Vector3(width, 1.0, depth))
 	shadow.transform = Transform3D(basis, Vector3(sprite_pos.x + 0.1, _canvas_surface_y() + 0.012, sprite_pos.z + 0.13))
 	shadow.material_override = _get_soft_shadow_material()
+	shadow.ignore_occlusion_culling = true
+	shadow.extra_cull_margin = BACKGROUND_RENDER_CULL_MARGIN
 	shadow.visible = sprite.visible
 
 func _shadow_width_factor(node_name: String) -> float:
@@ -408,7 +459,7 @@ void fragment() {
 }
 """
 	_soft_shadow_material.shader = shader
-	_soft_shadow_material.set_shader_parameter("shadow_color", Color(0.33, 0.33, 0.33, 0.26 * BACKGROUND_FADE_ALPHA))
+	_soft_shadow_material.set_shader_parameter("shadow_color", Color(0.33, 0.33, 0.33, 0.26 * (1.0 - BACKGROUND_TRANSPARENCY)))
 	return _soft_shadow_material
 
 func _visible_bottom_local_y(sprite: Sprite3D) -> float:

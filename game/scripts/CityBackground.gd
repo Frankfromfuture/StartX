@@ -10,6 +10,8 @@ const CAM_FOV := 46.0
 const CAM_PITCH_DEG := 56.0
 const CAM_DIST := 30.0
 const CAM_TARGET_Y := 0.4
+const CAM_NEAR := 0.02
+const CAM_FAR := 1600.0
 const EDITABLE_BACKGROUND_SCENE := "res://scenes/backgrounds/EditableBattleBackground3D.tscn"
 const BOARD_GRID_COLS := 36
 const BOARD_GRID_ROWS := 20
@@ -154,7 +156,8 @@ func _build_camera() -> void:
 	cam = Camera3D.new()
 	cam.name = "GamePerspectiveCamera"
 	cam.fov = CAM_FOV
-	cam.far = 600.0
+	cam.near = CAM_NEAR
+	cam.far = CAM_FAR
 	cam.current = true
 	_root3d.add_child(cam)
 	aim(Vector3.ZERO, CAM_DIST)

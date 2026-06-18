@@ -40,7 +40,7 @@ const TOP_ICON_SIZE := 31.2
 const FIXED_MONTHLY_EXPENSE := 0
 const BUSINESS_MODEL_CHANCE := 0.50
 const START_PACK_GAP := CW * 0.5
-const SUPPLY_CHAIN_HUD_SHIFT := 105.0
+const SUPPLY_CHAIN_HUD_SHIFT := 155.0
 
 # ---- Perspective ----  (1.0 = OFF/flat)；0.9 = 轻微一点透视（顶窄底宽）
 const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
@@ -58,6 +58,13 @@ const OFFICE_BG := Color(0.80, 0.85, 0.88, 0.20)   # 办公室·20% 透明淡蓝
 const MARKET_BG := Color(0.90, 0.84, 0.78, 0.20)   # 市场·20% 透明暖砂粉
 const ORG_BG := Color("d8d2dc")      # 组织·雾紫灰
 const INK := Color("3a352f")         # 墨线/深字
+const HUD_GLASS_BG := Color(0, 0, 0, 0.80)
+const HUD_GLASS_LINE := Color(1, 1, 1, 0.16)
+const HUD_TEXT_LIGHT := Color(1, 1, 1, 0.95)
+const HUD_TEXT_WARNING := Color("ffb0aa")
+const HUD_ICON_LIGHT := Color(0.82, 0.84, 0.84, 0.95)
+const HUD_PROGRESS_ACTIVE := Color(1, 1, 1, 0.92)
+const HUD_PROGRESS_BG := Color(0.55, 0.55, 0.55, 0.42)
 
 var all_cards: Array = []
 var stacks: Dictionary = {}
@@ -112,6 +119,7 @@ var task_tab_seam: Node2D
 var task_collapsed: Dictionary = {}
 var max_space_capacity_seen: int = 0
 const PANEL_CREAM := Color(0.98, 0.95, 0.89, 0.97)   # 弹窗/标签共用奶白底
+var top_icon_gray_material: ShaderMaterial = null
 var lbl_status: Label
 var lbl_month: Label
 var lbl_top_rp: Label
@@ -5272,7 +5280,8 @@ func _ensure_top_icon(name: String, icon_name: String, pos: Vector2, icon_size: 
 	return tr
 
 func _clear_button_style(b: Button) -> void:
-	for state in ["normal", "hover", "pressed", "disabled"]:
+	b.flat = true
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(0, 0, 0, 0)
 		sb.border_color = Color(0, 0, 0, 0)
@@ -5346,14 +5355,52 @@ func _ensure_top_bar() -> Control:
 	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var bg := top_bar.get_node_or_null("TopBarBg") as ColorRect
-	if bg != null:
-		bg.size = Vector2(_screen_size().x, HUD_H)
+	if bg == null:
+		bg = ColorRect.new()
+		bg.name = "TopBarBg"
+		top_bar.add_child(bg)
+		top_bar.move_child(bg, 0)
+	bg.position = Vector2.ZERO
+	bg.size = Vector2(_screen_size().x, HUD_H)
+	bg.color = HUD_GLASS_BG
 	var line := top_bar.get_node_or_null("TopBarLine") as ColorRect
-	if line != null:
-		line.position = Vector2(0, HUD_H - 2.0)
-		line.size = Vector2(_screen_size().x, 2.0)
+	if line == null:
+		line = ColorRect.new()
+		line.name = "TopBarLine"
+		top_bar.add_child(line)
+	line.position = Vector2(0, HUD_H - 2.0)
+	line.size = Vector2(_screen_size().x, 2.0)
+	line.color = HUD_GLASS_LINE
+	_tint_top_bar_icons()
 
 	return top_bar
+
+func _tint_top_bar_icons() -> void:
+	if top_bar == null:
+		return
+	for node in top_bar.find_children("*", "TextureRect", true, false):
+		var icon := node as TextureRect
+		if icon != null:
+			icon.modulate = Color.WHITE
+			icon.material = null
+
+func _top_icon_gray_material() -> ShaderMaterial:
+	if top_icon_gray_material != null:
+		return top_icon_gray_material
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform vec4 icon_color : source_color = vec4(0.82, 0.84, 0.84, 0.95);
+
+void fragment() {
+	vec4 tex = texture(TEXTURE, UV);
+	COLOR = vec4(icon_color.rgb, tex.a * icon_color.a * COLOR.a);
+}
+"""
+	top_icon_gray_material = ShaderMaterial.new()
+	top_icon_gray_material.shader = shader
+	top_icon_gray_material.set_shader_parameter("icon_color", HUD_ICON_LIGHT)
+	return top_icon_gray_material
 
 func _clear_legacy_top_nodes() -> void:
 	for n in [
@@ -5394,6 +5441,8 @@ func _top_stat_label(
 		icon.size = Vector2(icon_size, icon_size)
 		icon.position = Vector2(0, (HUD_H - icon_size) * 0.5)
 		icon.texture = _ui_icon(icon_name)
+		icon.modulate = Color.WHITE
+		icon.material = null
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
@@ -5409,7 +5458,7 @@ func _top_stat_label(
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right_align else HORIZONTAL_ALIGNMENT_LEFT
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(label, TOP_LABEL_FONT_SIZE)
-	label.add_theme_color_override("font_color", INK)
+	label.add_theme_color_override("font_color", HUD_TEXT_LIGHT)
 	return label
 
 func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool) -> void:
@@ -5555,7 +5604,7 @@ func _build_hud() -> void:
 	_ensure_top_bar()
 	_clear_legacy_top_nodes()
 
-	lbl_status = _top_stat_label("StageGroup", "trophy", 24, 175)
+	lbl_status = _top_stat_label("StageGroup", "milestone", 24, 175)
 	lbl_month = _top_stat_label("MonthGroup", "calendar", 282, 130)
 	lbl_top_rp = null
 
@@ -5590,7 +5639,7 @@ func _build_hud() -> void:
 		month_progress_slot.position = Vector2(0, (HUD_H - TOP_LABEL_FONT_SIZE) * 0.5)
 		month_progress_slot.size = Vector2(270, TOP_LABEL_FONT_SIZE)
 		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color("8d8d8d")
+		sb.bg_color = HUD_PROGRESS_BG
 		sb.corner_radius_top_left = 6
 		sb.corner_radius_top_right = 6
 		sb.corner_radius_bottom_left = 6
@@ -5609,7 +5658,7 @@ func _build_hud() -> void:
 		month_progress.size = Vector2(270, TOP_LABEL_FONT_SIZE)
 
 	var sb_fill := StyleBoxFlat.new()
-	sb_fill.bg_color = Color("141414")
+	sb_fill.bg_color = HUD_PROGRESS_ACTIVE
 	sb_fill.corner_radius_top_left = 6
 	sb_fill.corner_radius_top_right = 6
 	sb_fill.corner_radius_bottom_left = 6
@@ -5619,7 +5668,7 @@ func _build_hud() -> void:
 	month_progress_full_width = 270.0
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	lbl_expense = _top_stat_label("ExpenseGroup", "salary", 1220, 220, TOP_ICON_SIZE, true)
+	lbl_expense = _top_stat_label("ExpenseGroup", "cost", 1250, 220, TOP_ICON_SIZE, true)
 	var expense_group := lbl_expense.get_parent() as Control
 	if expense_group != null:
 		expense_group.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -5628,10 +5677,10 @@ func _build_hud() -> void:
 		if not expense_group.mouse_exited.is_connected(_hide_hover):
 			expense_group.mouse_exited.connect(_hide_hover)
 
-	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "chain", 970, 140, TOP_ICON_SIZE, true)
+	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "supplychain", 970, 140, TOP_ICON_SIZE, true)
 	var initial_supply_group := lbl_supply_chain.get_parent() as Control
 	if initial_supply_group != null:
-		initial_supply_group.position.x -= 40.0
+		initial_supply_group.position.x -= 50.0
 	var supply_chain_group := lbl_supply_chain.get_parent() as Control
 	if supply_chain_group != null:
 		supply_chain_group.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -5640,7 +5689,7 @@ func _build_hud() -> void:
 		if not supply_chain_group.mouse_exited.is_connected(_hide_hover):
 			supply_chain_group.mouse_exited.connect(_hide_hover)
 
-	lbl_business = _top_stat_label("BusinessGroup", "development", 1450, 180, TOP_ICON_SIZE, true)
+	lbl_business = _top_stat_label("BusinessGroup", "space", 1450, 180, TOP_ICON_SIZE, true)
 	var business_group := lbl_business.get_parent() as Control
 	if business_group != null:
 		business_group.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -5649,7 +5698,7 @@ func _build_hud() -> void:
 		if not business_group.mouse_exited.is_connected(_hide_hover):
 			business_group.mouse_exited.connect(_hide_hover)
 
-	lbl_finance = _top_stat_label("FinanceGroup", "save", 1640, 180, TOP_ICON_SIZE, true)
+	lbl_finance = _top_stat_label("FinanceGroup", "wallet", 1640, 180, TOP_ICON_SIZE, true)
 	var finance_group := lbl_finance.get_parent() as Control
 	if finance_group != null:
 		finance_group.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -5669,9 +5718,20 @@ func _build_hud() -> void:
 	gear_btn.position = Vector2(1844, (HUD_H - 44.0) * 0.5)
 	gear_btn.size = Vector2(64, 44)
 	_apply_pixel_font(gear_btn, 26)
-	_style_button(gear_btn, Color("f3ead7"))
-	_set_button_icon(gear_btn, "streamline/icon_settings")
+	_clear_button_style(gear_btn)
+	var gear_gloss := gear_btn.get_node_or_null("ButtonGloss")
+	if gear_gloss != null:
+		gear_gloss.queue_free()
+	_set_button_icon(gear_btn, "option")
+	var gear_icon := gear_btn.get_node_or_null("ButtonIcon") as TextureRect
+	if gear_icon != null:
+		var gear_icon_size := 38.0
+		gear_icon.size = Vector2(gear_icon_size, gear_icon_size)
+		gear_icon.position = Vector2((gear_btn.size.x - gear_icon_size) * 0.5, (gear_btn.size.y - gear_icon_size) * 0.5)
+		gear_icon.modulate = Color.WHITE
+		gear_icon.material = null
 	gear_btn.pressed.connect(_toggle_gear_menu)
+	_tint_top_bar_icons()
 
 	var rbtn := hud.get_node_or_null("Buttons/ResearchButton") as Button
 	if rbtn == null:
@@ -7692,6 +7752,8 @@ func _layout_top_right_stats() -> void:
 			shift = 30.0
 		elif label == lbl_supply_chain:
 			shift = SUPPLY_CHAIN_HUD_SHIFT
+		elif label == lbl_expense:
+			shift = -30.0
 			
 		group.position.x = right_edge - total_width - shift
 		group.size.x = total_width
@@ -7725,7 +7787,7 @@ func _update_hud() -> void:
 		lbl_business.text = "%d/%d" % [_business_card_count(), _business_card_capacity()]
 		lbl_business.add_theme_color_override(
 			"font_color",
-			Color("d64b45") if _business_card_count() > _business_card_capacity() else INK
+			HUD_TEXT_WARNING if _business_card_count() > _business_card_capacity() else HUD_TEXT_LIGHT
 		)
 	if lbl_finance:
 		lbl_finance.text = "$%d" % GameState.cash
@@ -8270,28 +8332,28 @@ func _draw_bottom_info() -> void:
 	var info_h := screen.y - info_y
 	var font_size := 29
 	var baseline_y := info_y + (info_h - f.get_height(font_size)) * 0.5 + f.get_ascent(font_size)
-	bottom_info.draw_rect(Rect2(0, info_y, screen.x, info_h), ORG_BG, true)
-	bottom_info.draw_line(Vector2(0, info_y), Vector2(screen.x, info_y), Color(0.23, 0.21, 0.18, 0.5), 2.5)
+	bottom_info.draw_rect(Rect2(0, info_y, screen.x, info_h), HUD_GLASS_BG, true)
+	bottom_info.draw_line(Vector2(0, info_y), Vector2(screen.x, info_y), HUD_GLASS_LINE, 2.5)
 	if battle_active and is_instance_valid(battle_rival) and is_instance_valid(battle_employee):
 		var rival_name := String(battle_rival.cdef.get("name", battle_rival.card_id))
 		var employee_name := String(battle_employee.cdef.get("name", battle_employee.card_id))
 		_draw_info_line(bottom_info, f, baseline_y, [
 			{"t": "商战开始！　", "b": true, "i": false},
 			{"t": "%s vs %s" % [rival_name, employee_name], "b": false, "i": false},
-		], Color(0.27, 0.25, 0.22, 0.98), font_size)
+		], HUD_TEXT_LIGHT, font_size)
 		return
 	if capacity_cleanup_pending:
 		_draw_info_line(bottom_info, f, baseline_y, [
 			{"t": _capacity_cleanup_text(), "b": true, "i": false},
-		], Color("b63f3a"), 24)
+		], HUD_TEXT_WARNING, 24)
 		return
 	# 悬停优先：鼠标移到卡上即出该卡（或堆叠）信息；移开则恢复选中/默认 hint
 	var info_parts := _hover_info_parts()
 	if not info_parts.is_empty():
-		_draw_info_line(bottom_info, f, baseline_y, info_parts, Color(0.30, 0.27, 0.23, 0.95), font_size)
+		_draw_info_line(bottom_info, f, baseline_y, info_parts, HUD_TEXT_LIGHT, font_size)
 	else:
 		var fresh := toast_t > 0.0
-		var hint_col := Color("8a5a26") if fresh else Color(0.36, 0.33, 0.29, 0.92)
+		var hint_col := HUD_TEXT_LIGHT if fresh else Color(1, 1, 1, 0.82)
 		_draw_italic(bottom_info, f, Vector2(0, baseline_y), hint_text, font_size, hint_col)
 
 func _on_business_model_unlocked(recipe_id: String) -> void:

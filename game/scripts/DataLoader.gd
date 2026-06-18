@@ -15,10 +15,10 @@ const XLSX_PATH := "res://data/startx_data.xlsx"
 func _ready() -> void:
 	# 卡牌 / 配方 / 卡包：以 Excel 表为唯一数据源（启动时实时读取）
 	_load_workbook()
-	# 其余非卡牌配置仍走 JSON
-	balance = _load("res://data/balance.json")
-	research = _load("res://data/research.json")
-	idea_pools = _load("res://data/idea_pools.json")
+	# 其余非卡牌配置仍走 JSON (硬引用预加载)
+	balance = (preload("res://data/balance.json") as JSON).data
+	research = (preload("res://data/research.json") as JSON).data
+	idea_pools = (preload("res://data/idea_pools.json") as JSON).data
 
 # ---------------------------------------------------------------- Excel 数据源
 func _load_workbook() -> void:

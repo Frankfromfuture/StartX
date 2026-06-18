@@ -296,7 +296,7 @@ func _credits_ui_font() -> Font:
 	if credits_font != null:
 		return credits_font
 	var ff: FontFile
-	var loaded := load("res://fonts/zpix.ttf")
+	var loaded := preload("res://fonts/zpix.ttf")
 	if loaded is FontFile:
 		ff = (loaded as FontFile).duplicate() as FontFile
 	else:

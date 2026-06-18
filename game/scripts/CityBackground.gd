@@ -56,7 +56,7 @@ func set_background_mode(value: int) -> void:
 		_background_root.visible = value == 0 or value == 1
 
 func _load_editable_background() -> void:
-	var packed := load(EDITABLE_BACKGROUND_SCENE) as PackedScene
+	var packed := preload(EDITABLE_BACKGROUND_SCENE) as PackedScene
 	if packed == null:
 		push_warning("Editable background scene missing: %s" % EDITABLE_BACKGROUND_SCENE)
 		return

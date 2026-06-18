@@ -2,18 +2,18 @@ extends Node
 ## 全局音效。menu.ogg 自动挂到所有按钮（菜单/战斗 UI 等）；其余由游戏逻辑显式调用。
 
 const FILES := {
-	"menu": "res://assets/sounds/menu.ogg",                              # 所有按钮点击
-	"grab": "res://assets/sounds/grab card.ogg",                         # 拿起卡
-	"human_down": "res://assets/sounds/human down.ogg",                  # 人类牌放下
-	"down": "res://assets/sounds/down.ogg",                              # 创始人/员工/客户牌放下
-	"resource_down": "res://assets/sounds/facility and resource down.ogg", # 资源/设施等放下
-	"cash_down": "res://assets/sounds/cash down.ogg",                    # 现金牌放下
-	"unpack": "res://assets/sounds/unpack.ogg",                          # 拆包
-	"battle_start": "res://assets/sounds/battlestart.ogg",               # 战斗开始
-	"battle_end": "res://assets/sounds/battleend.ogg",                   # 战斗结束
-	"aha": "res://assets/sounds/aha.ogg",                                # 创始人灵感气泡
-	"founder": "res://assets/sounds/founder.ogg",                        # 创始人落地
-	"hit": "res://assets/sounds/hit.ogg",                                # 战斗伤害数字
+	"menu": preload("res://assets/sounds/menu.ogg"),                              # 所有按钮点击
+	"grab": preload("res://assets/sounds/grab card.ogg"),                         # 拿起卡
+	"human_down": preload("res://assets/sounds/human down.ogg"),                  # 人类牌放下
+	"down": preload("res://assets/sounds/down.ogg"),                              # 创始人/员工/客户牌放下
+	"resource_down": preload("res://assets/sounds/facility and resource down.ogg"), # 资源/设施等放下
+	"cash_down": preload("res://assets/sounds/cash down.ogg"),                    # 现金牌放下
+	"unpack": preload("res://assets/sounds/unpack.ogg"),                          # 拆包
+	"battle_start": preload("res://assets/sounds/battlestart.ogg"),               # 战斗开始
+	"battle_end": preload("res://assets/sounds/battleend.ogg"),                   # 战斗结束
+	"aha": preload("res://assets/sounds/aha.ogg"),                                # 创始人灵感气泡
+	"founder": preload("res://assets/sounds/founder.ogg"),                        # 创始人落地
+	"hit": preload("res://assets/sounds/hit.ogg"),                                # 战斗伤害数字
 }
 
 var _streams: Dictionary = {}
@@ -23,7 +23,7 @@ var _i: int = 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS   # 暂停/战斗时也能出声
 	for k in FILES:
-		var s = load(FILES[k])
+		var s = FILES[k]
 		if s != null:
 			_streams[k] = s
 	for _n in 10:

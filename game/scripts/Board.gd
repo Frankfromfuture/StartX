@@ -904,7 +904,7 @@ func _add_new_card_badge(c, cardroot: Node3D) -> void:
 	material.alpha_scissor_threshold = 0.25
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_texture = load("res://assets/svg/ui/new.svg")
+	material.albedo_texture = preload("res://assets/svg/ui/new.svg")
 	mesh_instance.material_override = material
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	badge.add_child(mesh_instance)
@@ -921,7 +921,7 @@ func _add_new_card_badge(c, cardroot: Node3D) -> void:
 	shadow_material.alpha_scissor_threshold = 0.25
 	shadow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	shadow_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	shadow_material.albedo_texture = load("res://assets/svg/ui/new.svg")
+	shadow_material.albedo_texture = preload("res://assets/svg/ui/new.svg")
 	shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.35)
 	shadow_instance.material_override = shadow_material
 	shadow_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

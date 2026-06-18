@@ -444,31 +444,25 @@ func _card_art_paths() -> Array:
 func _capacity_icon() -> Texture2D:
 	if capacity_icon_tex != null:
 		return capacity_icon_tex
-	capacity_icon_tex = ResourceLoader.load("res://assets/gear.svg") as Texture2D
+	capacity_icon_tex = preload("res://assets/gear.svg") as Texture2D
 	return capacity_icon_tex
 
 func _cost_icon() -> Texture2D:
 	if cost_icon_tex != null:
 		return cost_icon_tex
-	cost_icon_tex = ResourceLoader.load("res://assets/cost.svg") as Texture2D
+	cost_icon_tex = preload("res://assets/cost.svg") as Texture2D
 	return cost_icon_tex
 
 func _star_icon() -> Texture2D:
 	if star_icon_tex != null:
 		return star_icon_tex
-	star_icon_tex = ResourceLoader.load("res://assets/star.svg") as Texture2D
+	star_icon_tex = preload("res://assets/star.svg") as Texture2D
 	return star_icon_tex
 
 func _idea_icon() -> Texture2D:
 	if idea_icon_tex != null:
 		return idea_icon_tex
-	var path := "res://assets/idea.svg"
-	if FileAccess.file_exists(path):
-		var img := Image.new()
-		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 1.0) == OK:
-			idea_icon_tex = ImageTexture.create_from_image(img)
-	elif ResourceLoader.exists(path):
-		idea_icon_tex = load(path) as Texture2D
+	idea_icon_tex = preload("res://assets/idea.svg") as Texture2D
 	return idea_icon_tex
 
 func _draw_badge_number(center: Vector2, txt: String, radius: float) -> void:

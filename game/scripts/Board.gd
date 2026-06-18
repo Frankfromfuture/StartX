@@ -4843,8 +4843,8 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 	)
 
 func _pack_card_landing(id: String, origin_center: Vector2, zone: String) -> Vector2:
-	const DROP_MIN := 1.15
-	const DROP_MAX := 2.65
+	const DROP_MIN := 1.5
+	const DROP_MAX := 3.0
 	var half := Vector2(CW, CH) * 0.5
 	var candidates: Array = []
 	for sidv in stack_base.keys():

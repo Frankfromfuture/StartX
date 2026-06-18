@@ -19,9 +19,6 @@ boot_splash/image="res://assets/menu/intro_splash.png"
 
 [autoload]
 
-
-
-
 DataLoader="*res://scripts/DataLoader.gd"
 GameState="*res://scripts/GameState.gd"
 Settings="*res://scripts/Settings.gd"

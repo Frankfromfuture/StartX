@@ -40,7 +40,7 @@ const TOP_ICON_SIZE := 31.2
 const FIXED_MONTHLY_EXPENSE := 0
 const BUSINESS_MODEL_CHANCE := 0.50
 const START_PACK_GAP := CW * 0.5
-const SUPPLY_CHAIN_HUD_SHIFT := 155.0
+const SUPPLY_CHAIN_HUD_SHIFT := 175.0
 
 # ---- Perspective ----  (1.0 = OFF/flat)；0.9 = 轻微一点透视（顶窄底宽）
 const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
@@ -5677,7 +5677,7 @@ func _build_hud() -> void:
 		if not expense_group.mouse_exited.is_connected(_hide_hover):
 			expense_group.mouse_exited.connect(_hide_hover)
 
-	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "supplychain", 970, 140, TOP_ICON_SIZE, true)
+	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "supplychain", 950, 140, TOP_ICON_SIZE, true)
 	var initial_supply_group := lbl_supply_chain.get_parent() as Control
 	if initial_supply_group != null:
 		initial_supply_group.position.x -= 50.0

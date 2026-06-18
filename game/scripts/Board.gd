@@ -4376,9 +4376,10 @@ func _update_card_visual_states(delta: float) -> void:
 	_update_supply_arrow_mesh()
 	if bank_button != null and is_instance_valid(bank_button):
 		var desired_bank_text := "解雇" if drag_sid != -1 and _can_fire_stack(drag_sid) \
-			else ("出售 / 解雇" if capacity_cleanup_pending else "出售")
+			else ("解雇" if capacity_cleanup_pending else "")
 		if bank_button.text != desired_bank_text:
 			bank_button.text = desired_bank_text
+			_set_button_icon(bank_button, "sold")
 	if bank_button != null and is_instance_valid(bank_button) and _is_dragging_sellable():
 		bank_button.queue_redraw()
 	var mouse_pos := get_viewport().get_mouse_position()
@@ -4467,7 +4468,8 @@ func _settle_month() -> void:
 		hint_text = _capacity_cleanup_text()
 		toast_t = 0.0
 		if bank_button != null:
-			bank_button.text = "出售 / 解雇"
+			bank_button.text = "解雇"
+			_set_button_icon(bank_button, "sold")
 			bank_button.queue_redraw()
 		return
 	_complete_month_settlement()
@@ -4502,7 +4504,8 @@ func _try_finish_capacity_cleanup() -> void:
 		return
 	capacity_cleanup_pending = false
 	if bank_button != null:
-		bank_button.text = "出售"
+		bank_button.text = ""
+		_set_button_icon(bank_button, "sold")
 		bank_button.queue_redraw()
 	hint_text = "「卡片容量已整理，完成月末结算」"
 	toast_t = 4.0
@@ -5250,6 +5253,7 @@ func _set_button_icon(b: Button, icon_name: String) -> void:
 	tr.position = Vector2((b.size.x - icon_size) * 0.5, (b.size.y - icon_size) * 0.5) if b.text == "" else Vector2(14, (b.size.y - icon_size) * 0.5)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.modulate = Color.WHITE
 
 # ---------------------------------------------------------------- HUD
 func _style_button(b: Button, fill: Color) -> void:
@@ -5771,12 +5775,13 @@ func _build_hud() -> void:
 		hud.add_child(rbtn)
 	rbtn.position = Vector2(28, _toolbar_y())
 	rbtn.size = Vector2(154.0, TOOLBAR_BUTTON_H)
-	rbtn.text = "研发"
+	rbtn.text = ""
 	_apply_bold_pixel_font(rbtn, 22)
-	_style_button(rbtn, Color("6f8793"))
-	var rbtn_icon := rbtn.get_node_or_null("ButtonIcon")
-	if rbtn_icon != null:
-		rbtn_icon.queue_free()
+	_style_button(rbtn, Color("3b4e59"))
+	rbtn.add_theme_color_override("font_color", HUD_TEXT_LIGHT)
+	rbtn.add_theme_color_override("font_hover_color", HUD_TEXT_LIGHT)
+	rbtn.add_theme_color_override("font_pressed_color", HUD_TEXT_LIGHT)
+	_set_button_icon(rbtn, "research")
 	rbtn.pressed.connect(_toggle_research)
 
 	book_btn = hud.get_node_or_null("Buttons/RecipeBookButton") as Button
@@ -5841,10 +5846,13 @@ func _build_hud() -> void:
 			add_child(bank_button)
 	bank_button.position = Vector2(1738, _toolbar_y())
 	bank_button.size = Vector2(154, TOOLBAR_BUTTON_H)
-	bank_button.text = "出售"
+	bank_button.text = ""
 	_apply_bold_pixel_font(bank_button, 20)
-	_style_button(bank_button, Color("c8a55a"))
-	bank_button.icon = null
+	_style_button(bank_button, Color("967638"))
+	bank_button.add_theme_color_override("font_color", HUD_TEXT_LIGHT)
+	bank_button.add_theme_color_override("font_hover_color", HUD_TEXT_LIGHT)
+	bank_button.add_theme_color_override("font_pressed_color", HUD_TEXT_LIGHT)
+	_set_button_icon(bank_button, "sold")
 	bank_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if not bank_button.draw.is_connected(_draw_bank_button_hint):
 		bank_button.draw.connect(_draw_bank_button_hint)

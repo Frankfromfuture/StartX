@@ -422,26 +422,27 @@ func _draw_node(id: String, hl: Dictionary, has_hl: bool) -> void:
 	elif id == hovered:
 		graph_area.draw_arc(c, r + 14, 0, TAU, 48, Color("332f2a"), 3.0, true)
 		
-	var ta := 1.0 if not dim else 0.3
-	var title_col := Color("332f2a")
-	title_col.a = ta
-	graph_area.draw_string(font, Vector2(c.x - 72, c.y + r + 22), String(d.get("name", id)),
-		HORIZONTAL_ALIGNMENT_CENTER, 144, 16, title_col)
-		
-	# 9. Cleaned up sub-labels: remove "需产品", "需规模", "缺前置"
-	var sl := ""
-	if done:
-		sl = "已研发"
-	elif not (GameState.stage >= int(d.get("stage", 0))):
-		sl = "" # Blank
-	elif not _prereq_ok(d):
-		sl = "" # Blank
-	else:
-		sl = "%d/%d RP" % [int(GameState.rp), int(cost)]
-	var status_col := Color("6f665c")
-	status_col.a = ta
-	graph_area.draw_string(font, Vector2(c.x - 72, c.y + r + 39), sl,
-		HORIZONTAL_ALIGNMENT_CENTER, 144, 13, status_col)
+	if id == hovered:
+		var ta := 1.0 if not dim else 0.3
+		var title_col := Color("332f2a")
+		title_col.a = ta
+		graph_area.draw_string(font, Vector2(c.x - 72, c.y + r + 22), String(d.get("name", id)),
+			HORIZONTAL_ALIGNMENT_CENTER, 144, 16, title_col)
+			
+		# 9. Cleaned up sub-labels: remove "需产品", "需规模", "缺前置"
+		var sl := ""
+		if done:
+			sl = "已研发"
+		elif not (GameState.stage >= int(d.get("stage", 0))):
+			sl = "" # Blank
+		elif not _prereq_ok(d):
+			sl = "" # Blank
+		else:
+			sl = "%d/%d RP" % [int(GameState.rp), int(cost)]
+		var status_col := Color("6f665c")
+		status_col.a = ta
+		graph_area.draw_string(font, Vector2(c.x - 72, c.y + r + 39), sl,
+			HORIZONTAL_ALIGNMENT_CENTER, 144, 13, status_col)
 
 func _icon(kind: String, c: Vector2, col: Color) -> void:
 	var bs := 4.8

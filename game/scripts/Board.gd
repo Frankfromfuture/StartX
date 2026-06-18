@@ -1128,20 +1128,20 @@ vec3 rainbow(float t) {
 }
 
 void fragment() {
-	// 视角偏移，倾斜卡片时发生滑动
-	float view_offset = VIEW.x * 0.75 + VIEW.y * 0.75;
+	// 视角偏移，倾斜卡片时让彩虹反光发生更大幅度的滑动
+	float view_offset = VIEW.x * 1.8 + VIEW.y * 1.8;
 	
-	// 采样闪卡纹理，加入视差偏移，使纹理随倾斜视角滑动，产生立体厚度感
-	vec2 uv_shifted = UV + VIEW.xy * 0.05;
+	// 采样闪卡纹理，加大视差偏移，使纹理随倾斜视角滑动的幅度更大，立体深邃感更明显
+	vec2 uv_shifted = UV + VIEW.xy * 0.15;
 	vec4 foil = texture(holo_tex, uv_shifted);
 	
 	// 彩虹基础坐标
 	float t = UV.x * 0.5 + UV.y * 0.5 + view_offset * 0.5;
 	vec3 base_rainbow = rainbow(t);
 	
-	// 高频闪烁亮片效果（模拟金属镭射微粒）
+	// 高频闪烁亮片效果（模拟金属镭射微粒），加大视角偏移动画响应
 	float sparkle1 = sin(UV.x * 150.0) * sin(UV.y * 150.0);
-	float sparkle2 = sin(UV.x * 80.0 - VIEW.x * 30.0) * sin(UV.y * 80.0 - VIEW.y * 30.0);
+	float sparkle2 = sin(UV.x * 80.0 - VIEW.x * 75.0) * sin(UV.y * 80.0 - VIEW.y * 75.0);
 	float sparkle = clamp((sparkle1 * sparkle2) * 4.0 - 2.8, 0.0, 1.0);
 	
 	// 双层彩虹条纹交叉，更有立体镭射质感

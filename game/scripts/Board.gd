@@ -6,6 +6,7 @@ extends Node2D
 const CardScript = preload("res://scripts/Card.gd")
 const PackCardScript = preload("res://scripts/PackCard.gd")
 const FloatingCostScript = preload("res://scripts/FloatingCost.gd")
+const HOLO_TEXTURE = preload("res://assets/holographic_texture.png")
 const CARD_SCALE := 1.0 / 3.0         # 卡面源图仍按 180×180 烘焙，显示/交互为 60×60
 const CW := 60.0
 const CH := 60.0
@@ -1117,8 +1118,10 @@ func _holo_coat_shader() -> Shader:
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled;
 
-uniform float intensity = 0.08;
-uniform float sparkle_intensity = 0.06;
+uniform sampler2D holo_tex : source_color, filter_linear_mipmap;
+uniform float intensity = 0.22;
+uniform float sparkle_intensity = 0.12;
+uniform float foil_intensity = 0.15;
 
 vec3 rainbow(float t) {
 	return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
@@ -1127,6 +1130,10 @@ vec3 rainbow(float t) {
 void fragment() {
 	// 视角偏移，倾斜卡片时发生滑动
 	float view_offset = VIEW.x * 0.75 + VIEW.y * 0.75;
+	
+	// 采样闪卡纹理，加入视差偏移，使纹理随倾斜视角滑动，产生立体厚度感
+	vec2 uv_shifted = UV + VIEW.xy * 0.05;
+	vec4 foil = texture(holo_tex, uv_shifted);
 	
 	// 彩虹基础坐标
 	float t = UV.x * 0.5 + UV.y * 0.5 + view_offset * 0.5;
@@ -1141,8 +1148,16 @@ void fragment() {
 	float t2 = (1.0 - UV.x) * 0.4 + UV.y * 0.4 - view_offset * 0.3;
 	vec3 cross_rainbow = rainbow(t2);
 	
-	// 混合两组彩虹以及亮片（整体更轻：强度 0.08，闪亮 0.06）
-	vec3 final_color = mix(base_rainbow, cross_rainbow, 0.4) * intensity;
+	// 混合两组彩虹获得基础镭射反光
+	vec3 rainbow_color = mix(base_rainbow, cross_rainbow, 0.4);
+	
+	// 使用闪卡纹理去调制彩虹的明暗反射，呈现出明显的凹凸镭射纹路闪烁
+	vec3 final_color = rainbow_color * (0.35 + 1.35 * foil.rgb) * intensity;
+	
+	// 叠加一层半透明闪卡纹理底色
+	final_color += foil.rgb * foil_intensity;
+	
+	// 叠加金属闪烁颗粒
 	final_color += vec3(sparkle * sparkle_intensity);
 	
 	ALBEDO = final_color;
@@ -1160,6 +1175,7 @@ func _add_holo_coat(parent: Node3D, w: float, h: float, y: float) -> void:
 	g.position = Vector3(0, y, 0)
 	var gm := ShaderMaterial.new()
 	gm.shader = _holo_coat_shader()
+	gm.set_shader_parameter("holo_tex", HOLO_TEXTURE)
 	g.material_override = gm
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(g)

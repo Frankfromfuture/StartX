@@ -5247,12 +5247,13 @@ func _set_button_icon(b: Button, icon_name: String) -> void:
 		tr.name = "ButtonIcon"
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(tr)
-	tr.texture = tex
 	var icon_size := TOP_ICON_SIZE
-	tr.size = Vector2(icon_size, icon_size)
-	tr.position = Vector2((b.size.x - icon_size) * 0.5, (b.size.y - icon_size) * 0.5) if b.text == "" else Vector2(14, (b.size.y - icon_size) * 0.5)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.custom_minimum_size = Vector2(icon_size, icon_size)
+	tr.size = Vector2(icon_size, icon_size)
+	tr.texture = tex
+	tr.position = Vector2((b.size.x - icon_size) * 0.5, (b.size.y - icon_size) * 0.5) if b.text == "" else Vector2(14, (b.size.y - icon_size) * 0.5)
 	tr.modulate = Color.WHITE
 
 # ---------------------------------------------------------------- HUD
@@ -5473,13 +5474,14 @@ func _top_stat_label(
 			icon.name = "Icon"
 			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			group.add_child(icon)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(icon_size, icon_size)
 		icon.size = Vector2(icon_size, icon_size)
 		icon.position = Vector2(0, (HUD_H - icon_size) * 0.5)
 		icon.texture = _ui_icon(icon_name)
 		icon.modulate = Color.WHITE
 		icon.material = null
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 	var label := group.get_node_or_null("Label") as Label
 	if label == null:

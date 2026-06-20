@@ -107,7 +107,7 @@ func _setup_gradient_overlay() -> void:
 	
 	overlay.anchor_left = 0.0
 	overlay.anchor_top = 0.0
-	overlay.anchor_right = 0.33333
+	overlay.anchor_right = 0.58333
 	overlay.anchor_bottom = 1.0
 	overlay.offset_left = 0
 	overlay.offset_top = 0

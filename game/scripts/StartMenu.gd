@@ -574,6 +574,12 @@ void fragment() {
 	// Calculate light spots color with glow
 	vec4 spot_color = glow_color * spots * outline * glow_intensity;
 	
+	// Soft exponential compression to prevent blowout in SDR / WebGL2
+	float max_val = max(spot_color.r, max(spot_color.g, spot_color.b));
+	if (max_val > 1.0) {
+		spot_color.rgb = spot_color.rgb / max_val * (1.0 - exp(-max_val));
+	}
+	
 	// Output only the light spots overlay
 	COLOR = spot_color;
 }

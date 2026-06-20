@@ -76,6 +76,11 @@ void fragment() {
 	rays *= smoothstep(cutoff, edge_fade + cutoff, 1.0 - transformed_uv.x);
 
 	float shine = rays * intensity;
+	vec3 final_color = color.rgb * shine * color.a;
+	float max_val = max(final_color.r, max(final_color.g, final_color.b));
+	if (max_val > 1.0) {
+		final_color = final_color / max_val * (1.0 - exp(-max_val));
+	}
 
-	COLOR = vec4(color.rgb * shine * color.a, clamp(shine * color.a, 0.0, 1.0));
+	COLOR = vec4(final_color, clamp(shine * color.a, 0.0, 1.0));
 }

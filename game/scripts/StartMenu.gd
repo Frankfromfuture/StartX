@@ -530,10 +530,10 @@ func _setup_logo_gloss() -> void:
 	shader.code = """
 shader_type canvas_item;
 uniform float speed = 4.0;
-uniform float spot_count = 24.0;
-uniform float spot_size = 0.08;
+uniform float spot_count = 4.0;
+uniform float spot_size = 0.3;
 uniform vec4 glow_color : source_color = vec4(1.0, 0.88, 0.45, 1.0);
-uniform float glow_intensity = 2.5;
+uniform float glow_intensity = 4.0;
 
 void fragment() {
 	// Sample original texture

@@ -36,6 +36,8 @@
 [sub_resource type="Environment" id="Environment_edit"]
 background_mode = 1
 background_color = Color(1, 1, 1, 1)
+tonemap_mode = 3
+tonemap_exposure = 1.0
 ambient_light_source = 3
 ambient_light_color = Color(0.86, 0.84, 0.78, 1)
 ambient_light_energy = 0.32
@@ -1080,7 +1082,7 @@ environment = SubResource("Environment_edit")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1958226854]
 transform = Transform3D(0.81915224, -0.40557957, 0.4055797, -0.0127527, 0.6940537, 0.7198103, -0.5734344, -0.59480643, 0.56336343, 0.044777453, 5.16111, 2.5254183)
-light_energy = 1.65
+light_energy = 1.2
 shadow_enabled = true
 shadow_opacity = 0.72
 
@@ -1135,7 +1137,7 @@ mesh = SubResource("Mesh_decoration_shadow")
 metadata/startx_generated_soft_shadow = true
 
 [node name="Shadow_Building05" type="MeshInstance3D" parent="DecorationShadows3D" unique_id=352596106]
-transform = Transform3D(0.7415948, 0, 0, 0, 1, 0, 0, 0, 0.3796931, -0.1316937, 0.031999998, -4.5863748)
+transform = Transform3D(0.7415948, 0, 0, 0, 1, 0, 0, 0, 0.3796931, -0.1316937, 0.031999998, -4.728404)
 material_override = SubResource("ShaderMaterial_7jq2q")
 cast_shadow = 0
 extra_cull_margin = 64.0
@@ -2191,7 +2193,7 @@ texture = ExtResource("4_7jq2q")
 metadata/startx_generated_background_asset = true
 
 [node name="Building05" type="Sprite3D" parent="OutsideDecorations3D" unique_id=2133779286]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.2316937, 0.73294765, -4.716375)
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.8660254, 0, -0.8660254, 0.5, -0.2316937, 0.73294765, -4.858404)
 cast_shadow = 2
 extra_cull_margin = 64.0
 ignore_occlusion_culling = true

@@ -36,11 +36,9 @@
 [sub_resource type="Environment" id="Environment_edit"]
 background_mode = 1
 background_color = Color(1, 1, 1, 1)
-tonemap_mode = 3
-tonemap_exposure = 1.0
 ambient_light_source = 3
 ambient_light_color = Color(0.86, 0.84, 0.78, 1)
-ambient_light_energy = 0.12
+ambient_light_energy = 0.32
 
 [sub_resource type="StandardMaterial3D" id="Material_outer"]
 transparency = 1
@@ -1082,7 +1080,7 @@ environment = SubResource("Environment_edit")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1958226854]
 transform = Transform3D(0.81915224, -0.40557957, 0.4055797, -0.0127527, 0.6940537, 0.7198103, -0.5734344, -0.59480643, 0.56336343, 0.044777453, 5.16111, 2.5254183)
-light_energy = 0.58
+light_energy = 1.65
 shadow_enabled = true
 shadow_opacity = 0.72
 

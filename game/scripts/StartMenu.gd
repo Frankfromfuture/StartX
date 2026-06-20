@@ -73,7 +73,7 @@ func _ready() -> void:
 	_steam_origins[steam_1] = steam_1.position
 	_steam_origins[steam_2] = steam_2.position
 	brand.pivot_offset = brand.size * 0.5
-	# _setup_logo_gloss()
+	_setup_logo_gloss()
 	# _setup_background_squiggllevision()
 
 	Settings.display_settings_changed.connect(_on_display_settings_changed)
@@ -529,20 +529,57 @@ func _setup_logo_gloss() -> void:
 	var shader := Shader.new()
 	shader.code = """
 shader_type canvas_item;
-uniform float enabled = 1.0;
-uniform float speed = 0.16;
+uniform float speed = 4.0;
+uniform float spot_count = 24.0;
+uniform float spot_size = 0.08;
+uniform vec4 glow_color : source_color = vec4(1.0, 0.88, 0.45, 1.0);
+uniform float glow_intensity = 2.5;
 
 void fragment() {
+	// Sample original texture
 	vec4 tex = texture(TEXTURE, UV);
-	float travel = mix(-0.35, 1.35, fract(TIME * speed));
-	float diagonal = UV.x + UV.y * 0.34;
-	float band = 1.0 - smoothstep(0.0, 0.13, abs(diagonal - travel));
-	COLOR = vec4(1.0, 0.96, 0.76, tex.a * band * 0.58 * enabled);
+	
+	// Outline detection using a 3x3 kernel
+	vec2 ps = TEXTURE_PIXEL_SIZE * 2.0;
+	float max_a = tex.a;
+	float min_a = tex.a;
+	
+	for (float x = -1.0; x <= 1.0; x += 1.0) {
+		for (float y = -1.0; y <= 1.0; y += 1.0) {
+			if (x == 0.0 && y == 0.0) continue;
+			float neighbor_a = texture(TEXTURE, UV + vec2(x, y) * ps).a;
+			max_a = max(max_a, neighbor_a);
+			min_a = min(min_a, neighbor_a);
+		}
+	}
+	
+	// Outline mask: 1.0 at the transition boundary
+	float outline = max_a - min_a;
+	
+	// Coordinate centering for circular rotation
+	vec2 center = vec2(0.5, 0.5);
+	vec2 dir = UV - center;
+	
+	// Aspect ratio correction (width: 660, height: 264 -> ratio = 2.5)
+	dir.x *= 2.5;
+	
+	// Radial angle calculation
+	float angle = atan(dir.y, dir.x);
+	float t = (angle + 3.14159265) / 6.28318530;
+	
+	// Marquee running spots animation
+	float marquee = cos(t * 6.28318530 * spot_count - TIME * speed);
+	float spots = smoothstep(1.0 - spot_size, 1.0, marquee);
+	
+	// Calculate light spots color with glow
+	vec4 spot_color = glow_color * spots * outline * glow_intensity;
+	
+	// Output only the light spots overlay
+	COLOR = spot_color;
 }
 """
 	var material := ShaderMaterial.new()
 	material.shader = shader
-	material.set_shader_parameter("enabled", 0.0 if Settings.reduce_motion else 1.0)
 	logo_gloss.material = material
 
 func _setup_background_squiggllevision() -> void:

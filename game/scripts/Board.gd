@@ -7,6 +7,7 @@ const CardScript = preload("res://scripts/Card.gd")
 const PackCardScript = preload("res://scripts/PackCard.gd")
 const FloatingCostScript = preload("res://scripts/FloatingCost.gd")
 const HOLO_TEXTURE = preload("res://assets/holographic_texture.png")
+const HOVER_BG_TEXTURE = preload("res://assets/flat2.jpg")
 const CARD_SCALE := 1.0 / 3.0         # 卡面源图仍按 180×180 烘焙，显示/交互为 60×60
 const CW := 60.0
 const CH := 60.0
@@ -41,7 +42,8 @@ const TOP_ICON_SIZE := 31.2
 const FIXED_MONTHLY_EXPENSE := 0
 const BUSINESS_MODEL_CHANCE := 0.50
 const START_PACK_GAP := CW * 0.5
-const SUPPLY_CHAIN_HUD_SHIFT := 175.0
+const SUPPLY_CHAIN_HUD_SHIFT := 50.0
+const SUPPLY_CHAIN_ICON_SCALE := 1.1
 
 # ---- Perspective ----  (1.0 = OFF/flat)；0.9 = 轻微一点透视（顶窄底宽）
 const TOP_SCALE := 0.9         # horizontal width factor at the very top (y=0)
@@ -63,7 +65,7 @@ const HUD_GLASS_BG := Color(0, 0, 0, 0.80)
 const HUD_GLASS_LINE := Color(1, 1, 1, 0.16)
 const HUD_TEXT_LIGHT := Color(1, 1, 1, 0.95)
 const HUD_TEXT_WARNING := Color("ffb0aa")
-const HUD_ICON_LIGHT := Color(0.82, 0.84, 0.84, 0.95)
+const HUD_ICON_LIGHT := Color(1, 1, 1, 1)
 const HUD_PROGRESS_ACTIVE := Color(1, 1, 1, 0.92)
 const HUD_PROGRESS_BG := Color(0.55, 0.55, 0.55, 0.42)
 
@@ -102,7 +104,9 @@ const SUPPLY_BLUE_DARK := Color("4b6070")
 const SUPPLY_ARROW_Y := 0.052
 
 var month_time: float = 0.0
+var month_timer_started: bool = false
 var capacity_cleanup_pending: bool = false
+@onready var background_music: AudioStreamPlayer = $BackgroundMusic
 
 const DEFAULT_HINT := "「公司的地板光亮如新，有可能是创始人晚上擦的」"
 
@@ -115,6 +119,7 @@ var book_btn: Button        # 商业模式按钮（作为弹窗的文件夹标�
 var task_btn: Button
 var task_panel: PanelContainer
 var task_list: VBoxContainer
+var task_scroll: ScrollContainer
 var task_tab_shadow: Node2D
 var task_tab_seam: Node2D
 var task_collapsed: Dictionary = {}
@@ -129,7 +134,7 @@ var lbl_expense: Label
 var lbl_supply_chain: Label
 var lbl_val: Label
 var lbl_business: Label
-var hover_panel: Panel
+var hover_panel: Control
 var display_mode_btn: OptionButton = null
 var resolution_btn: OptionButton = null
 var clarity_btn: OptionButton = null
@@ -220,6 +225,7 @@ const CAM_PITCH_STEP := 9.0
 const CAM_DIST_MIN := 1.6
 const CAM_DIST_STEP := 1.12
 const CAM_DIST_MAX := 12.0
+const BEGINNING_CAM_DIST := CAM_DIST_MIN * CAM_DIST_STEP
 const FLY_OUT_TIME := 0.43
 const FLY_OUT_ROT_TIME := 0.37
 
@@ -231,6 +237,7 @@ var pack_buttons: Array = []         # [{btn, id, pack}]
 var loose_packs: Array = []
 var recipe_panel: PanelContainer
 var recipe_list: VBoxContainer
+var recipe_scroll: ScrollContainer
 var codex_panel: PanelContainer
 var codex_grid: GridContainer
 var codex_preview: Node2D
@@ -239,6 +246,15 @@ var settings_panel: PanelContainer
 var gear_menu: Control
 var school_empty_toast_t: float = 0.0
 var val_timer: float = 0.0
+var panel_scroll_drag: ScrollContainer = null
+var beginning_active: bool = false
+var beginning_overlay: Control = null
+var beginning_top_mask: ColorRect = null
+var beginning_bottom_mask: ColorRect = null
+var beginning_text: Label = null
+var card_back_texture: Texture2D = null
+var pending_task_bubble_text: String = ""
+var start_pack_spawned: bool = false
 
 const SCHOOL_INSIGHT_NEED := 25.0
 
@@ -250,7 +266,8 @@ func _ready() -> void:
 	face_baker = CardFaceBakerScript.new()
 	add_child(face_baker)
 	_load_cursors()
-	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
+	_setup_background_music()
+	month_time = float(DataLoader.balance.get("month_seconds", 180.0))
 	_reset_view_default()               # 初始视角：画布水平居中、顶边锚定
 	_build_hud()
 	_apply_clarity_settings()
@@ -289,6 +306,12 @@ func _ready() -> void:
 	_spawn_start_cards()
 	max_space_capacity_seen = _business_card_capacity()
 	_task_event("game_start")
+	if not GameState.skip_beginning:
+		_start_beginning_sequence.call_deferred()
+	else:
+		_release_start_curtain_transition()
+		_start_background_music()
+		_spawn_start_pack(true)
 	GameState.recipe_discovered.connect(_on_discovery)
 	GameState.idea_unlocked.connect(_on_idea_unlocked)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -301,6 +324,22 @@ func _ready() -> void:
 	rival_timer.autostart = true
 	add_child(rival_timer)
 	rival_timer.timeout.connect(_rival_hop_tick)
+
+func _setup_background_music() -> void:
+	if background_music == null:
+		return
+	background_music.volume_db = Settings.music_volume_db()
+	if background_music.stream is AudioStreamMP3:
+		(background_music.stream as AudioStreamMP3).loop = true
+	Settings.music_volume_changed.connect(_on_music_volume_changed)
+
+func _start_background_music() -> void:
+	if background_music != null and not background_music.playing:
+		background_music.play()
+
+func _on_music_volume_changed(_value: float) -> void:
+	if background_music != null:
+		background_music.volume_db = Settings.music_volume_db()
 
 func _screen_size() -> Vector2:
 	return get_viewport().get_visible_rect().size
@@ -379,6 +418,223 @@ func _recompute_view_zoom() -> void:
 	var a := _project(Vector2(BOARD_CX, BOARD_CY))
 	var b := _project(Vector2(BOARD_CX + 100.0, BOARD_CY))
 	view_zoom = clampf(a.distance_to(b) / 100.0, 0.05, 8.0)
+
+func _center_founder_on_screen() -> void:
+	var founder = _founder_on_board()
+	if not is_instance_valid(founder):
+		return
+	var center_board := _unproject(_screen_center())
+	stack_base[founder.stack_id] = clamp_to_zone(center_board - Vector2(CW, CH) * 0.5)
+	relayout(founder.stack_id)
+
+func _cardroot3d(c) -> Node3D:
+	if c == null or not is_instance_valid(c):
+		return null
+	if c.face3d == null or not is_instance_valid(c.face3d) or c.face3d.get_child_count() == 0:
+		return null
+	return c.face3d.get_child(0) as Node3D
+
+func _card_back_texture() -> Texture2D:
+	if card_back_texture != null:
+		return card_back_texture
+	var path := "res://assets/menu/startx_card_back_nyc_v4.png"
+	var tex := ResourceLoader.load(path) as Texture2D if ResourceLoader.exists(path) else null
+	if tex != null:
+		card_back_texture = tex
+		return card_back_texture
+	return null
+
+func _set_founder_back_visible(founder, enabled: bool) -> void:
+	if not is_instance_valid(founder):
+		return
+	var was_back := bool(founder.get_meta("beginning_card_back", false))
+	founder.set_meta("beginning_card_back", enabled)
+	var mesh := _face3d_mesh(founder)
+	if mesh != null and mesh.material_override is StandardMaterial3D:
+		var mat := mesh.material_override as StandardMaterial3D
+		if enabled:
+			if not was_back and not founder.has_meta("beginning_front_color"):
+				founder.set_meta("beginning_front_color", mat.albedo_color)
+			if not was_back and mat.albedo_texture != null:
+				founder.set_meta("beginning_front_texture", mat.albedo_texture)
+			var back_tex := _card_back_texture()
+			mat.albedo_texture = back_tex
+			mat.albedo_color = Color(1, 1, 1) if back_tex != null else Color("050505")
+		else:
+			var tex = founder.get_meta("beginning_front_texture", null)
+			if tex is Texture2D:
+				mat.albedo_texture = tex
+			else:
+				_bake_face_async(founder, mat)
+			mat.albedo_color = Color(1, 1, 1)
+			founder.remove_meta("beginning_front_texture")
+			founder.remove_meta("beginning_front_color")
+	var root := _cardroot3d(founder)
+	if root != null:
+		for i in range(3, root.get_child_count()):
+			var child := root.get_child(i)
+			if child != null:
+				child.visible = not enabled
+
+func _make_beginning_overlay() -> void:
+	if hud == null:
+		return
+	if beginning_overlay != null and is_instance_valid(beginning_overlay):
+		beginning_overlay.queue_free()
+	beginning_overlay = Control.new()
+	beginning_overlay.name = "BeginningOverlay"
+	beginning_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	beginning_overlay.z_index = 4095
+	hud.add_child(beginning_overlay)
+	
+	beginning_top_mask = ColorRect.new()
+	beginning_top_mask.name = "TopMask"
+	beginning_top_mask.color = Color.BLACK
+	beginning_overlay.add_child(beginning_top_mask)
+	
+	beginning_bottom_mask = ColorRect.new()
+	beginning_bottom_mask.name = "BottomMask"
+	beginning_bottom_mask.color = Color.BLACK
+	beginning_overlay.add_child(beginning_bottom_mask)
+	
+	beginning_text = Label.new()
+	beginning_text.name = "BeginningText"
+	beginning_text.text = "有一天，Frank 决定创业..."
+	beginning_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	beginning_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	beginning_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_apply_bold_pixel_font(beginning_text, 34)
+	beginning_text.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
+	beginning_overlay.add_child(beginning_text)
+	_layout_beginning_overlay(true)
+
+func _layout_beginning_overlay(closed: bool = false) -> void:
+	if beginning_overlay == null or not is_instance_valid(beginning_overlay):
+		return
+	var screen := _screen_size()
+	beginning_overlay.position = Vector2.ZERO
+	beginning_overlay.size = screen
+	if beginning_text != null:
+		beginning_text.position = Vector2.ZERO
+		beginning_text.size = screen
+	if beginning_top_mask != null and beginning_bottom_mask != null:
+		if closed:
+			beginning_top_mask.position = Vector2.ZERO
+			beginning_top_mask.size = Vector2(screen.x, screen.y * 0.5)
+			beginning_bottom_mask.position = Vector2(0, screen.y * 0.5)
+			beginning_bottom_mask.size = Vector2(screen.x, screen.y * 0.5)
+		else:
+			beginning_top_mask.position.x = 0
+			beginning_top_mask.size.x = screen.x
+			beginning_bottom_mask.size.x = screen.x
+
+func _start_beginning_sequence() -> void:
+	if beginning_active:
+		return
+	beginning_active = true
+	_make_beginning_overlay()
+	_release_start_curtain_transition()
+	
+	var founder = _founder_on_board()
+	cam_dist = CAM_DIST_MAX
+	cam_target = Vector3.ZERO
+	_apply_camera()
+	_center_founder_on_screen()
+	await get_tree().process_frame
+	founder = _founder_on_board()
+	if is_instance_valid(founder):
+		_set_founder_back_visible(founder, true)
+	
+	if beginning_text != null:
+		_start_background_music()
+		beginning_text.modulate = Color(1, 1, 1, 0)
+		var text_tw := create_tween()
+		text_tw.tween_property(beginning_text, "modulate", Color(1, 1, 1, 1), 0.65)
+		await text_tw.finished
+		await get_tree().create_timer(1.15).timeout
+		var text_out := create_tween()
+		text_out.tween_property(beginning_text, "modulate", Color(1, 1, 1, 0), 0.35)
+		await text_out.finished
+	
+	await _open_beginning_curtain()
+	await _run_beginning_founder_intro()
+	_spawn_start_pack(false)
+	
+	beginning_active = false
+	if beginning_overlay != null and is_instance_valid(beginning_overlay):
+		beginning_overlay.queue_free()
+	beginning_overlay = null
+	beginning_top_mask = null
+	beginning_bottom_mask = null
+	beginning_text = null
+	if pending_task_bubble_text != "":
+		var text := pending_task_bubble_text
+		pending_task_bubble_text = ""
+		await get_tree().create_timer(3.25).timeout
+		_show_founder_bubble(text)
+
+func _release_start_curtain_transition() -> void:
+	var transition := get_tree().root.get_node_or_null("StartCurtainTransition")
+	if transition != null:
+		transition.queue_free()
+
+func _open_beginning_curtain() -> void:
+	if beginning_top_mask == null or beginning_bottom_mask == null:
+		return
+	var screen := _screen_size()
+	_layout_beginning_overlay(true)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(beginning_top_mask, "size:y", 0.0, 1.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(beginning_bottom_mask, "position:y", screen.y, 1.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(beginning_bottom_mask, "size:y", 0.0, 1.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tw.finished
+
+func _run_beginning_founder_intro() -> void:
+	var founder = _founder_on_board()
+	if not is_instance_valid(founder):
+		return
+	cam_dist = CAM_DIST_MAX
+	cam_target = Vector3.ZERO
+	_apply_camera()
+	_center_founder_on_screen()
+	_set_founder_back_visible(founder, true)
+	await get_tree().create_timer(0.25).timeout
+	
+	var from_dist := cam_dist
+	var zoom_tw := create_tween()
+	zoom_tw.tween_method(func(v: float):
+		cam_dist = v
+		_apply_camera()
+	, from_dist, BEGINNING_CAM_DIST, 0.82).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	await zoom_tw.finished
+	await get_tree().create_timer(2.0).timeout
+	await _flip_founder_card(founder)
+	_show_founder_bubble("欢迎进入我的商业世界！")
+	while is_instance_valid(founder_bubble):
+		await get_tree().process_frame
+	await get_tree().create_timer(1.0).timeout
+
+func _flip_founder_card(founder) -> void:
+	if not is_instance_valid(founder):
+		return
+	var root := _cardroot3d(founder)
+	if root == null:
+		_set_founder_back_visible(founder, false)
+		return
+	var old_scale := root.scale
+	var old_pos := root.position
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(root, "position:y", old_pos.y + 0.22, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(root, "scale:x", 0.03, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await tw.finished
+	_set_founder_back_visible(founder, false)
+	var tw2 := create_tween()
+	tw2.set_parallel(true)
+	tw2.tween_property(root, "position:y", old_pos.y, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw2.tween_property(root, "scale", old_scale, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await tw2.finished
 
 func _reset_view_default() -> void:
 	cam_pitch_deg = DEFAULT_CAM_PITCH_DEG   # 进入/重置视角始终为 77° 俯角（不沿用上次保存的角度）
@@ -682,21 +938,15 @@ func _jit(amount: float) -> Vector2:
 	return Vector2(GameState.rng.randf_range(-amount, amount), GameState.rng.randf_range(-amount, amount))
 
 func _spawn_start_cards() -> void:
-	# 创始人先在场上，随后车库创业包从画面顶部落下；卡包不再包含创始人。
-	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
-	var contents := ["p1_neighborhood", "p1_wholesale", "p1_office", "cash", "cash"]
 	var founder_screen := _screen_center()
 	var founder_pos := clamp_to_zone(
 		_unproject(founder_screen - Vector2(CW, CH) * 0.5 * view_zoom),
 		"office"
 	)
-	var founder := _spawn_card_pop("founder", founder_pos)
+	# 开场创始人保持静止，避免切场和文案阶段出现随机旋转/弹跳抖动。
+	var founder := spawn_card("founder", founder_pos)
 	if is_instance_valid(founder):
 		founder.is_new_discovery = false
-	var pack_pos := _clamp_pack_to_simple_board(
-		founder_pos + Vector2(CW + START_PACK_GAP, (CH - PACK_H) * 0.5)
-	)
-	_spawn_loose_pack("garage_pack", pack, contents, pack_pos, false)
 
 	# 在活跃画布右侧生成一摞物理现金堆叠，资金完全由画布上的现金卡牌决定
 	var start_cash := int(DataLoader.balance.get("start_cash", 50)) if GameState.dev_mode else 0
@@ -720,6 +970,20 @@ func _spawn_start_cards() -> void:
 		relayout(sid)
 	
 	_sync_cash_state()
+
+func _spawn_start_pack(instant: bool = false) -> void:
+	if start_pack_spawned:
+		return
+	start_pack_spawned = true
+	var pack: Dictionary = DataLoader.packs.get("garage_pack", {"name": "车库创业包"})
+	var contents := ["cash", "cash", "cash", "cash", "cash", "p1_neighborhood", "p1_wholesale", "p1_office"]
+	var founder = _founder_on_board()
+	var pack_pos := _pack_landing_below("garage_pack")
+	if is_instance_valid(founder):
+		pack_pos = _clamp_pack_to_simple_board(
+			_board_topleft(founder) + Vector2(CW + START_PACK_GAP, (CH - PACK_H) * 0.5)
+		)
+	_spawn_loose_pack("garage_pack", pack, contents, pack_pos, instant)
 
 func _spawn_card_pop(id: String, pos: Vector2, delay: float = 0.0) -> Node2D:
 	var c := spawn_card(id, pos)
@@ -746,6 +1010,9 @@ func spawn_card(id: String, pos: Vector2) -> Node2D:
 	stack_base[sid] = pos
 	all_cards.append(c)
 	relayout(sid)
+	if id in ["p1_office", "office"] and not month_timer_started:
+		month_timer_started = true
+		month_time = float(DataLoader.balance.get("month_seconds", 180.0))
 	return c
 
 func _founder_on_board():
@@ -1311,6 +1578,9 @@ func _bake_face_async(c, mat) -> void:
 	if not is_instance_valid(c) or int(c.get_meta("face_bake_revision", 0)) != revision:
 		return
 	if tex != null and is_instance_valid(mat):
+		if bool(c.get_meta("beginning_card_back", false)):
+			c.set_meta("beginning_front_texture", tex)
+			return
 		mat.albedo_texture = tex
 		mat.albedo_color = Color(1, 1, 1)
 		if mat.emission_enabled:
@@ -1443,7 +1713,7 @@ func _sync_cash_state() -> void:
 	GameState.cash = _cash_card_count() + _account_cash_count()
 
 
-func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null) -> void:
+func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", from_display = null, pop_interval: float = 0.05) -> void:
 	if amount <= 0:
 		return
 	# 一批现金叠成一摞：朝旁边飞出一小段后落在同一摞里，快速依次弹出
@@ -1460,7 +1730,7 @@ func _spawn_cash_cards(amount: int, around: Vector2, zone: String = "office", fr
 	var origin_display: Vector2 = (from_display as Vector2) if from_display != null else _project(around + Vector2(CW, CH) * 0.5)
 	var arr: Array = stacks[sid]
 	for i in arr.size():
-		_play_card_pop(arr[i], 0.05 * i, origin_display)
+		_play_card_pop(arr[i], pop_interval * i, origin_display)
 	_sync_cash_state()
 
 func destroy_card(c) -> void:
@@ -1576,6 +1846,10 @@ func _to_world(event: InputEvent) -> Vector2:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if game_over:
+		return
+	if beginning_active:
+		return
+	if _handle_panel_scroll_input(event):
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		var wp := _to_world(event)
@@ -3786,7 +4060,7 @@ func _cash_output_amount(recipe: Dictionary, fallback: int) -> int:
 			"customer":
 				customer_value += int(cdef.get("value", 0)) * count
 	if product_value > 0 and customer_value > 0:
-		return int(ceil(float(product_value + customer_value) * 1.5))
+		return int(ceil(float(product_value + customer_value) * 2.0))
 	return fallback
 
 # Decrement remaining uses on non-consumed node inputs; destroy when depleted.
@@ -4224,6 +4498,10 @@ func _process(delta: float) -> void:
 				_reposition_founder_bubble(founder_bubble, founder)
 		else:
 			founder_bubble.queue_free()
+	if beginning_active:
+		_update_hud()
+		queue_redraw()
+		return
 	if game_over:
 		return
 	if selected_card != null and not is_instance_valid(selected_card):
@@ -4274,7 +4552,7 @@ func _process(delta: float) -> void:
 			_show_toast("渡过危机！")
 		elif emergency_t <= 0:
 			_trigger_game_over()
-	else:
+	elif month_timer_started:
 		month_time -= delta
 		if month_time <= 0:
 			_settle_month()
@@ -4375,10 +4653,8 @@ func _update_card_visual_states(delta: float) -> void:
 	supply_flow_phase += delta * 55.0
 	_update_supply_arrow_mesh()
 	if bank_button != null and is_instance_valid(bank_button):
-		var desired_bank_text := "解雇" if drag_sid != -1 and _can_fire_stack(drag_sid) \
-			else ("解雇" if capacity_cleanup_pending else "")
-		if bank_button.text != desired_bank_text:
-			bank_button.text = desired_bank_text
+		if bank_button.text != "":
+			bank_button.text = ""
 			_set_button_icon(bank_button, "sold")
 	if bank_button != null and is_instance_valid(bank_button) and _is_dragging_sellable():
 		bank_button.queue_redraw()
@@ -4468,7 +4744,7 @@ func _settle_month() -> void:
 		hint_text = _capacity_cleanup_text()
 		toast_t = 0.0
 		if bank_button != null:
-			bank_button.text = "解雇"
+			bank_button.text = ""
 			_set_button_icon(bank_button, "sold")
 			bank_button.queue_redraw()
 		return
@@ -4496,7 +4772,7 @@ func _complete_month_settlement() -> void:
 		
 	_float_text("运营支出 -$" + str(total_deduct), Vector2(880, 300), Color("ff8c8c"))
 	GameState.advance_month()
-	month_time = float(DataLoader.balance.get("month_seconds", 90.0))
+	month_time = float(DataLoader.balance.get("month_seconds", 180.0))
 	_sync_cash_state()
 
 func _try_finish_capacity_cleanup() -> void:
@@ -4689,6 +4965,23 @@ func _pack_prism_mesh(poly2: PackedVector2Array, pw: float, ph: float, thick: fl
 	st.generate_normals()
 	return st.commit()
 
+func _pack_cover_mesh(poly2: PackedVector2Array, pw: float, ph: float) -> ArrayMesh:
+	var pts := PackedVector2Array()
+	for q in poly2:
+		pts.append(Vector2((q.x / PackCardScript.W - 0.5) * pw, (q.y / PackCardScript.H - 0.5) * ph))
+	var idx := Geometry2D.triangulate_polygon(pts)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for k in range(0, idx.size(), 3):
+		for j in 3:
+			var src_i := idx[k + j]
+			var src := poly2[src_i]
+			var p := pts[src_i]
+			st.set_uv(Vector2(src.x / PackCardScript.W, src.y / PackCardScript.H))
+			st.add_vertex(Vector3(p.x, 0.0, p.y))
+	st.generate_normals()
+	return st.commit()
+
 # ---- 卡包 3D 网格（与卡牌同套：pivot + mesh，躺在白板上）----
 func _ensure_pack3d(p) -> void:
 	if p.face3d != null and is_instance_valid(p.face3d):
@@ -4703,7 +4996,8 @@ func _ensure_pack3d(p) -> void:
 	# 卡包盒身（沿封面真实轮廓——桶形+上下锯齿——挤出的厚棱柱，投射真阴影）：
 	# 顶面在 cardroot 原点、底面贴白板
 	var frame := MeshInstance3D.new()
-	frame.mesh = _pack_prism_mesh(p._body_poly(), pw, ph, PACK3D_THICK)
+	var body_poly: PackedVector2Array = p._body_poly()
+	frame.mesh = _pack_prism_mesh(body_poly, pw, ph, PACK3D_THICK)
 	var fmat := StandardMaterial3D.new()
 	fmat.albedo_color = Color(0.1, 0.1, 0.1)
 	fmat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -4712,10 +5006,8 @@ func _ensure_pack3d(p) -> void:
 	cardroot.add_child(frame)
 	# 卡包封面：烘焙图贴在盒子顶面
 	var m := MeshInstance3D.new()
-	var qm := QuadMesh.new()
-	qm.size = Vector2(pw, ph)
-	m.mesh = qm
-	m.rotation = Vector3(deg_to_rad(-90.0), 0.0, 0.0)
+	m.name = "PackCover"
+	m.mesh = _pack_cover_mesh(body_poly, pw, ph)
 	m.position = Vector3(0, 0.002, 0)
 	var mat := StandardMaterial3D.new()
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # 不透明部分能投射阴影
@@ -4782,6 +5074,17 @@ func _open_loose_pack(p) -> void:
 		p.set_meta("task_open_recorded", true)
 		_task_event("pack_opened", p.pack_id)
 	_sfx("unpack")                     # 拆包点击音效
+	var origin: Vector2 = p.position + Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * p.scale.x
+	var zone := _zone_for_center(_unproject(origin))
+	var start_cash_count := _leading_pack_cash_count(p)
+	if p.pack_id == "garage_pack" and start_cash_count >= 5:
+		for i in start_cash_count:
+			p.contents.pop_front()
+		_burst_start_cash_from_pack(start_cash_count, origin, zone)
+		p.queue_redraw()
+		if p.contents.is_empty():
+			_dissolve_pack(p)
+		return
 	var id := String(p.contents.pop_front())
 	while _skip_pack_card(id):
 		if p.contents.is_empty():
@@ -4789,8 +5092,6 @@ func _open_loose_pack(p) -> void:
 			_dissolve_pack(p)
 			return
 		id = String(p.contents.pop_front())
-	var origin: Vector2 = p.position + Vector2(PackCardScript.W, PackCardScript.H) * 0.5 * p.scale.x
-	var zone := _zone_for_center(_unproject(origin))
 	_burst_card_from_pack(id, origin, zone)
 	p.queue_redraw()                       # 刷新剩余数量角标
 	if p.contents.is_empty():
@@ -4804,6 +5105,39 @@ func _open_loose_pack(p) -> void:
 		tw.tween_property(p, "scale", Vector2(1.14, 0.86) * PACK_SCALE * view_zoom, 0.08).set_trans(Tween.TRANS_QUAD)
 		tw.tween_property(p, "scale", Vector2.ONE * PACK_SCALE * view_zoom, 0.14).set_trans(Tween.TRANS_BACK)
 
+func _leading_pack_cash_count(p) -> int:
+	if not is_instance_valid(p):
+		return 0
+	var count := 0
+	for idv in p.contents:
+		if String(idv) != "cash":
+			break
+		count += 1
+	return count
+
+func _burst_start_cash_from_pack(amount: int, origin_display: Vector2, zone: String) -> void:
+	var origin_board := _unproject(origin_display)
+	var landing := clamp_to_zone(
+		origin_board + Vector2(CW * 1.7, CH * 0.2),
+		zone
+	)
+	var cash_sid := -1
+	for i in amount:
+		get_tree().create_timer(0.045 * i).timeout.connect(func():
+			var c := spawn_card("cash", landing)
+			if not is_instance_valid(c):
+				return
+			c.zone = zone
+			if cash_sid == -1:
+				cash_sid = c.stack_id
+			else:
+				cash_sid = _merge(c.stack_id, cash_sid)
+			if stacks.has(cash_sid):
+				relayout(cash_sid)
+			_fly_out_card(c, origin_display)
+			_sync_cash_state()
+		)
+
 func _pack_material(p) -> StandardMaterial3D:
 	if p == null or not is_instance_valid(p) or p.face3d == null or not is_instance_valid(p.face3d):
 		return null
@@ -4811,22 +5145,35 @@ func _pack_material(p) -> StandardMaterial3D:
 	if cardroot == null:
 		return null
 	for child in cardroot.get_children():
-		if child is MeshInstance3D and child.mesh is QuadMesh and child.material_override is StandardMaterial3D:
+		if child.name == "PackCover" and child is MeshInstance3D and child.material_override is StandardMaterial3D:
 			return child.material_override as StandardMaterial3D
 	return null
 
 func _dissolve_pack(p) -> void:
 	if not is_instance_valid(p):
 		return
+	if is_instance_valid(p.face3d):
+		_smoke_burst3d(p.face3d.global_position)
+	p.z_index = 2500
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(p, "scale", Vector2(1.1, 0.55) * PACK_SCALE * view_zoom, 0.14).set_trans(Tween.TRANS_QUAD)
-	tw.tween_property(p, "modulate:a", 0.0, 0.30).set_delay(0.06)
+	tw.tween_property(p, "scale", p.scale * 0.05, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "modulate", Color(0.35, 0.35, 0.35, 0.0), 0.34)
+	tw.tween_property(p, "rotation", 0.35, 0.34)
+	tw.tween_property(p, "position:y", p.position.y - 22, 0.34)
 	tw.chain().tween_callback(func():
 		loose_packs.erase(p)
 		if is_instance_valid(p):
 			p.queue_free()
 	)
+	# 3D 卡包整体缩进烟里，同时轻微上浮。
+	if is_instance_valid(p.face3d) and p.face3d.get_child_count() > 0:
+		var cardroot := p.face3d.get_child(0) as Node3D
+		var tw3 := create_tween()
+		tw3.set_parallel(true)
+		if cardroot != null:
+			tw3.tween_property(cardroot, "scale", Vector3.ZERO, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw3.tween_property(p.face3d, "position:y", p.face3d.position.y + 0.10, 0.32)
 
 func _skip_pack_card(id: String) -> bool:
 	if id == "founder" and _founder_on_board() != null:
@@ -4862,8 +5209,8 @@ func _burst_card_from_pack(id: String, origin_display: Vector2, zone: String) ->
 	)
 
 func _pack_card_landing(id: String, origin_center: Vector2, zone: String) -> Vector2:
-	const DROP_MIN := 0.8
-	const DROP_MAX := 1.5
+	const DROP_MIN := 1.2
+	const DROP_MAX := 2.0
 	var half := Vector2(CW, CH) * 0.5
 	
 	# 1. 优先尝试叠放到相同卡牌的既有牌堆上
@@ -5380,6 +5727,23 @@ func _top_icon_y() -> float:
 func _top_label_y() -> float:
 	return (HUD_H - 40.0) * 0.5
 
+func _layout_gear_button() -> void:
+	if top_bar == null:
+		return
+	var gear_btn := top_bar.get_node_or_null("GearButton") as Button
+	if gear_btn == null:
+		return
+	var screen := _screen_size()
+	gear_btn.position = Vector2(screen.x - 76.0, roundf((top_bar.size.y - gear_btn.size.y) * 0.5))
+	var gear_icon := gear_btn.get_node_or_null("ButtonIcon") as TextureRect
+	if gear_icon != null:
+		var gear_icon_size := 38.0
+		gear_icon.size = Vector2(gear_icon_size, gear_icon_size)
+		gear_icon.position = Vector2(
+			roundf((gear_btn.size.x - gear_icon_size) * 0.5),
+			roundf((gear_btn.size.y - gear_icon_size) * 0.5) - 2.0
+		)
+
 func _ensure_top_bar() -> Control:
 	top_bar = hud.get_node_or_null("TopBar") as Control
 	if top_bar == null:
@@ -5419,6 +5783,19 @@ func _tint_top_bar_icons() -> void:
 		if icon != null:
 			icon.modulate = Color.WHITE
 			icon.material = null
+	_apply_finance_icon_tint()
+
+func _apply_finance_icon_tint() -> void:
+	if top_bar == null:
+		return
+	var finance_group := top_bar.get_node_or_null("FinanceGroup") as Control
+	if finance_group == null:
+		return
+	var finance_icon := finance_group.get_node_or_null("Icon") as TextureRect
+	if finance_icon == null:
+		return
+	finance_icon.modulate = Color.WHITE
+	finance_icon.material = _top_icon_gray_material()
 
 func _top_icon_gray_material() -> ShaderMaterial:
 	if top_icon_gray_material != null:
@@ -5526,6 +5903,7 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		pb.add_child(fill)
 	fill.polygon = poly
 	fill.color = Color("34383b") if not locked else Color("464849")
+	fill.texture = null
 
 	var gloss := pb.get_node_or_null("GlassGloss") as Polygon2D
 	if gloss == null:
@@ -5568,20 +5946,16 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		pb.add_child(icon)
 	var content_h := 58.0
 	var offset_y := (size.y - content_h) * 0.5
-	var icon_w := 30.6
+	var icon_w := 34.0
 	icon.visible = not locked
-	icon.texture = _ui_icon("cost")
+	icon.texture = _ui_icon("cost_float")
 	icon.position = Vector2((size.x - icon_w) * 0.5, offset_y)
 	icon.size = Vector2(icon_w, icon_w)
-	icon.modulate = Color(1, 1, 1, 0.55 if locked else 1.0)
+	icon.z_index = 3
+	icon.modulate = Color(1, 1, 1, 1.0)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-
-	var mat := ShaderMaterial.new()
-	var shader := Shader.new()
-	shader.code = "shader_type canvas_item; void fragment() { vec4 c = COLOR; COLOR = vec4(1.0 - c.rgb, c.a); }"
-	mat.shader = shader
-	icon.material = mat
+	icon.material = null
 
 	var cost := pb.get_node_or_null("PackCost") as Label
 	if cost == null:
@@ -5591,12 +5965,13 @@ func _style_pack_button(pb: Button, pack_name: String, price: int, locked: bool)
 		pb.add_child(cost)
 	cost.visible = not locked
 	cost.text = str(price)
-	cost.position = Vector2((size.x - icon_w) * 0.5, offset_y + 6.3)
+	cost.position = Vector2((size.x - icon_w) * 0.5, offset_y + 6.6)
 	cost.size = Vector2(icon_w, 18)
+	cost.z_index = 4
 	cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_apply_bold_pixel_font(cost, 15)
-	cost.add_theme_color_override("font_color", Color("141414") if not locked else Color("5f5c58"))
+	cost.add_theme_color_override("font_color", Color("141414"))
 
 	var label := pb.get_node_or_null("PackLabel") as Label
 	if label == null:
@@ -5705,16 +6080,13 @@ func _build_hud() -> void:
 	month_progress_full_width = 270.0
 	month_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	lbl_expense = _top_stat_label("ExpenseGroup", "cost", 1250, 220, TOP_ICON_SIZE, true)
+	lbl_expense = _top_stat_label("ExpenseGroup", "", 1250, 0, TOP_ICON_SIZE, true)
 	var expense_group := lbl_expense.get_parent() as Control
 	if expense_group != null:
-		expense_group.mouse_filter = Control.MOUSE_FILTER_STOP
-		if not expense_group.mouse_entered.is_connected(_on_expense_hover):
-			expense_group.mouse_entered.connect(_on_expense_hover)
-		if not expense_group.mouse_exited.is_connected(_hide_hover):
-			expense_group.mouse_exited.connect(_hide_hover)
+		expense_group.visible = false
+		expense_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "supplychain", 950, 140, TOP_ICON_SIZE, true)
+	lbl_supply_chain = _top_stat_label("SupplyChainGroup", "supplychain", 950, 140, TOP_ICON_SIZE * SUPPLY_CHAIN_ICON_SCALE, true)
 	var initial_supply_group := lbl_supply_chain.get_parent() as Control
 	if initial_supply_group != null:
 		initial_supply_group.position.x -= 50.0
@@ -5735,10 +6107,13 @@ func _build_hud() -> void:
 		if not business_group.mouse_exited.is_connected(_hide_hover):
 			business_group.mouse_exited.connect(_hide_hover)
 
-	lbl_finance = _top_stat_label("FinanceGroup", "wallet", 1640, 180, TOP_ICON_SIZE, true)
+	lbl_finance = _top_stat_label("FinanceGroup", "cost", 1640, 220, TOP_ICON_SIZE, true)
 	var finance_group := lbl_finance.get_parent() as Control
 	if finance_group != null:
 		finance_group.mouse_filter = Control.MOUSE_FILTER_STOP
+		var finance_icon := finance_group.get_node_or_null("Icon") as TextureRect
+		if finance_icon != null:
+			finance_icon.material = _top_icon_gray_material()
 		if not finance_group.mouse_entered.is_connected(_on_finance_hover):
 			finance_group.mouse_entered.connect(_on_finance_hover)
 		if not finance_group.mouse_exited.is_connected(_hide_hover):
@@ -5752,7 +6127,6 @@ func _build_hud() -> void:
 		gear_btn.name = "GearButton"
 		gear_btn.text = ""
 		top_bar.add_child(gear_btn)
-	gear_btn.position = Vector2(1844, (HUD_H - 44.0) * 0.5)
 	gear_btn.size = Vector2(64, 44)
 	_apply_pixel_font(gear_btn, 26)
 	_clear_button_style(gear_btn)
@@ -5762,11 +6136,9 @@ func _build_hud() -> void:
 	_set_button_icon(gear_btn, "option")
 	var gear_icon := gear_btn.get_node_or_null("ButtonIcon") as TextureRect
 	if gear_icon != null:
-		var gear_icon_size := 38.0
-		gear_icon.size = Vector2(gear_icon_size, gear_icon_size)
-		gear_icon.position = Vector2((gear_btn.size.x - gear_icon_size) * 0.5, (gear_btn.size.y - gear_icon_size) * 0.5)
 		gear_icon.modulate = Color.WHITE
 		gear_icon.material = null
+	_layout_gear_button()
 	gear_btn.pressed.connect(_toggle_gear_menu)
 	_tint_top_bar_icons()
 
@@ -5924,7 +6296,7 @@ func _layout_responsive() -> void:
 			line.size.x = screen.x
 		var gear_btn := top_bar.get_node_or_null("GearButton") as Control
 		if gear_btn != null:
-			gear_btn.position.x = screen.x - 76.0
+			_layout_gear_button()
 	_layout_top_right_stats()
 
 	var bottom := _bottom_y()
@@ -5970,6 +6342,8 @@ func _layout_responsive() -> void:
 		settings_panel.position = Vector2((screen.x - 460.0) * 0.5, 320.0 + extra.y * 0.5)
 	if research_panel != null:
 		research_panel.size = screen
+	if beginning_overlay != null and is_instance_valid(beginning_overlay):
+		_layout_beginning_overlay()
 	if bottom_info != null:
 		bottom_info.queue_redraw()
 	if book_tab_shadow != null:
@@ -6116,17 +6490,18 @@ func _zoom_icon_texture(path: String) -> Texture2D:
 
 # ---------------------------------------------------------------- hover tooltip
 func _build_hover_panel() -> void:
-	hover_panel = hud.get_node_or_null("HoverPanel") as Panel
+	hover_panel = hud.get_node_or_null("HoverPanel") as Control
 	if hover_panel == null:
-		hover_panel = Panel.new()
+		var textured_panel := HoverTexturePanel.new()
+		textured_panel.bg_texture = HOVER_BG_TEXTURE
+		textured_panel.border_color = INK
+		textured_panel.border_width = 4.2
+		hover_panel = textured_panel
 		hover_panel.name = "HoverPanel"
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color("fbf6ec")
-		sb.border_color = INK
-		sb.set_border_width_all(3)
-		sb.set_corner_radius_all(6)
-		hover_panel.add_theme_stylebox_override("panel", sb)
 		hud.add_child(hover_panel)
+	elif hover_panel is HoverTexturePanel:
+		(hover_panel as HoverTexturePanel).bg_texture = HOVER_BG_TEXTURE
+		(hover_panel as HoverTexturePanel).border_color = INK
 	hover_panel.z_index = 4096
 	hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hover_panel.visible = false
@@ -6134,7 +6509,6 @@ func _build_hover_panel() -> void:
 	if hover_label == null:
 		hover_label = Label.new()
 		hover_label.name = "HoverLabel"
-		hover_label.position = Vector2(12, 8)
 		hover_panel.add_child(hover_label)
 	_apply_pixel_font(hover_label, 20)
 	hover_label.add_theme_color_override("font_color", INK)
@@ -6147,19 +6521,21 @@ func _show_hover(text: String, anchor: Control, centered: bool = false) -> void:
 	hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	
 	var w := 280.0 if hover_follows_mouse else 230.0
-	hover_label.custom_minimum_size = Vector2(w - 24, 0)
+	var pad := Vector2(18, 14)
+	hover_label.custom_minimum_size = Vector2(w - pad.x * 2.0, 0)
 	var content_h := hover_label.get_minimum_size().y
-	var h := maxf(content_h + 16.0, 40.0)
+	var h := maxf(content_h + pad.y * 2.0, 52.0)
 	hover_panel.size = Vector2(w, h)
+	hover_panel.queue_redraw()
 	
 	if centered:
-		hover_label.position = Vector2(12, 8)
-		hover_label.size = Vector2(w - 24, h - 16)
+		hover_label.position = pad
+		hover_label.size = Vector2(w - pad.x * 2.0, h - pad.y * 2.0)
 		hover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		hover_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	else:
-		hover_label.position = Vector2(12, 8)
-		hover_label.size = Vector2(w - 24, h - 16)
+		hover_label.position = pad
+		hover_label.size = Vector2(w - pad.x * 2.0, h - pad.y * 2.0)
 		hover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		
@@ -6284,7 +6660,10 @@ func _on_month_hover() -> void:
 
 func _on_progress_hover() -> void:
 	var progress_group := top_bar.get_node_or_null("ProgressGroup") as Control
-	var total := float(DataLoader.balance.get("month_seconds", 90.0))
+	var total := float(DataLoader.balance.get("month_seconds", 180.0))
+	if not month_timer_started:
+		_show_hover("月度结算进度条\n抽到办公室后开始计时。\n每个月总时长：%d 秒。" % int(total), progress_group)
+		return
 	var elapsed_percent := int((1.0 - clampf(month_time / maxf(1.0, total), 0.0, 1.0)) * 100)
 	var txt := "月度结算进度条\n本月已度过：%d%%\n本月总时长：%d 秒。\n进度条耗尽时自动进行结算。" % [elapsed_percent, int(total)]
 	_show_hover(txt, progress_group)
@@ -6296,7 +6675,7 @@ func _on_business_hover() -> void:
 
 func _on_finance_hover() -> void:
 	var finance_group := lbl_finance.get_parent() as Control
-	var txt := "公司流动资金储备"
+	var txt := "公司流动资金储备\n\n" + _expense_hover_text()
 	_show_hover(txt, finance_group if finance_group != null else lbl_finance)
 
 func _on_expense_hover() -> void:
@@ -6402,6 +6781,119 @@ func _create_separator(color: Color) -> HSeparator:
 	sep.add_theme_stylebox_override("separator", sb)
 	return sep
 
+func _is_mouse_wheel_event(event: InputEvent) -> bool:
+	if event is InputEventMouseButton:
+		return event.button_index in [
+			MOUSE_BUTTON_WHEEL_UP,
+			MOUSE_BUTTON_WHEEL_DOWN,
+			MOUSE_BUTTON_WHEEL_LEFT,
+			MOUSE_BUTTON_WHEEL_RIGHT,
+		]
+	return false
+
+func _scroll_panel_from_event(scroll: ScrollContainer, event: InputEvent) -> bool:
+	if scroll == null or not is_instance_valid(scroll):
+		return false
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
+			scroll.scroll_vertical = maxi(0, scroll.scroll_vertical - 72)
+			return true
+		if mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
+			scroll.scroll_vertical += 72
+			return true
+		if mb.button_index == MOUSE_BUTTON_WHEEL_LEFT and mb.pressed:
+			scroll.scroll_horizontal = maxi(0, scroll.scroll_horizontal - 72)
+			return true
+		if mb.button_index == MOUSE_BUTTON_WHEEL_RIGHT and mb.pressed:
+			scroll.scroll_horizontal += 72
+			return true
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			panel_scroll_drag = scroll if mb.pressed else null
+			return true
+	if event is InputEventMouseMotion and panel_scroll_drag == scroll:
+		var motion := event as InputEventMouseMotion
+		scroll.scroll_vertical = maxi(0, scroll.scroll_vertical - int(round(motion.relative.y)))
+		return true
+	return false
+
+func _panel_scroll_for_point(pos: Vector2) -> ScrollContainer:
+	if recipe_panel != null and recipe_panel.visible and recipe_panel.get_global_rect().has_point(pos):
+		return recipe_scroll
+	if task_panel != null and task_panel.visible and task_panel.get_global_rect().has_point(pos):
+		return task_scroll
+	return null
+
+func _handle_panel_scroll_input(event: InputEvent) -> bool:
+	if event is InputEventMouseMotion and panel_scroll_drag != null:
+		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			panel_scroll_drag = null
+			return true
+		return _scroll_panel_from_event(panel_scroll_drag, event)
+	if not (event is InputEventMouse):
+		return false
+	var scroll := _panel_scroll_for_point((event as InputEventMouse).position)
+	if scroll == null:
+		return false
+	if event is InputEventMouseButton or event is InputEventMouseMotion:
+		return _scroll_panel_from_event(scroll, event) or true
+	return true
+
+func _wire_panel_scroll_events(control: Control, scroll: ScrollContainer) -> void:
+	control.gui_input.connect(func(event: InputEvent):
+		if _scroll_panel_from_event(scroll, event):
+			control.accept_event()
+	)
+
+func _style_panel_scrollbar(scroll: ScrollContainer) -> void:
+	if scroll == null:
+		return
+	for bar in [scroll.get_v_scroll_bar(), scroll.get_h_scroll_bar()]:
+		if bar == null:
+			continue
+		bar.mouse_filter = Control.MOUSE_FILTER_PASS
+		if bar is VScrollBar:
+			bar.custom_minimum_size = Vector2(6, 0)
+		elif bar is HScrollBar:
+			bar.custom_minimum_size = Vector2(0, 6)
+		var transparent := StyleBoxFlat.new()
+		transparent.bg_color = Color(1, 1, 1, 0)
+		transparent.set_border_width_all(0)
+		transparent.set_corner_radius_all(4)
+		transparent.content_margin_left = 3
+		transparent.content_margin_right = 3
+		transparent.content_margin_top = 3
+		transparent.content_margin_bottom = 3
+		bar.add_theme_stylebox_override("scroll", transparent)
+		bar.add_theme_stylebox_override("scroll_focus", transparent)
+		
+		var grabber := StyleBoxFlat.new()
+		grabber.bg_color = Color(0.86, 0.86, 0.86, 0.8)
+		grabber.set_corner_radius_all(4)
+		grabber.content_margin_left = 4
+		grabber.content_margin_right = 4
+		grabber.content_margin_top = 4
+		grabber.content_margin_bottom = 4
+		bar.add_theme_stylebox_override("grabber", grabber)
+		
+		var grabber_highlight := StyleBoxFlat.new()
+		grabber_highlight.bg_color = Color(0.93, 0.93, 0.93, 0.8)
+		grabber_highlight.set_corner_radius_all(4)
+		grabber_highlight.content_margin_left = 4
+		grabber_highlight.content_margin_right = 4
+		grabber_highlight.content_margin_top = 4
+		grabber_highlight.content_margin_bottom = 4
+		bar.add_theme_stylebox_override("grabber_highlight", grabber_highlight)
+		
+		var grabber_pressed := StyleBoxFlat.new()
+		grabber_pressed.bg_color = Color(0.98, 0.98, 0.98, 0.8)
+		grabber_pressed.set_corner_radius_all(4)
+		grabber_pressed.content_margin_left = 4
+		grabber_pressed.content_margin_right = 4
+		grabber_pressed.content_margin_top = 4
+		grabber_pressed.content_margin_bottom = 4
+		bar.add_theme_stylebox_override("grabber_pressed", grabber_pressed)
+
 func _build_recipe_book_panel() -> void:
 	# 阴影层：添加在最底层以绘制整体阴影
 	book_tab_shadow = Node2D.new()
@@ -6410,14 +6902,16 @@ func _build_recipe_book_panel() -> void:
 	hud.add_child(book_tab_shadow)
 	book_tab_shadow.draw.connect(_draw_book_tab_shadow)
 
-	recipe_panel = PanelContainer.new()
+	recipe_panel = TexturedPanelContainer.new()
+	(recipe_panel as TexturedPanelContainer).bg_texture = HOVER_BG_TEXTURE
+	(recipe_panel as TexturedPanelContainer).border_width = 4.0
 	var panel_h := 700.0
 	var y_recess := (INFO_Y - 88.0) - 22.0   # 弹窗底边：按钮顶边再往上缩 22px
 	recipe_panel.position = Vector2(30, y_recess - panel_h)
 	recipe_panel.size = Vector2(310, panel_h)
 	recipe_panel.visible = false
 	var psb := StyleBoxFlat.new()
-	psb.bg_color = PANEL_CREAM
+	psb.bg_color = Color(PANEL_CREAM.r, PANEL_CREAM.g, PANEL_CREAM.b, 0.0)
 	psb.corner_radius_top_left = 8
 	psb.corner_radius_top_right = 8
 	psb.corner_radius_bottom_left = 0
@@ -6433,9 +6927,9 @@ func _build_recipe_book_panel() -> void:
 	psb.content_margin_top = 16
 	psb.content_margin_bottom = 16
 	recipe_panel.add_theme_stylebox_override("panel", psb)
-	# 拦截所有鼠标点击、释放和滚动事件，防止影响平移/缩放画布
+	# 弹窗内的滚轮/左键拖动只滚动弹窗，避免传给画布。
 	recipe_panel.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton or event is InputEventMouseMotion:
+		if _scroll_panel_from_event(recipe_scroll, event):
 			recipe_panel.accept_event()
 	)
 	hud.add_child(recipe_panel)
@@ -6469,10 +6963,12 @@ func _build_recipe_book_panel() -> void:
 	head.add_child(close)
 
 	var scroll := ScrollContainer.new()
+	recipe_scroll = scroll
+	_style_panel_scrollbar(recipe_scroll)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton or event is InputEventMouseMotion:
+		if _scroll_panel_from_event(recipe_scroll, event):
 			scroll.accept_event()
 	)
 	box.add_child(scroll)
@@ -6480,6 +6976,7 @@ func _build_recipe_book_panel() -> void:
 	recipe_list = CustomListContainer.new()
 	recipe_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	recipe_list.add_theme_constant_override("separation", 6)
+	_wire_panel_scroll_events(recipe_list, recipe_scroll)
 	scroll.add_child(recipe_list)
 	_refresh_recipe_book()
 
@@ -6598,6 +7095,7 @@ func _set_book_tab_open(open: bool) -> void:
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var sb := book_btn.get_theme_stylebox(state) as StyleBoxFlat
 		if sb != null:
+			sb.bg_color = PANEL_CREAM
 			sb.border_width_left = bw
 			sb.border_width_right = bw
 			sb.border_width_top = bw
@@ -6626,14 +7124,16 @@ func _build_company_task_panel() -> void:
 	task_tab_shadow.draw.connect(_draw_task_tab_shadow)
 	hud.add_child(task_tab_shadow)
 
-	task_panel = PanelContainer.new()
+	task_panel = TexturedPanelContainer.new()
+	(task_panel as TexturedPanelContainer).bg_texture = HOVER_BG_TEXTURE
+	(task_panel as TexturedPanelContainer).border_width = 4.0
 	var panel_h := 700.0
 	var y_recess := (INFO_Y - 88.0) - 22.0
 	task_panel.position = Vector2(30, y_recess - panel_h)
 	task_panel.size = Vector2(310, panel_h)
 	task_panel.visible = false
 	var psb := StyleBoxFlat.new()
-	psb.bg_color = PANEL_CREAM
+	psb.bg_color = Color(PANEL_CREAM.r, PANEL_CREAM.g, PANEL_CREAM.b, 0.0)
 	psb.corner_radius_top_left = 8
 	psb.corner_radius_top_right = 8
 	psb.border_color = INK
@@ -6644,9 +7144,9 @@ func _build_company_task_panel() -> void:
 	psb.content_margin_top = 16
 	psb.content_margin_bottom = 16
 	task_panel.add_theme_stylebox_override("panel", psb)
-	# 拦截所有鼠标点击、释放和滚动事件，防止影响平移/缩放画布
+	# 弹窗内的滚轮/左键拖动只滚动弹窗，避免传给画布。
 	task_panel.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton or event is InputEventMouseMotion:
+		if _scroll_panel_from_event(task_scroll, event):
 			task_panel.accept_event()
 	)
 	hud.add_child(task_panel)
@@ -6677,10 +7177,12 @@ func _build_company_task_panel() -> void:
 	head.add_child(close)
 
 	var scroll := ScrollContainer.new()
+	task_scroll = scroll
+	_style_panel_scrollbar(task_scroll)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton or event is InputEventMouseMotion:
+		if _scroll_panel_from_event(task_scroll, event):
 			scroll.accept_event()
 	)
 	box.add_child(scroll)
@@ -6688,6 +7190,7 @@ func _build_company_task_panel() -> void:
 	task_list = CustomListContainer.new()
 	task_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	task_list.add_theme_constant_override("separation", 6)
+	_wire_panel_scroll_events(task_list, task_scroll)
 	scroll.add_child(task_list)
 	_refresh_company_tasks()
 
@@ -6832,7 +7335,13 @@ func _complete_task(task: Dictionary) -> void:
 	if unlock_pack != "":
 		GameState.unlock_pack_from_task(unlock_pack)
 	_refresh_packs()
-	_show_founder_bubble("完成 %s 啦！" % String(task.get("title", task_id)))
+	_show_task_complete_bubble("完成 %s 啦！" % String(task.get("title", task_id)))
+
+func _show_task_complete_bubble(text: String) -> void:
+	if beginning_active:
+		pending_task_bubble_text = text
+		return
+	_show_founder_bubble(text)
 
 func _task_check_card_state() -> void:
 	var ids := ["p2_sales_specialist", "p2_product_specialist", "p2_admin_specialist"]
@@ -6844,34 +7353,99 @@ func _task_check_card_state() -> void:
 func _draw_task_tab_shadow() -> void:
 	if task_panel == null or not task_panel.visible:
 		return
-	var rect := Rect2(task_panel.position + Vector2(4, 5), task_panel.size)
-	task_tab_shadow.draw_rect(rect, Color(0, 0, 0, 0.28), true)
+	
+	var pl := 30.0
+	var pr := 340.0
+	var tl := 210.0
+	var tab_top := _bottom_y() - 88.0
+	var tab_bot := _bottom_y() - 24.0
+	var y_recess := tab_top - 22.0
+	var pt := y_recess - task_panel.size.y
+	var r := 16.0
+	
+	var poly := PackedVector2Array()
+	poly.append(Vector2(pl + 8.0, pt))
+	poly.append(Vector2(pl + 2.3, pt + 2.3))
+	poly.append(Vector2(pl, pt + 8.0))
+	poly.append(Vector2(pl, y_recess))
+	
+	var cx := tl - r
+	var cy := y_recess + r
+	var steps := 12
+	for i in steps + 1:
+		var ang := deg_to_rad(270.0 + 90.0 * float(i) / float(steps))
+		poly.append(Vector2(cx + r * cos(ang), cy + r * sin(ang)))
+	
+	poly.append(Vector2(tl, tab_bot))
+	poly.append(Vector2(pr, tab_bot))
+	poly.append(Vector2(pr, pt + 8.0))
+	poly.append(Vector2(pr - 2.3, pt + 2.3))
+	poly.append(Vector2(pr - 8.0, pt))
+	
+	var shadow_poly := PackedVector2Array()
+	for p in poly:
+		shadow_poly.append(p + Vector2(4, 5))
+	task_tab_shadow.draw_colored_polygon(shadow_poly, Color(0, 0, 0, 0.28))
 
 func _draw_task_tab_seam() -> void:
 	if task_panel == null or not task_panel.visible or task_btn == null:
 		return
-	var top := task_btn.position.y
-	task_tab_seam.draw_rect(
-		Rect2(task_btn.position.x + 4, top - 24, task_btn.size.x - 8, 30),
-		PANEL_CREAM,
-		true
-	)
-	task_tab_seam.draw_line(
-		Vector2(task_panel.position.x + 2, top - 22),
-		Vector2(task_btn.position.x + 2, top - 22),
-		INK,
-		4
-	)
+	var w := 4.0
+	var ins := w * 0.5
+	var pl := 30.0
+	var pr := 340.0
+	var tl := 210.0
+	var pl_line := pl + ins
+	var pr_line := pr - ins
+	var tl_line := tl + ins
+	var tab_top := _bottom_y() - 88.0
+	var tab_bot := _bottom_y() - 24.0
+	var y_recess := tab_top - 22.0
+	var r := 16.0
+	var up := 8.0
+
+	var arc := PackedVector2Array()
+	var cx := tl_line - r
+	var cy := y_recess + r
+	var steps := 12
+	for i in steps + 1:
+		var ang := deg_to_rad(270.0 + 90.0 * float(i) / float(steps))
+		arc.append(Vector2(cx + r * cos(ang), cy + r * sin(ang)))
+
+	var fill := PackedVector2Array()
+	fill.append(Vector2(pr, y_recess - up))
+	fill.append(Vector2(tl_line - r, y_recess - up))
+	for p in arc:
+		fill.append(p)
+	fill.append(Vector2(tl, tab_top + 6.0))
+	fill.append(Vector2(pr, tab_top + 6.0))
+	task_tab_seam.draw_colored_polygon(fill, PANEL_CREAM)
+
+	var path := PackedVector2Array()
+	path.append(Vector2(pl_line, y_recess - up))
+	path.append(Vector2(pl_line, y_recess))
+	path.append(Vector2(tl_line - r, y_recess))
+	for p in arc:
+		path.append(p)
+	path.append(Vector2(tl_line, tab_bot))
+	path.append(Vector2(pr_line, tab_bot))
+	path.append(Vector2(pr_line, y_recess - up))
+	task_tab_seam.draw_polyline(path, INK, w, false)
 
 func _set_task_tab_open(open: bool) -> void:
 	if task_btn == null:
 		return
-	var width := 0 if open else 4
+	var bw := 0 if open else 4
+	var ss := 0 if open else 4
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var sb := task_btn.get_theme_stylebox(state) as StyleBoxFlat
 		if sb != null:
-			sb.set_border_width_all(width)
-			sb.shadow_size = 0 if open else 4
+			sb.bg_color = PANEL_CREAM
+			sb.border_width_left = bw
+			sb.border_width_right = bw
+			sb.border_width_top = bw
+			sb.border_width_bottom = bw
+			sb.shadow_size = ss
 
 func _toggle_company_tasks() -> void:
 	if task_panel == null:
@@ -6951,25 +7525,6 @@ func _build_gear_menu() -> void:
 		_style_menu_text_button(b, 34)
 		b.pressed.connect(it["f"])
 		box.add_child(b)
-
-	var dev_toggle := CheckButton.new()
-	dev_toggle.text = "开发模式"
-	dev_toggle.button_pressed = GameState.dev_mode
-	dev_toggle.custom_minimum_size = Vector2(0, 72)
-	dev_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_apply_pixel_font(dev_toggle, 34)
-	dev_toggle.add_theme_constant_override("icon_max_width", 36)
-	dev_toggle.add_theme_color_override("font_color", INK)
-	dev_toggle.add_theme_color_override("font_pressed_color", INK)
-	dev_toggle.toggled.connect(_on_dev_mode_toggled)
-	box.add_child(dev_toggle)
-
-	var dev_note := Label.new()
-	dev_note.text = "关闭后卡包按任务进度解锁"
-	dev_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_apply_pixel_font(dev_note, 18)
-	dev_note.add_theme_color_override("font_color", Color("746b60"))
-	box.add_child(dev_note)
 
 func _toggle_gear_menu() -> void:
 	if gear_menu == null:
@@ -7298,6 +7853,35 @@ func _build_settings_panel() -> void:
 	volume_value.add_theme_color_override("font_color", INK)
 	volume_row.add_child(volume_value)
 
+	var music_row := HBoxContainer.new()
+	music_row.add_theme_constant_override("separation", 12)
+	box.add_child(music_row)
+	var music_label := Label.new()
+	music_label.text = "音乐音量"
+	music_label.custom_minimum_size = Vector2(120, 48)
+	_apply_pixel_font(music_label, 22)
+	music_label.add_theme_color_override("font_color", INK)
+	music_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	music_row.add_child(music_label)
+	var music_slider := HSlider.new()
+	music_slider.custom_minimum_size = Vector2(220, 48)
+	music_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	music_slider.min_value = 0.0
+	music_slider.max_value = 100.0
+	music_slider.step = 1.0
+	music_slider.value = Settings.music_volume * 100.0
+	music_slider.value_changed.connect(_on_settings_music_volume_changed)
+	music_row.add_child(music_slider)
+	var music_value := Label.new()
+	music_value.name = "MusicVolumeValue"
+	music_value.custom_minimum_size = Vector2(64, 48)
+	music_value.text = "%d%%" % roundi(Settings.music_volume * 100.0)
+	music_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	music_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_pixel_font(music_value, 20)
+	music_value.add_theme_color_override("font_color", INK)
+	music_row.add_child(music_value)
+
 	# 显示模式
 	var display_row := HBoxContainer.new()
 	display_row.add_theme_constant_override("separation", 12)
@@ -7442,6 +8026,13 @@ func _on_settings_volume_changed(value: float) -> void:
 	Settings.set_sfx_volume(value / 100.0)
 	if settings_panel != null:
 		var value_label := settings_panel.find_child("VolumeValue", true, false) as Label
+		if value_label != null:
+			value_label.text = "%d%%" % roundi(value)
+
+func _on_settings_music_volume_changed(value: float) -> void:
+	Settings.set_music_volume(value / 100.0)
+	if settings_panel != null:
+		var value_label := settings_panel.find_child("MusicVolumeValue", true, false) as Label
 		if value_label != null:
 			value_label.text = "%d%%" % roundi(value)
 
@@ -7767,7 +8358,7 @@ func _stage_pack_name(stage: int) -> String:
 func _layout_top_right_stats() -> void:
 	var right_edge := _screen_size().x - 100.0
 	var visible_gap := 10.0
-	for label in [lbl_finance, lbl_business, lbl_supply_chain, lbl_expense]:
+	for label in [lbl_finance, lbl_business, lbl_supply_chain]:
 		if label == null or not is_instance_valid(label):
 			continue
 		var font: Font = label.get_theme_font("font")
@@ -7780,10 +8371,10 @@ func _layout_top_right_stats() -> void:
 		var group := label.get_parent() as Control
 		if group == null:
 			continue
-			
+		
 		var icon := group.get_node_or_null("Icon") as TextureRect
 		var has_icon := icon != null and icon.visible
-		var icon_w := TOP_ICON_SIZE if has_icon else 0.0
+		var icon_w := icon.size.x if has_icon else 0.0
 		var gap := 12.0 if has_icon else 0.0
 		
 		var total_width := icon_w + gap + ceilf(text_width) + 4.0
@@ -7821,7 +8412,7 @@ func _update_hud() -> void:
 	if lbl_top_rp:
 		lbl_top_rp.text = "RP %d" % int(GameState.rp)
 	if month_progress:
-		var total := float(DataLoader.balance.get("month_seconds", 90.0))
+		var total := float(DataLoader.balance.get("month_seconds", 180.0))
 		var ratio := clampf(month_time / maxf(1.0, total), 0.0, 1.0)
 		month_progress.size = Vector2(month_progress_full_width * ratio, month_progress.size.y)
 	if lbl_business:
@@ -7831,9 +8422,9 @@ func _update_hud() -> void:
 			HUD_TEXT_WARNING if _business_card_count() > _business_card_capacity() else HUD_TEXT_LIGHT
 		)
 	if lbl_finance:
-		lbl_finance.text = "$%d" % GameState.cash
+		lbl_finance.text = "%d/%d" % [_current_expense(), GameState.cash]
 	if lbl_expense:
-		lbl_expense.text = "$%d" % _current_expense()
+		lbl_expense.text = ""
 	if lbl_supply_chain:
 		lbl_supply_chain.text = "%d/%d" % [_supply_chain_count(), _supply_chain_limit()]
 	_layout_top_right_stats()
@@ -8457,7 +9048,7 @@ func _show_founder_bubble(text: String) -> void:
 		var f = _founder_on_board()
 		if not is_instance_valid(f):
 			return
-		var depth := Vector2(8.0 / 3.0, 8.0 / 3.0)
+		var depth := Vector2(7, 7)
 		var mouth := _founder_mouth_screen(f)
 		var local_pivot := mouth - bubble.position
 		var w := bubble.size.x
@@ -8470,19 +9061,20 @@ func _show_founder_bubble(text: String) -> void:
 		var pt_a := local_pivot
 		var pt_b := Vector2(base_cx - base_w * 0.5, edge_y)
 		var pt_c := Vector2(base_cx + base_w * 0.5, edge_y)
-		var shadow_color := Color(0.04, 0.04, 0.04, 0.20)
+		var shadow_color := Color(0, 0, 0, 0.32)
 		var shadow_box := StyleBoxFlat.new()
 		shadow_box.bg_color = shadow_color
 		shadow_box.set_corner_radius_all(22)
 		shadow_box.corner_detail = 8
-		bubble_shadow.draw_style_box(shadow_box, Rect2(depth, bubble.size))
+		var shadow_origin := bubble_shadow.position
+		bubble_shadow.draw_style_box(shadow_box, Rect2(depth - shadow_origin, bubble.size))
 		# 阴影尾巴只从主体外轮廓开始，避免半透明区域与主体阴影重复叠色。
 		var shadow_edge_y := h if on_bottom else 0.0
 		bubble_shadow.draw_colored_polygon(
 			PackedVector2Array([
-				Vector2(pt_b.x, shadow_edge_y) + depth,
-				pt_a + depth,
-				Vector2(pt_c.x, shadow_edge_y) + depth,
+				Vector2(pt_b.x, shadow_edge_y) + depth - shadow_origin,
+				pt_a + depth - shadow_origin,
+				Vector2(pt_c.x, shadow_edge_y) + depth - shadow_origin,
 			]),
 			shadow_color
 		)
@@ -8588,3 +9180,47 @@ class CustomListContainer extends VBoxContainer:
 				elif child is RichTextLabel:
 					lines.append(child.text)
 			return "\n".join(lines)
+
+class TexturedPanelContainer extends PanelContainer:
+	var bg_texture: Texture2D
+	var border_width: float = 4.0
+	var bg_modulate: Color = Color(1, 1, 1, 0.96)
+
+	func _draw() -> void:
+		if bg_texture == null:
+			return
+		var inset := border_width
+		var rect := Rect2(
+			Vector2(inset, inset),
+			Vector2(maxf(size.x - inset * 2.0, 0.0), maxf(size.y - inset, 0.0))
+		)
+		draw_texture_rect(bg_texture, rect, true, bg_modulate)
+
+class HoverTexturePanel extends Control:
+	var bg_texture: Texture2D
+	var border_color: Color = Color.BLACK
+	var border_width: float = 3.0
+	var bg_modulate: Color = Color(1, 1, 1, 0.96)
+	var corner_radius: int = 6
+	var shadow_offset: Vector2 = Vector2(7, 7)
+	var shadow_color: Color = Color(0, 0, 0, 0.32)
+
+	func _draw() -> void:
+		var rect := Rect2(Vector2.ZERO, size)
+		var shadow := StyleBoxFlat.new()
+		shadow.bg_color = shadow_color
+		shadow.set_corner_radius_all(corner_radius)
+		draw_style_box(shadow, Rect2(shadow_offset, size))
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = Color("fbf6ec")
+		fill.set_corner_radius_all(corner_radius)
+		draw_style_box(fill, rect)
+		if bg_texture != null:
+			var inset := ceili(border_width)
+			draw_texture_rect(bg_texture, rect.grow(-float(inset)), true, bg_modulate)
+		var border := StyleBoxFlat.new()
+		border.bg_color = Color(1, 1, 1, 0.0)
+		border.border_color = border_color
+		border.set_border_width_all(ceili(border_width))
+		border.set_corner_radius_all(corner_radius)
+		draw_style_box(border, rect)

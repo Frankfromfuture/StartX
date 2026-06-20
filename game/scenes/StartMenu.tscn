@@ -1,12 +1,30 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/StartMenu.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/menu/start_menu_office.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://assets/menu/main_background.png" id="2_background"]
 [ext_resource type="Texture2D" path="res://assets/menu/startx_logo_comic.png" id="3_logo"]
 [ext_resource type="Texture2D" path="res://assets/menu/screen_chart_a.svg" id="5_chart_a"]
 [ext_resource type="Texture2D" path="res://assets/menu/screen_chart_b.svg" id="6_chart_b"]
 [ext_resource type="Texture2D" path="res://assets/menu/lamp_glow.svg" id="7_lamp_glow"]
 [ext_resource type="Texture2D" path="res://assets/menu/steam.svg" id="8_steam"]
+[ext_resource type="Shader" path="res://shaders/menu_sunshine.gdshader" id="9_sunshine"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sunshine"]
+shader = ExtResource("9_sunshine")
+shader_parameter/angle = 0.75
+shader_parameter/position = 0.4
+shader_parameter/spread = 0.27
+shader_parameter/cutoff = -0.18
+shader_parameter/falloff = 0.12
+shader_parameter/edge_fade = 0.39
+shader_parameter/speed = 2.0
+shader_parameter/ray1_density = 10.0
+shader_parameter/ray2_density = 30.0
+shader_parameter/ray2_intensity = 0.42
+shader_parameter/intensity = 1.2
+shader_parameter/color = Color(1, 0.88, 0.56, 0.65)
+shader_parameter/hdr = true
+shader_parameter/seed = 5.0
 
 [node name="StartMenu" type="Control"]
 layout_mode = 3
@@ -27,9 +45,31 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_background")
 expand_mode = 1
-stretch_mode = 0
+stretch_mode = 6
+
+[node name="BackgroundGrayWash" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.941176, 0.941176, 0.921569, 0.5)
+
+[node name="Sunshine" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_sunshine")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
 
 [node name="WarmWash" type="ColorRect" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,6 +80,7 @@ mouse_filter = 2
 color = Color(0.956863, 0.921569, 0.843137, 0.08)
 
 [node name="Ambient" type="Control" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -178,6 +219,12 @@ layout_mode = 2
 mouse_default_cursor_shape = 2
 text = "退出"
 
+[node name="TestStartButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(410, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "游戏开始（测试模式）"
+
 [node name="Footer" type="Label" parent="."]
 layout_mode = 0
 offset_left = 128.0
@@ -258,6 +305,32 @@ value = 80.0
 custom_minimum_size = Vector2(72, 48)
 layout_mode = 2
 text = "80%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MusicVolumeRow" type="HBoxContainer" parent="SettingsPanel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="SettingsPanel/Margin/Content/MusicVolumeRow"]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+text = "音乐音量"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="SettingsPanel/Margin/Content/MusicVolumeRow"]
+custom_minimum_size = Vector2(300, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 60.0
+
+[node name="Value" type="Label" parent="SettingsPanel/Margin/Content/MusicVolumeRow"]
+custom_minimum_size = Vector2(72, 48)
+layout_mode = 2
+text = "60%"
 horizontal_alignment = 2
 vertical_alignment = 1
 

@@ -23,12 +23,15 @@ const GOLD := Color("d9c79a")
 @onready var settings_button: Button = $Menu/SettingsButton
 @onready var credits_button: Button = $Menu/CreditsButton
 @onready var quit_button: Button = $Menu/QuitButton
+@onready var test_start_button: Button = $Menu/TestStartButton
 
 @onready var overlay_dim: ColorRect = $OverlayDim
 @onready var settings_panel: PanelContainer = $SettingsPanel
 @onready var settings_close: Button = $SettingsPanel/Margin/Content/Header/CloseButton
 @onready var volume_slider: HSlider = $SettingsPanel/Margin/Content/VolumeRow/Slider
 @onready var volume_value: Label = $SettingsPanel/Margin/Content/VolumeRow/Value
+@onready var music_volume_slider: HSlider = $SettingsPanel/Margin/Content/MusicVolumeRow/Slider
+@onready var music_volume_value: Label = $SettingsPanel/Margin/Content/MusicVolumeRow/Value
 @onready var fullscreen_toggle: CheckButton = $SettingsPanel/Margin/Content/Fullscreen
 @onready var reduce_motion_toggle: CheckButton = $SettingsPanel/Margin/Content/ReduceMotion
 var display_mode_btn: OptionButton = null
@@ -56,6 +59,7 @@ var _credits_dragging := false
 var _credits_drag_y := 0.0
 var _credits_reel_y := 0.0
 var _credits_drag_distance := 0.0
+var _starting_transition := false
 
 func _ready() -> void:
 	CursorManager.reset()
@@ -74,6 +78,7 @@ func _ready() -> void:
 
 	Settings.display_settings_changed.connect(_on_display_settings_changed)
 	Settings.sfx_volume_changed.connect(_on_sfx_volume_changed)
+	Settings.music_volume_changed.connect(_on_music_volume_changed)
 	_build_extra_settings()
 	Settings.card_clarity_changed.connect(_on_card_clarity_changed)
 	Settings.mipmap_bias_changed.connect(_on_mipmap_bias_changed)
@@ -81,11 +86,49 @@ func _ready() -> void:
 	_refresh_motion()
 	start_button.grab_focus.call_deferred()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	_setup_gradient_overlay()
+
+func _setup_gradient_overlay() -> void:
+	var overlay := TextureRect.new()
+	overlay.name = "LeftGradientOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	var grad := Gradient.new()
+	grad.offsets = [0.0, 1.0]
+	grad.colors = [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+	
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill_from = Vector2(0.0, 0.0)
+	tex.fill_to = Vector2(1.0, 0.0)
+	
+	overlay.texture = tex
+	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	
+	overlay.anchor_left = 0.0
+	overlay.anchor_top = 0.0
+	overlay.anchor_right = 0.33333
+	overlay.anchor_bottom = 1.0
+	overlay.offset_left = 0
+	overlay.offset_top = 0
+	overlay.offset_right = 0
+	overlay.offset_bottom = 0
+	
+	var ambient_node := get_node_or_null("Ambient")
+	if ambient_node != null:
+		var idx := ambient_node.get_index()
+		add_child(overlay)
+		move_child(overlay, idx + 1)
+	else:
+		add_child(overlay)
 
 func _on_viewport_size_changed() -> void:
 	_layout_responsive()
 	_steam_origins[steam_1] = steam_1.position
 	_steam_origins[steam_2] = steam_2.position
+
+func _screen_size() -> Vector2:
+	return get_viewport().get_visible_rect().size
 
 func _layout_responsive() -> void:
 	var viewport_size := get_viewport_rect().size
@@ -141,12 +184,16 @@ func _style_interface() -> void:
 	_font($SettingsPanel/Margin/Content/Header/Title, 34)
 	_font($SettingsPanel/Margin/Content/VolumeRow/Label, 22)
 	_font(volume_value, 20)
+	_font($SettingsPanel/Margin/Content/MusicVolumeRow/Label, 22)
+	_font(music_volume_value, 20)
 	_font(fullscreen_toggle, 22)
 	_font(reduce_motion_toggle, 22)
 	_font($SettingsPanel/Margin/Content/MotionHint, 16)
 	$SettingsPanel/Margin/Content/Header/Title.add_theme_color_override("font_color", INK)
 	$SettingsPanel/Margin/Content/VolumeRow/Label.add_theme_color_override("font_color", INK)
 	volume_value.add_theme_color_override("font_color", INK)
+	$SettingsPanel/Margin/Content/MusicVolumeRow/Label.add_theme_color_override("font_color", INK)
+	music_volume_value.add_theme_color_override("font_color", INK)
 	$SettingsPanel/Margin/Content/MotionHint.add_theme_color_override("font_color", Color("777067"))
 
 	_font($DeveloperPanel/Margin/Content/Header/Title, 34)
@@ -168,10 +215,15 @@ func _style_interface() -> void:
 	_prepare_menu_text_button(settings_button, 40)
 	_prepare_menu_text_button(credits_button, 40)
 	_prepare_menu_text_button(quit_button, 40)
+	_prepare_menu_text_button(test_start_button, 26)
 	continue_button.add_theme_color_override("font_disabled_color", Color("9b958c"))
 	growth_button.add_theme_color_override("font_color", Color("777067"))
 	growth_button.add_theme_color_override("font_hover_color", Color("777067"))
 	growth_button.add_theme_color_override("font_focus_color", Color("777067"))
+	test_start_button.add_theme_color_override("font_color", Color("8b8780"))
+	test_start_button.add_theme_color_override("font_hover_color", Color("9a9690"))
+	test_start_button.add_theme_color_override("font_focus_color", Color("9a9690"))
+	test_start_button.add_theme_color_override("font_pressed_color", Color("77736d"))
 	_prepare_button(settings_close, GOLD, 18)
 	_prepare_button(developer_close, GOLD, 18)
 	_prepare_credits_skip()
@@ -214,12 +266,14 @@ func _connect_interface() -> void:
 	settings_button.pressed.connect(_toggle_settings)
 	credits_button.pressed.connect(_toggle_credits)
 	quit_button.pressed.connect(_quit)
+	test_start_button.pressed.connect(_start_game_test)
 	settings_close.pressed.connect(_close_overlays)
 	developer_close.pressed.connect(_close_overlays)
 	credits_skip.pressed.connect(_close_overlays)
 	credits_panel.gui_input.connect(_on_credits_input)
 	dev_button.pressed.connect(_start_game_dev)
 	volume_slider.value_changed.connect(_on_volume_changed)
+	music_volume_slider.value_changed.connect(_on_music_volume_changed_by_user)
 
 func _prepare_button(button: Button, fill: Color, font_size: int) -> void:
 	_font(button, font_size)
@@ -578,6 +632,8 @@ func _ui_font() -> Font:
 func _sync_settings() -> void:
 	volume_slider.set_value_no_signal(Settings.sfx_volume * 100.0)
 	volume_value.text = "%d%%" % roundi(Settings.sfx_volume * 100.0)
+	music_volume_slider.set_value_no_signal(Settings.music_volume * 100.0)
+	music_volume_value.text = "%d%%" % roundi(Settings.music_volume * 100.0)
 	fullscreen_toggle.visible = false
 	reduce_motion_toggle.visible = false
 	var motion_hint := $SettingsPanel/Margin/Content/MotionHint
@@ -667,6 +723,14 @@ func _on_sfx_volume_changed(value: float) -> void:
 	volume_slider.set_value_no_signal(value * 100.0)
 	volume_value.text = "%d%%" % roundi(value * 100.0)
 
+func _on_music_volume_changed_by_user(value: float) -> void:
+	music_volume_value.text = "%d%%" % roundi(value)
+	Settings.set_music_volume(value / 100.0)
+
+func _on_music_volume_changed(value: float) -> void:
+	music_volume_slider.set_value_no_signal(value * 100.0)
+	music_volume_value.text = "%d%%" % roundi(value * 100.0)
+
 func _refresh_motion() -> void:
 	_reset_ambient_static()
 
@@ -685,7 +749,46 @@ func _reset_steam(steam: TextureRect, alpha: float) -> void:
 	steam.modulate.a = alpha
 
 func _start_game() -> void:
+	if _starting_transition:
+		return
 	GameState.dev_mode = false
+	GameState.skip_beginning = false
+	_play_start_curtain_transition()
+
+func _play_start_curtain_transition() -> void:
+	_starting_transition = true
+	_close_overlays()
+	for button in [start_button, continue_button, growth_button, settings_button, credits_button, quit_button, test_start_button]:
+		button.disabled = true
+	var overlay := Control.new()
+	overlay.name = "StartCurtainTransition"
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 5000
+	get_tree().root.add_child(overlay)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var screen := _screen_size()
+	var top_mask := ColorRect.new()
+	top_mask.name = "TopMask"
+	top_mask.color = Color.BLACK
+	top_mask.position = Vector2.ZERO
+	top_mask.size = Vector2(screen.x, 0.0)
+	overlay.add_child(top_mask)
+
+	var bottom_mask := ColorRect.new()
+	bottom_mask.name = "BottomMask"
+	bottom_mask.color = Color.BLACK
+	bottom_mask.position = Vector2(0.0, screen.y)
+	bottom_mask.size = Vector2(screen.x, 0.0)
+	overlay.add_child(bottom_mask)
+
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(top_mask, "size:y", screen.y * 0.5, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(bottom_mask, "position:y", screen.y * 0.5, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(bottom_mask, "size:y", screen.y * 0.5, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	await tw.finished
+	await get_tree().create_timer(0.08).timeout
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _on_growth_pressed() -> void:
@@ -693,6 +796,12 @@ func _on_growth_pressed() -> void:
 
 func _start_game_dev() -> void:
 	GameState.dev_mode = true
+	GameState.skip_beginning = true
+	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+
+func _start_game_test() -> void:
+	GameState.dev_mode = true
+	GameState.skip_beginning = true
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _open_city_builder() -> void:

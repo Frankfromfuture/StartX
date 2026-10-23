@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": [
+    "Four-edge card moves",
+    "All stacks retain 48 spacing and slide inward",
+    "Split, merge and overflowing stacks stay inside",
+    "Production, pack placement and unpacking stay inside",
+    "Automatic movement and overshoot stay inside"
+  ]
+}

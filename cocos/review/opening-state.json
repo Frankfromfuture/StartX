@@ -1,0 +1,125 @@
+{
+  "ready": true,
+  "error": "",
+  "modal": "none",
+  "zoom": 1,
+  "wide": true,
+  "page": 0,
+  "pageCount": 1,
+  "card": {
+    "x": 400,
+    "y": 250,
+    "width": 280,
+    "height": 280
+  },
+  "position": {
+    "x": -180,
+    "y": 60
+  },
+  "cards": [
+    {
+      "uid": 1,
+      "id": "founder",
+      "sid": 2,
+      "stored": 0,
+      "elapsed": 0,
+      "workRequired": 0,
+      "funds": 15,
+      "uses": -1,
+      "name": "创始人",
+      "position": {
+        "x": -180,
+        "y": 60
+      },
+      "bounds": {
+        "x": 400,
+        "y": 250,
+        "width": 280,
+        "height": 280
+      }
+    }
+  ],
+  "packs": [
+    {
+      "uid": 3,
+      "id": "garage_pack",
+      "x": 160,
+      "y": 60,
+      "opened": false,
+      "contents": [
+        "p1_office",
+        "cash",
+        "cash",
+        "cash",
+        "cash",
+        "cash",
+        "p1_neighborhood",
+        "p1_wholesale"
+      ],
+      "bounds": {
+        "x": 712,
+        "y": 222,
+        "width": 336,
+        "height": 336
+      }
+    }
+  ],
+  "cash": 0,
+  "month": 1,
+  "models": [],
+  "tasks": [
+    "main_start"
+  ],
+  "rp": 0,
+  "notice": "点击车库卡包拆出第一张卡",
+  "links": [],
+  "pan": {
+    "x": 0,
+    "y": 0
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1440,
+    "height": 900
+  },
+  "panelText": [],
+  "controls": {
+    "Book": {
+      "x": 1024,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    },
+    "Details": {
+      "x": 1102,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    },
+    "ZoomOut": {
+      "x": 1180,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    },
+    "ZoomIn": {
+      "x": 1258,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    },
+    "Reset": {
+      "x": 1336,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    },
+    "Pack": {
+      "x": 40,
+      "y": 808,
+      "width": 64,
+      "height": 64
+    }
+  }
+}

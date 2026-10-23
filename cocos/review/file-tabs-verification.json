@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "mobile": false,
+      "drawerWidth": 330,
+      "checks": [
+        "Vertical file tabs, left slide-out, switch/retract, maximum one third width",
+        "Task group folding and scrolling stay inside the drawer",
+        "Shared card/grid plane at tilted view, after zoom and pan",
+        "Infinite canvas pan of 2800 pixels preserves card world positions"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "mobile": true,
+      "drawerWidth": 130,
+      "checks": [
+        "Vertical file tabs, left slide-out, switch/retract, maximum one third width",
+        "Task group folding and scrolling stay inside the drawer",
+        "Shared card/grid plane at tilted view, after zoom and pan",
+        "Touch picking and dropping at the same tilted angle"
+      ]
+    }
+  ],
+  "errors": []
+}

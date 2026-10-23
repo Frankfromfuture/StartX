@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "desktop",
+      "cardScale": 1.22,
+      "damage": {
+        "font": "LilitaOne-Regular",
+        "sameAsHud": false,
+        "system": false,
+        "size": 76,
+        "actual": 76,
+        "text": "-5.0",
+        "bubbleWidth": 220
+      },
+      "returnFrames": 49,
+      "maximumStep": 17.154726771044196,
+      "cameraRestored": true,
+      "normalScaleRestored": true,
+      "returnGestureIgnored": true
+    },
+    {
+      "name": "portrait",
+      "cardScale": 1.22,
+      "damage": {
+        "font": "LilitaOne-Regular",
+        "sameAsHud": false,
+        "system": false,
+        "size": 76,
+        "actual": 82,
+        "text": "-5.0",
+        "bubbleWidth": 220
+      },
+      "returnFrames": 40,
+      "maximumStep": 6.839315369325291,
+      "cameraRestored": true,
+      "normalScaleRestored": true,
+      "returnGestureIgnored": true
+    }
+  ],
+  "errors": []
+}

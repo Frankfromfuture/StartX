@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Original baked face, font, geometry and capacity 5 reused",
+    "Desktop drag/lift/foil and detail hit test",
+    "Portrait rendering and tap detail"
+  ],
+  "errors": []
+}

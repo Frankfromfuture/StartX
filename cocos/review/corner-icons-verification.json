@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "desktop: two unframed vector icons in bottom corners, 44px targets, four previous controls absent, research opens and product drag-to-sale works",
+    "portrait: two unframed vector icons in bottom corners, 44px targets, four previous controls absent, research opens and product drag-to-sale works"
+  ],
+  "errors": []
+}

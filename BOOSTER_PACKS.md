@@ -2,7 +2,7 @@
 
 > 基于 `Stacklands_like_Enterprise_Resource_Management_GDD_CN.pdf` 第 6.1 节整理。
 > 规则：每包 3–5 张卡，每个 slot 有独立概率池；**Idea 卡一次性掉落**，已拥有则替换为默认资源；和平/教学模式下敌人 slot 自动替换为默认资源。
-> 「切片」标注是否已在当前 MVP（`game/data/packs.json`）中实现。
+> 本文为早期卡包设计稿，当前卡包配置以 `cocos/data/startx_data.xlsx` 的 `packs` 工作表为准。
 
 ---
 
@@ -123,6 +123,6 @@ type PackSlot = {
 };
 ```
 
-切片实现见 `game/data/packs.json`（当前仅 `sales_growth` 一包）。
+当前实现见 `cocos/data/startx_data.xlsx` 的 `packs` 工作表。
 
 图例：✅ 已实现 ｜ 🔶 已实现但简化 ｜ 其余为待后续分层扩展。

@@ -1,0 +1,63 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "scenario": "desktop",
+      "widths": {
+        "primary": 245,
+        "secondary": 205.8,
+        "settings": 58.8
+      },
+      "titleHeld": {
+        "scale": 0.94,
+        "fill": [
+          224,
+          215,
+          189
+        ],
+        "pressed": true
+      },
+      "settingsHeld": {
+        "scale": 0.94,
+        "fill": [
+          222,
+          218,
+          209
+        ],
+        "pressed": true
+      },
+      "refreshRestores": true,
+      "closedPageRestores": true,
+      "savedCards": 20,
+      "account": 40,
+      "view": {
+        "zoom": 0.5741790406037912,
+        "pitch": 1,
+        "centerX": 594.4269214387423,
+        "centerY": -82.86261014823258
+      }
+    },
+    {
+      "scenario": "portrait",
+      "touchHeld": {
+        "scale": 0.94,
+        "fill": [
+          224,
+          187,
+          65
+        ],
+        "pressed": true
+      },
+      "account": 40,
+      "touchCancelRestores": true
+    }
+  ],
+  "errors": [],
+  "modelChecks": [
+    "Full progress round trip",
+    "Production continuation",
+    "Unique IDs after restoration",
+    "Invalid save fallback",
+    "Battle entry restoration"
+  ]
+}

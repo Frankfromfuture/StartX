@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "errors": [],
+  "viewports": [
+    "1440×900",
+    "390×844"
+  ],
+  "checks": [
+    "Final detail content boxes and original card descriptions",
+    "Original opening cards, independent bottom icons and pack picker"
+  ]
+}

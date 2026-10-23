@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 40,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 40
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 40,
+          "text": "HP: $50.0\nATK: 5",
+          "actual": 40
+        }
+      ],
+      "leftInset": 67.77777777777777,
+      "rightInset": 67.77777777777783,
+      "overlaps": 0,
+      "minVerticalGap": 15.480873918007887,
+      "frames": 213,
+      "attackers": [
+        "player",
+        "rival"
+      ]
+    },
+    {
+      "screen": "portrait",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 40,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 43.33333333333333
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 40,
+          "text": "HP: $50.0\nATK: 6",
+          "actual": 43.33333333333333
+        }
+      ],
+      "leftInset": 24.009009009009,
+      "rightInset": 24.009009009008977,
+      "overlaps": 0,
+      "minVerticalGap": 5.490192657100238,
+      "frames": 281,
+      "attackers": [
+        "player",
+        "rival"
+      ]
+    }
+  ],
+  "errors": []
+}

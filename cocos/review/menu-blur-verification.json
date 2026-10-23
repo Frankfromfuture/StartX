@@ -1,0 +1,457 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "menu": "settings menu",
+      "width": 1440,
+      "height": 900,
+      "blur": [
+        0.004166666666666667,
+        0.006666666666666667,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        768,
+        480
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 0
+    },
+    {
+      "viewport": "desktop",
+      "menu": "settings submenu",
+      "width": 1440,
+      "height": 900,
+      "blur": [
+        0.004166666666666667,
+        0.006666666666666667,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        768,
+        480
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 0
+    },
+    {
+      "viewport": "desktop",
+      "menu": "resized submenu",
+      "width": 708,
+      "height": 556,
+      "blur": [
+        0.00847457627118644,
+        0.01079136690647482,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        708,
+        556
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 2.8980721594962233e-05
+    },
+    {
+      "viewport": "desktop",
+      "menu": "returned settings menu",
+      "width": 708,
+      "height": 556,
+      "blur": [
+        0.00847457627118644,
+        0.01079136690647482,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        708,
+        556
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 2.3711499579803785e-05
+    },
+    {
+      "viewport": "desktop",
+      "menu": "business models drawer",
+      "width": 708,
+      "height": 556,
+      "blur": [
+        0.00847457627118644,
+        0.01079136690647482,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        708,
+        556
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 2.8541619485622505e-05
+    },
+    {
+      "viewport": "desktop",
+      "menu": "research panel",
+      "width": 708,
+      "height": 556,
+      "blur": [
+        0.00847457627118644,
+        0.01079136690647482,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        708,
+        556
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 3.0298027127173555e-05
+    },
+    {
+      "viewport": "portrait",
+      "menu": "homepage settings",
+      "width": 390,
+      "height": 844,
+      "blur": [
+        0.015384615384615384,
+        0.0071090047393364926,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        355,
+        768
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 5.634014428324008e-05
+    },
+    {
+      "viewport": "portrait",
+      "menu": "settings menu",
+      "width": 390,
+      "height": 844,
+      "blur": [
+        0.015384615384615384,
+        0.0071090047393364926,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        355,
+        768
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 5.634014428324008e-05
+    },
+    {
+      "viewport": "portrait",
+      "menu": "settings submenu",
+      "width": 390,
+      "height": 844,
+      "blur": [
+        0.015384615384615384,
+        0.0071090047393364926,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        355,
+        768
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 5.634014428324008e-05
+    },
+    {
+      "viewport": "portrait",
+      "menu": "returned settings menu",
+      "width": 390,
+      "height": 844,
+      "blur": [
+        0.015384615384615384,
+        0.0071090047393364926,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        355,
+        768
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 5.634014428324008e-05
+    },
+    {
+      "viewport": "portrait",
+      "menu": "business models drawer",
+      "width": 390,
+      "height": 844,
+      "blur": [
+        0.015384615384615384,
+        0.0071090047393364926,
+        0.94,
+        0.42
+      ],
+      "texture": [
+        355,
+        768
+      ],
+      "cameraRestored": true,
+      "foreground": [
+        {
+          "name": "Panel",
+          "opacity": 255,
+          "layer": 11
+        },
+        {
+          "name": "Scrim",
+          "opacity": 255,
+          "layer": 10
+        },
+        {
+          "name": "Toolbar",
+          "opacity": 255,
+          "layer": 9
+        },
+        {
+          "name": "TaskDrawer",
+          "opacity": 255,
+          "layer": 8
+        }
+      ],
+      "layer": 7,
+      "maskError": 3.0048076951061375e-05
+    }
+  ],
+  "errors": []
+}

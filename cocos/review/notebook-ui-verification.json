@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop: Godot stage grouping/counts/placeholders, original task sections/folds/status, mouse descriptions, live recipe discovery and original formula",
+    "Portrait touch: overlap switching, Godot groups/counts/status and tap descriptions constrained within one third width"
+  ],
+  "errors": []
+}

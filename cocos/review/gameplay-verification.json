@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "results": [
+    "Desktop: original opening, four unpack taps, resource production, stack split, product/customer sale, paid pack, recipe book and resized context menu",
+    "390×844 touch: 44px controls, long press/details, cancelled and committed drags, pinch, icon zoom/reset, original pack opening and independent pack button"
+  ],
+  "errors": [],
+  "engineWarnings": [
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchcancel event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "purchaseSource": {
+        "x": 294.75,
+        "y": 91
+      },
+      "animationSource": {
+        "x": 294.75,
+        "y": 91
+      },
+      "slide": true,
+      "landed": true,
+      "chargedOnce": true
+    },
+    {
+      "viewport": "portrait-scrolled",
+      "purchaseSource": {
+        "x": 194.99999999999991,
+        "y": 81.66666666666663
+      },
+      "animationSource": {
+        "x": 195,
+        "y": 81.66666666666652
+      },
+      "slide": true,
+      "landed": true,
+      "chargedOnce": true
+    }
+  ],
+  "resourceCheck": {
+    "passed": true,
+    "normalBalances": [
+      50,
+      47,
+      26
+    ],
+    "errors": []
+  },
+  "fixtureCorrection": "Origin checks passed in both viewports. The test seeded an account above its 50 cash capacity, causing only missing badge errors for 100, 97 and 76. Normal balance sprites were verified separately; future fixture seed corrected to 50."
+}

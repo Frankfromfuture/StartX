@@ -1,0 +1,32 @@
+{
+  "name": "startx-card-sample",
+  "uuid": "8930c395-8eab-48d3-8b6c-1b3f1fd8f43c",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "sync:data": "node tools/sync-content.cjs",
+    "test:data": "node tests/content-sync.cjs",
+    "build:web": "node tools/build.cjs web-mobile",
+    "build:wechat": "node tools/build.cjs wechatgame",
+    "preview": "node tools/serve.cjs",
+    "test:ui": "node tests/notebook-ui.cjs",
+    "test:canvas": "node tests/infinite-canvas.cjs",
+    "test:rules": "node tests/rules.cjs",
+    "test:progress": "node tests/progress.cjs",
+    "test:game": "node tests/gameplay.cjs",
+    "test:hud": "node tests/notebook-ui.cjs",
+    "test:tabs": "node tests/file-tabs.cjs",
+    "test:notebook": "node tests/notebook-data.cjs",
+    "test:audio": "node tests/audio.cjs",
+    "test:compact-hud": "node tests/compact-hud.cjs"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "1.0.13",
+    "fast-xml-parser": "5.11.2",
+    "fflate": "0.8.3",
+    "playwright": "1.56.1",
+    "typescript": "5.4.5"
+  }
+}

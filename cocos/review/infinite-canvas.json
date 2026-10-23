@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "results": [
+    "Pan beyond former boundaries; zoom and resize preserve world positions; overview reset returns cards to view",
+    "Corrected dynamic labels: desktop detail and portrait pack list screenshots"
+  ],
+  "errors": []
+}

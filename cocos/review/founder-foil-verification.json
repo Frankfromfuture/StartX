@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "build": "npm run typecheck and one npm run build:web succeeded",
+  "initialCards": [
+    {
+      "id": "founder",
+      "bounds": {
+        "x": 633.9,
+        "y": 363.9,
+        "width": 172.20000000000005,
+        "height": 172.20000000000005
+      }
+    },
+    {
+      "id": "p3_account",
+      "bounds": {
+        "x": 843,
+        "y": 573,
+        "width": 172.20000000000005,
+        "height": 172.2
+      }
+    }
+  ],
+  "materials": [
+    {
+      "id": "founder",
+      "customMaterial": true,
+      "view": {
+        "x": 0,
+        "y": 0.43999999999999995,
+        "z": 0.32,
+        "w": 0.12
+      }
+    },
+    {
+      "id": "p3_account",
+      "customMaterial": false,
+      "view": null
+    }
+  ],
+  "checks": [
+    "Founder view-dependent shader rendered at initial, panned, zoomed and tilted views",
+    "Pan preserved founder world position",
+    "Ordinary account keeps default material and drag displacement on tilted board"
+  ],
+  "errors": [],
+  "fixtureNote": "Initial regression drag was outside viewport after large zoom; checked ordinary card separately within viewport.",
+  "pixelComparison": {
+    "founder": {
+      "meanInteriorRGBChange": 9.249,
+      "meanBorderRGBChange": 125.074,
+      "meanBorderSaturation": 0.762
+    },
+    "p3_account": {
+      "meanInteriorRGBChange": 0.0
+    }
+  }
+}

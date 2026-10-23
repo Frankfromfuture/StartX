@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "results": [
+    "Original opening: founder, free pack, five cash, resource production, durability, discovery RP",
+    "All 22 original recipes: priority, ingredients, workforce, outputs, sale revenue and bank persistence",
+    "Splitting/rejoining a stack preserves progress on the resource",
+    "Account capacity 50, withdrawal 5, cash-first spending and conserved balances",
+    "All 10 packs use the preserved source order, original unlock gates and valid reserved card pools",
+    "Supply output reaches compatible target stack and records task progress",
+    "Monthly payroll, insolvency and capacity cleanup settlement"
+  ]
+}

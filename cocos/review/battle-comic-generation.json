@@ -1,0 +1,24 @@
+{
+  "generator": "image_gen.imagegen",
+  "source": "/Users/frankfan/.codex/generated_images/01a163f8-633c-72e1-ba4d-abffd5e89ce3/exec-a9fde2ec-c026-4b20-b71b-e5c9f296e3d0.png",
+  "asset": "assets/content/ui/battle-bubble-comic.png",
+  "transparent": true,
+  "pixelsPreserved": true,
+  "displaySize": [
+    280,
+    175.24290220820188
+  ],
+  "brief": "Asymmetrical comic impact frame: unequal broad tips, irregular gaps, different top/bottom and left/right contours. Current display size and motion preserved.",
+  "prompt": "Use case: illustration-story\nAsset type: transparent PNG damage-number impact frame for a hand-drawn business card game.\nPrimary request: Create a NEW distinctly ASYMMETRICAL comic impact bubble. The previous frame in the reference is too symmetric. Use it only for the cream paper, black brush ink, ochre and brick-red palette; completely redesign its silhouette.\nComposition: approximately 1.6:1 width to height, full and plump, sparse large tips with irregular spacing. A hand-drawn, lopsided explosion: one dominant broad spike projects toward upper left, a longer narrow spike projects near lower right, a shallow curved shoulder at upper right, a blunt short notch along left bottom. Other broad points vary strongly in length, width and lean. The top and bottom contours must clearly differ; the left and right contours must clearly differ. About 9 to 11 broad points total, no small serrations. No tip directly opposite a matching tip. No cardinal-axis star pattern. No rotational or mirror symmetry. Do NOT put a spike at each of the four cardinal directions.\nKeep a large clean light ivory center centered in the image for the game's dynamic damage numbers, with comfortable empty space. Full frame fits inside transparent padding.\nStyle: lively hand-inked European vintage comic, chunky imperfect black brush outline, modest red and ochre accents on a few nonmatching edges, subtle cream paper texture inside. Deliberate irregular hand-drawn energy, not a geometric star or logo.\nConstraints: genuinely transparent background outside; no text, numbers, lettering, watermark, shadows, speed rays, extra debris or halftone clouds. Keep large readable sparse shapes. This must visibly look irregular and unbalanced in its edge rhythm while the clear number area stays centered.",
+  "width": 1586,
+  "height": 992,
+  "rendering": {
+    "outlineWorldWidth": 5.2,
+    "outlineGeometry": "Original PNG outer alpha contour, 119 points",
+    "damageFontSize": 82,
+    "damageFormat": "integer",
+    "statsFontSize": 52,
+    "statsTopInset": 36,
+    "launch": "Victim center, grow over 0.42s, rise 268 units over 0.55s, drift 18 units, fade 0.9-1.3s"
+  }
+}

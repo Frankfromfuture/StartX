@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "spacing": 48,
+      "correctionDistance": 48,
+      "sampledFrames": 28,
+      "smoothGroupSlide": true,
+      "settlesInsideBoard": true
+    },
+    {
+      "viewport": "portrait",
+      "spacing": 48,
+      "correctionDistance": 48,
+      "sampledFrames": 28,
+      "smoothGroupSlide": true,
+      "settlesInsideBoard": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  }
+}

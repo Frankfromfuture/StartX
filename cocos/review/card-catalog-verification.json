@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "history": {
+        "unlocked": 16,
+        "total": 53
+      },
+      "blur": {
+        "width": 768,
+        "height": 480,
+        "range": 255,
+        "paused": true,
+        "kernel": {
+          "x": 0.004166666666666667,
+          "y": 0.006666666666666667,
+          "z": 0.94,
+          "w": 0.42
+        },
+        "mask": true
+      },
+      "columns": 8,
+      "lockedOnlyBacks": true,
+      "threeSorts": true,
+      "scrollOffset": 350,
+      "previewReturnsToSamePosition": true,
+      "boardLongPressRegression": true
+    },
+    {
+      "viewport": "portrait",
+      "history": {
+        "unlocked": 16,
+        "total": 53
+      },
+      "blur": {
+        "width": 355,
+        "height": 768,
+        "range": 255,
+        "paused": true,
+        "kernel": {
+          "x": 0.015384615384615384,
+          "y": 0.0071090047393364926,
+          "z": 0.94,
+          "w": 0.42
+        },
+        "mask": true
+      },
+      "columns": 3,
+      "lockedOnlyBacks": true,
+      "threeSorts": true,
+      "scrollOffset": 590.7692307692308,
+      "previewReturnsToSamePosition": true,
+      "boardLongPressRegression": false
+    }
+  ],
+  "errors": [],
+  "build": "TypeScript check passed; complete web-mobile build passed after correcting GLSL ES 1.0 integer compatibility",
+  "rarity": "Existing acquisition stage and card-pack option weights; no draw-rule changes"
+}

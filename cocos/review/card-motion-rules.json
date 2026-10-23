@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "distributions": [
+    {
+      "viewport": "portrait",
+      "source": "pack",
+      "verticalFraction": 0.799,
+      "horizontalFraction": 0.20099999999999996,
+      "samples": 1000
+    },
+    {
+      "viewport": "portrait",
+      "source": "production",
+      "verticalFraction": 0.783,
+      "horizontalFraction": 0.21699999999999997,
+      "samples": 1000
+    },
+    {
+      "viewport": "landscape",
+      "source": "pack",
+      "verticalFraction": 0.29,
+      "horizontalFraction": 0.71,
+      "samples": 1000
+    },
+    {
+      "viewport": "landscape",
+      "source": "production",
+      "verticalFraction": 0.32,
+      "horizontalFraction": 0.6799999999999999,
+      "samples": 1000
+    }
+  ],
+  "checks": [
+    "Viewport weights apply to real pack openings and production, with random signs and angles",
+    "Resize updates weights immediately",
+    "Matching hints and drops agree; incompatible targets retain their slide origin",
+    "Full accounts preserve cash and sale cash still exits upper-left"
+  ]
+}

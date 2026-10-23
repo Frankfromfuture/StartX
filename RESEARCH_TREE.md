@@ -201,7 +201,7 @@ type ResearchState = {
 6. **卡包改造**：`packs.json` 的 Idea slot 换成"研究资料"（一次性 +RP）。
 7. 把"首次发现闪光"保留为**解锁节点时**的庆祝果汁。
 
-数据建议落在 `game/data/research.json`（节点定义）。
+数据建议落在 `cocos/data/research.json`（节点定义）。
 
 ---
 

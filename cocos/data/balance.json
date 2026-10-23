@@ -1,0 +1,9 @@
+{
+  "start_cash": 50,
+  "month_seconds": 180.0,
+  "office_opex": 1,
+  "emergency_seconds": 30.0,
+  "discovery_reward": 1,
+  "research_discovery_reward": 12,
+  "start_cards": ["founder", "sales_rep", "dev_rep", "admin_rep", "market_lead_pool", "office"]
+}

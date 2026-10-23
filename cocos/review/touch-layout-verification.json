@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "reference": "User supplied Godot screenshot; top pack covers retained per latest instruction",
+  "desktop": {
+    "passed": true,
+    "checks": [
+      "Desktop: company task tab opens upward",
+      "Desktop: original task sections",
+      "Desktop: task group folds",
+      "Desktop: business model tab opens notebook",
+      "Desktop: upper view control changes board angle",
+      "Desktop: original research button opens research",
+      "Desktop: original gear opens options",
+      "Desktop: original opening pack still produces nine cards",
+      "Desktop: drag to resource still produces customers",
+      "Desktop: dragging a customer to the original cart sells it",
+      "Mobile: Book is at least 44 CSS pixels",
+      "Mobile: Tasks is at least 44 CSS pixels",
+      "Mobile: ViewFront is at least 44 CSS pixels",
+      "Mobile: ViewBack is at least 44 CSS pixels",
+      "Mobile: ZoomIn is at least 44 CSS pixels",
+      "Mobile: ZoomOut is at least 44 CSS pixels",
+      "Mobile: ResearchPanel is at least 44 CSS pixels",
+      "Mobile: SellZone is at least 44 CSS pixels",
+      "Mobile: Settings is at least 44 CSS pixels"
+    ]
+  },
+  "touch": {
+    "passed": true,
+    "checks": [
+      "Original folder tabs, right vertical view/zoom controls, research/cart and gear; all targets at least 44 CSS px",
+      "Touch opens task/business notebooks and folds original task groups",
+      "Touch controls change view/zoom and open research/options",
+      "Card and board taps show original text in the dark bottom strip",
+      "Opening the original pack updates task progress and shows completion text"
+    ],
+    "errors": []
+  },
+  "builds": {
+    "web": "build/web-mobile",
+    "wechat": "build/wechatgame",
+    "mainBytes": 1822347,
+    "wechatRuntimeVerified": false
+  }
+}

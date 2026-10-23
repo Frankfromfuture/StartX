@@ -1,0 +1,232 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "fresh": {
+        "canContinue": false,
+        "start": {
+          "text": "开始创业  →",
+          "width": 350,
+          "height": 66,
+          "font": 29,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 540,
+          "active": true
+        },
+        "resume": {
+          "text": "继续创业  →",
+          "width": 350,
+          "height": 76,
+          "font": 32,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 450,
+          "active": false
+        },
+        "catalog": {
+          "text": "图鉴",
+          "width": 294,
+          "height": 48,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 615,
+          "active": true
+        },
+        "logoCenterY": 270
+      },
+      "resumed": {
+        "canContinue": true,
+        "start": {
+          "text": "开始创业",
+          "width": 294,
+          "height": 48,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 615,
+          "active": true
+        },
+        "resume": {
+          "text": "继续创业  →",
+          "width": 350,
+          "height": 66,
+          "font": 29,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 540,
+          "active": true
+        },
+        "catalog": {
+          "text": "图鉴",
+          "width": 294,
+          "height": 48,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 677,
+          "active": true
+        },
+        "logoCenterY": 270
+      },
+      "short": {
+        "canContinue": true,
+        "start": {
+          "text": "开始创业",
+          "width": 205.59839999999994,
+          "height": 33.391304347826086,
+          "font": 13.91304347826087,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 244.17391304347828,
+          "active": true
+        },
+        "resume": {
+          "text": "继续创业  →",
+          "width": 244.75999999999996,
+          "height": 45.913043478260875,
+          "font": 20.173913043478258,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 192,
+          "active": true
+        },
+        "catalog": {
+          "text": "图鉴",
+          "width": 205.59839999999994,
+          "height": 33.391304347826086,
+          "font": 13.91304347826087,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 287.30434782608694,
+          "active": true
+        },
+        "logoCenterY": 96
+      },
+      "continuePreservesGame": true,
+      "collectionReturnsToOrigin": true
+    },
+    {
+      "viewport": "portrait",
+      "fresh": {
+        "canContinue": false,
+        "start": {
+          "text": "开始创业  →",
+          "width": 304.2,
+          "height": 66,
+          "font": 29,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 506.4,
+          "active": true
+        },
+        "resume": {
+          "text": "继续创业  →",
+          "width": 189.58333333333331,
+          "height": 41.166666666666664,
+          "font": 17.333333333333332,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 422,
+          "active": false
+        },
+        "catalog": {
+          "text": "图鉴",
+          "width": 255.528,
+          "height": 47.99999999999999,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 581.4,
+          "active": true
+        },
+        "logoCenterY": 253.2
+      },
+      "resumed": {
+        "canContinue": true,
+        "start": {
+          "text": "开始创业",
+          "width": 255.528,
+          "height": 47.99999999999999,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 581.4,
+          "active": true
+        },
+        "resume": {
+          "text": "继续创业  →",
+          "width": 304.2,
+          "height": 66,
+          "font": 29,
+          "color": [
+            255,
+            213,
+            74
+          ],
+          "centerY": 506.4,
+          "active": true
+        },
+        "catalog": {
+          "text": "图鉴",
+          "width": 255.528,
+          "height": 47.99999999999999,
+          "font": 20,
+          "color": [
+            255,
+            244,
+            215
+          ],
+          "centerY": 643.4,
+          "active": true
+        },
+        "logoCenterY": 253.2
+      },
+      "short": null,
+      "continuePreservesGame": true,
+      "collectionReturnsToOrigin": true
+    }
+  ],
+  "errors": []
+}

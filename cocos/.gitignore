@@ -1,0 +1,15 @@
+/library/
+/temp/
+/profiles/
+/local/
+/build/
+/node_modules/
+/.venv/
+*.log
+
+# Local test captures and intermediate diagnostics
+/output/
+/review/*.png
+/review/*-import-backup.txt
+/review/*-progress.json
+/review/*-diagnostic.json

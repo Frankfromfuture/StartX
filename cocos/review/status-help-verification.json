@@ -1,0 +1,265 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "square",
+      "tips": [
+        {
+          "key": "Stage",
+          "text": "创业阶段\n显示当前创业阶段，随公司估值提升而变化。完成公司任务可解锁更多卡包。",
+          "bounds": {
+            "x": 12,
+            "y": 46.5,
+            "width": 320,
+            "height": 102.72000000000003
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 18,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Month",
+          "text": "月份\n显示当前月份。获得办公室后开始计时，顶部进度条走完时结算工资。",
+          "bounds": {
+            "x": 138.25104370117185,
+            "y": 46.5,
+            "width": 320,
+            "height": 102.72000000000003
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 18,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Supply",
+          "text": "供应链\n前一项是已连接的供应链数量，后一项是连接上限。连接后，产出会自动送入目标牌堆。",
+          "bounds": {
+            "x": 288.0986526489258,
+            "y": 46.5,
+            "width": 319.99999999999994,
+            "height": 102.72000000000003
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 18,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Space",
+          "text": "空间\n前一项是占用空间的卡牌数量，后一项是空间上限。散装现金不占空间；月末超出上限时需要清理卡牌。",
+          "bounds": {
+            "x": 432.23276824951176,
+            "y": 46.5,
+            "width": 320,
+            "height": 102.72000000000003
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 18,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Cash",
+          "text": "现金\n前一项是本月工资，后一项是可用现金总额（含账户）。月末先扣散装现金，再扣账户现金。",
+          "bounds": {
+            "x": 568,
+            "y": 46.5,
+            "width": 320,
+            "height": 102.72000000000003
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 18,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        }
+      ],
+      "toggle": true,
+      "outsideDismiss": true,
+      "noPause": true,
+      "settingsWorks": true
+    },
+    {
+      "viewport": "portrait",
+      "tips": [
+        {
+          "key": "Stage",
+          "text": "创业阶段\n显示当前创业阶段，随公司估值提升而变化。完成公司任务可解锁更多卡包。",
+          "bounds": {
+            "x": 11.999999999999988,
+            "y": 46.083333333333215,
+            "width": 319.99999999999994,
+            "height": 102.7200000000001
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 17.875,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Month",
+          "text": "月份\n显示当前月份。获得办公室后开始计时，顶部进度条走完时结算工资。",
+          "bounds": {
+            "x": 11.999999999999988,
+            "y": 46.083333333333215,
+            "width": 319.99999999999994,
+            "height": 102.7200000000001
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 17.875,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Supply",
+          "text": "供应链\n前一项是已连接的供应链数量，后一项是连接上限。连接后，产出会自动送入目标牌堆。",
+          "bounds": {
+            "x": 49.63246383666988,
+            "y": 46.083333333333215,
+            "width": 320.00000000000006,
+            "height": 102.7200000000001
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 17.875,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Space",
+          "text": "空间\n前一项是占用空间的卡牌数量，后一项是空间上限。散装现金不占空间；月末超出上限时需要清理卡牌。",
+          "bounds": {
+            "x": 57.99999999999998,
+            "y": 46.083333333333215,
+            "width": 319.99999999999994,
+            "height": 102.7200000000001
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 17.875,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        },
+        {
+          "key": "Cash",
+          "text": "现金\n前一项是本月工资，后一项是可用现金总额（含账户）。月末先扣散装现金，再扣账户现金。",
+          "bounds": {
+            "x": 57.99999999999998,
+            "y": 46.083333333333215,
+            "width": 319.99999999999994,
+            "height": 102.7200000000001
+          },
+          "labels": [
+            {
+              "font": 18,
+              "actual": 17.875,
+              "width": 292,
+              "height": 25
+            },
+            {
+              "font": 15,
+              "actual": 15,
+              "width": 292,
+              "height": 49.72
+            }
+          ]
+        }
+      ],
+      "toggle": true,
+      "outsideDismiss": true,
+      "noPause": true,
+      "settingsWorks": true
+    }
+  ],
+  "errors": [],
+  "build": "Updated UI font subset; TypeScript check and one complete web-mobile build passed"
+}

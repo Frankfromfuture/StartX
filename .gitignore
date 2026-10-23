@@ -1,24 +1,17 @@
 .DS_Store
 
-# Godot generated/import cache
-game/.godot/
-game/.import/
-.godot/
-*.import
 *.tmp
 
 # Node dependencies and build output
 node_modules/
 dist/
 build/
-web_build/
-startx_web.zip
 
-# Local source asset packs; runtime-ready copies live under game/assets/
+# Local source asset packs; runtime assets live under cocos/
 City-Builder/
 wall Models/
 
-# Loose source copies duplicated into game/assets/
+# Loose source copies
 /1.svg
 /2.svg
 /3.svg
@@ -30,10 +23,8 @@ wall Models/
 /new.svg
 /*.ogg
 
-# Local MCP tooling
-godot-mcp/
-
 # Logs and temporary files
 *.log
 tmp/
 temp/
+.playwright-cli/

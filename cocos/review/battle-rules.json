@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": [
+    "50 cash cards form one bounded stack without changing card dimensions",
+    "Enemies move continuously on the original three-second cadence",
+    "Original entry, per-person arc/impact/return timing and initiative",
+    "Mid-turn reinforcements wait; other stacks leave the arena",
+    "Original cumulative cash deduction, victory tasks and defeat removal; battle sounds queued"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "game/data/startx_data.xlsx": "043a17258800c35f4b6895d0afd9f2e9e345b83f1bacf5f7cd97df6dd48e046b",
+  "game/data/research.json": "845536b4ec5f19e15c6b6dab7d863141bd2db9db4d9be51cc3868be36591fda1",
+  "game/data/balance.json": "36bee098dc570e7c5750d7bc1fa4bca9e1fa92403233e86f9936c4c9e1df7c25",
+  "game/scripts/Board.gd": "a0d3781d877fde26868ca6f0816af6d077a28574f4e87af983a721bf3d2c032d",
+  "game/scripts/Card.gd": "59acca760a5b108c2888e714e6a0046415e2dcfdefa273f211a8d0d2083f3dab",
+  "game/scripts/CardFaceBaker.gd": "6b908216e61e25102b05256cc54bdded07ed6af066dff9ac2c9f5fcbcd07b8e2",
+  "game/scripts/PackCard.gd": "753da579bb25911170bb0370850d868507028a5f7edcc932dd2a9580bdba6f8e",
+  "game/scripts/DataLoader.gd": "b87728b26771dd0c2d6b012e27c6c44423b0504f1c4a24962d9731709984b599"
+}

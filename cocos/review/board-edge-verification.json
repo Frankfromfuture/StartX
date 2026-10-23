@@ -1,0 +1,634 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "samples": [
+        {
+          "kind": "edge",
+          "distance": 5,
+          "point": {
+            "x": 506,
+            "y": 402
+          },
+          "opacity": 158,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            133,
+            134,
+            134
+          ],
+          "actual": [
+            133,
+            134,
+            134
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 43,
+          "point": {
+            "x": 506,
+            "y": 421
+          },
+          "opacity": 133,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            151,
+            151,
+            150
+          ],
+          "actual": [
+            151,
+            151,
+            150
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 85,
+          "point": {
+            "x": 506,
+            "y": 442
+          },
+          "opacity": 78,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            191,
+            190,
+            184
+          ],
+          "actual": [
+            191,
+            190,
+            184
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 127,
+          "point": {
+            "x": 506,
+            "y": 463
+          },
+          "opacity": 24,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            230,
+            227,
+            217
+          ],
+          "actual": [
+            230,
+            227,
+            217
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 163,
+          "point": {
+            "x": 506,
+            "y": 481
+          },
+          "opacity": 0,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            248,
+            244,
+            232
+          ],
+          "actual": [
+            247,
+            244,
+            231
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 195,
+          "point": {
+            "x": 506,
+            "y": 497
+          },
+          "opacity": 0,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            255,
+            250,
+            240
+          ],
+          "actual": [
+            255,
+            250,
+            240
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 5,
+          "point": {
+            "x": 797,
+            "y": 402
+          },
+          "opacity": 158,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            135,
+            136,
+            137
+          ],
+          "actual": [
+            135,
+            136,
+            137
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 41,
+          "point": {
+            "x": 779,
+            "y": 421
+          },
+          "opacity": 134,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            154,
+            153,
+            153
+          ],
+          "actual": [
+            154,
+            153,
+            153
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 83.00000000000045,
+          "point": {
+            "x": 758,
+            "y": 442
+          },
+          "opacity": 80,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            194,
+            192,
+            188
+          ],
+          "actual": [
+            194,
+            192,
+            188
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 125,
+          "point": {
+            "x": 737,
+            "y": 463
+          },
+          "opacity": 25,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            236,
+            232,
+            224
+          ],
+          "actual": [
+            236,
+            232,
+            223
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 163,
+          "point": {
+            "x": 718,
+            "y": 481
+          },
+          "opacity": 0,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            255,
+            250,
+            240
+          ],
+          "actual": [
+            254,
+            249,
+            239
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 195,
+          "point": {
+            "x": 702,
+            "y": 497
+          },
+          "opacity": 0,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            255,
+            250,
+            240
+          ],
+          "actual": [
+            255,
+            250,
+            240
+          ]
+        }
+      ],
+      "edgeFade": {
+        "width": 168,
+        "bands": 128,
+        "active": true,
+        "parent": "Table"
+      },
+      "tint": [
+        62,
+        66,
+        74,
+        158
+      ],
+      "tableLayer": 2,
+      "cardLayers": [
+        4,
+        7,
+        5
+      ],
+      "cardDrag": true
+    },
+    {
+      "viewport": "portrait",
+      "samples": [
+        {
+          "kind": "edge",
+          "distance": 4.615384615384755,
+          "point": {
+            "x": 68,
+            "y": 361
+          },
+          "opacity": 158,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            133,
+            134,
+            134
+          ],
+          "actual": [
+            133,
+            134,
+            134
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 41.53846153846189,
+          "point": {
+            "x": 68,
+            "y": 373
+          },
+          "opacity": 134,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            150,
+            150,
+            149
+          ],
+          "actual": [
+            150,
+            150,
+            149
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 84.61538461538476,
+          "point": {
+            "x": 68,
+            "y": 387
+          },
+          "opacity": 78,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            191,
+            190,
+            184
+          ],
+          "actual": [
+            191,
+            190,
+            184
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 124.61538461538476,
+          "point": {
+            "x": 68,
+            "y": 400
+          },
+          "opacity": 27,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            228,
+            225,
+            215
+          ],
+          "actual": [
+            229,
+            226,
+            216
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 161.5384615384619,
+          "point": {
+            "x": 68,
+            "y": 412
+          },
+          "opacity": 1,
+          "original": [
+            248,
+            244,
+            232
+          ],
+          "expected": [
+            247,
+            243,
+            231
+          ],
+          "actual": [
+            247,
+            243,
+            231
+          ]
+        },
+        {
+          "kind": "edge",
+          "distance": 195.3846153846157,
+          "point": {
+            "x": 68,
+            "y": 423
+          },
+          "opacity": 0,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            255,
+            250,
+            240
+          ],
+          "actual": [
+            255,
+            250,
+            240
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 4.615384615384755,
+          "point": {
+            "x": 258,
+            "y": 361
+          },
+          "opacity": 158,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            135,
+            136,
+            137
+          ],
+          "actual": [
+            135,
+            136,
+            137
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 41.53846153846143,
+          "point": {
+            "x": 246,
+            "y": 373
+          },
+          "opacity": 134,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            154,
+            153,
+            153
+          ],
+          "actual": [
+            153,
+            153,
+            153
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 84.61538461538476,
+          "point": {
+            "x": 232,
+            "y": 387
+          },
+          "opacity": 78,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            196,
+            194,
+            189
+          ],
+          "actual": [
+            195,
+            193,
+            188
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 124.61538461538476,
+          "point": {
+            "x": 219,
+            "y": 400
+          },
+          "opacity": 27,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            235,
+            231,
+            222
+          ],
+          "actual": [
+            235,
+            231,
+            223
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 161.53846153846143,
+          "point": {
+            "x": 207,
+            "y": 412
+          },
+          "opacity": 1,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            254,
+            249,
+            239
+          ],
+          "actual": [
+            254,
+            249,
+            239
+          ]
+        },
+        {
+          "kind": "corner",
+          "distance": 195.38461538461524,
+          "point": {
+            "x": 196,
+            "y": 423
+          },
+          "opacity": 0,
+          "original": [
+            255,
+            250,
+            240
+          ],
+          "expected": [
+            255,
+            250,
+            240
+          ],
+          "actual": [
+            255,
+            250,
+            240
+          ]
+        }
+      ],
+      "edgeFade": {
+        "width": 168,
+        "bands": 128,
+        "active": true,
+        "parent": "Table"
+      },
+      "tint": [
+        62,
+        66,
+        74,
+        158
+      ],
+      "tableLayer": 2,
+      "cardLayers": [
+        4,
+        7,
+        5
+      ],
+      "cardDrag": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  }
+}

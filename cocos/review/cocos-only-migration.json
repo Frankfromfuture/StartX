@@ -1,0 +1,34 @@
+{
+  "trash": "/Users/frankfan/.Trash/StartX-Godot-20261024-002600",
+  "removedFromProject": [
+    "game",
+    "godot-mcp",
+    "backups",
+    "web_build",
+    "startx_web.zip",
+    "cocos/tools/export-card-icons.gd",
+    "cocos/tools/export-content.gd",
+    "cocos/tools/export-hud.gd",
+    "cocos/tools/export-founder.gd",
+    "cocos/tools/create-sample.py",
+    "cocos/tools/author-game.py",
+    "cocos/tools/import-audio.py",
+    "cocos/tools/subset-font.py",
+    ".codex_tmp/startx-balance",
+    "outputs/019f9ec9-1be7-7312-8e94-5a39f90ebcaa"
+  ],
+  "canonicalWorkbook": "cocos/data/startx_data.xlsx",
+  "verified": {
+    "godotProjectAbsent": true,
+    "godotToolingAbsent": true,
+    "legacyWebBuildAbsent": true,
+    "sourceWorkbookPresent": true,
+    "runtimeSourceUsesExcel": "data/startx_data.xlsx; tools/sync-content.cjs",
+    "webBuildPassed": true,
+    "editorBuildHookExecuted": true,
+    "typecheckPassed": true,
+    "rulesPassed": true,
+    "progressPassed": true,
+    "dataSynchronizationPassed": true
+  }
+}

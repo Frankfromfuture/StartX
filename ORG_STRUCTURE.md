@@ -159,7 +159,7 @@ function throughput(u: OrgUnit): number {
 5. **HUD 组织面板**：组织图（树）视图，显示各部门人数/产能/防御。
 6. **重组决策**：季度决策卡接入。
 
-数据建议落在 `game/data/org.json`（部门模板、阈值、幅度、开销系数）。
+数据建议落在 `cocos/data/org.json`（部门模板、阈值、幅度、开销系数）。
 
 ---
 

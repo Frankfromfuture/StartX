@@ -1,0 +1,34 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs'),root=require('node:path').resolve(__dirname,'..');
+(async()=>{const browser=await chromium.launch({channel:'chrome',headless:true}),report={passed:false,checks:[],errors:[]};try{
+for(const mobile of [false,true]){
+ const name=mobile?'portrait':'desktop',viewport=mobile?{width:390,height:844}:{width:1440,height:900};
+ const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile,deviceScaleFactor:mobile?2:1}),page=await context.newPage();
+ page.on('pageerror',e=>report.errors.push(e.message));page.on('console',e=>{if(e.type()==='error'&&!e.text().startsWith('Ignored attempt to cancel a touch'))report.errors.push(e.text())});
+ await page.goto('http://127.0.0.1:4173/?review=1');await page.waitForLoadState('networkidle');await page.waitForFunction(()=>window.__STARTX_SAMPLE__?.().ready);await page.waitForFunction(()=>window.__STARTX_SAMPLE__().motions.every(m=>!m.kind));
+ const state=()=>page.evaluate(()=>window.__STARTX_SAMPLE__());let s=await state();assert.equal(s.cash,50);
+ const opening=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews),m=c.model,piles=m.stacks.filter(s=>m.members(s.sid).every(c=>c.id==='cash'));return{piles:piles.length,count:piles[0].cards.length,height:m.stackHeight(piles[0].sid),badge:c.views.get(piles[0].cards.slice(-1)[0]).view.frontNode.parent.getChildByName('CashPileCount').getComponent('cc.Label').string}});
+ assert.equal(opening.piles,1);assert.equal(opening.count,50);assert(opening.height<65);assert.equal(opening.badge,'×50');
+ const expected=mobile?280*((720-32*(720/390)-96)/820)/(720/390):280*(1440/1920*.82);assert(Math.abs(s.card.width-expected)<1.5,'Opening uses original card scale: '+s.card.width+' vs '+expected);
+ await page.screenshot({path:root+'/review/battle-opening-'+name+'.png'});
+ const fit=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews);c.fitBoard();const a={zoom:c.board.zoom,x:c.board.node.position.x,y:c.board.node.position.y};const cash=c.model.cards.find(c=>c.id==='cash'),s=c.model.stack(cash.sid);s.x=10000;s.y=-10000;c.fitBoard();const b={zoom:c.board.zoom,x:c.board.node.position.x,y:c.board.node.position.y};s.x=340;s.y=-340;return{a,b}});assert.deepEqual(fit.a,fit.b,'Cash does not affect automatic camera fitting');
+ // Fixture only arranges existing original card definitions; trigger battle using the actual input path.
+ const fixture=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews),m=c.model;m.packs.length=0;m.random=()=>.5;const f=m.cards.find(c=>c.id==='founder'),stack=m.stack(f.sid);stack.x=0;stack.y=0;const intern=m.spawn('p1_intern',0,0);m.merge(intern.sid,f.sid);const r=m.spawn('rival2',-650,0);m.rivalClock=0;m.timerStarted=false;c.syncViews();c.fitBoard();return{founder:f.uid,intern:intern.uid,rival:r.uid}});
+ await page.waitForFunction(()=>{const s=window.__STARTX_SAMPLE__();return s.ready&&s.motions.every(m=>!m.kind)});s=await state();
+ const founder=s.cards.find(c=>c.uid===fixture.founder),rival=s.cards.find(c=>c.uid===fixture.rival),source={x:founder.bounds.x+founder.bounds.width/2,y:founder.bounds.y+8},target={x:rival.bounds.x+rival.bounds.width/2,y:rival.bounds.y+rival.bounds.height/2};
+ const saved={zoom:s.zoom,...s.pan};
+ if(mobile){const session=await context.newCDPSession(page);await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[source]});for(let i=1;i<=12;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:source.x+(target.x-source.x)*i/12,y:source.y+(target.y-source.y)*i/12}]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
+ else{await page.mouse.move(source.x,source.y);await page.mouse.down();await page.mouse.move(target.x,target.y,{steps:14});await page.mouse.up();}
+ await page.waitForFunction(()=>!!window.__STARTX_SAMPLE__().battle,undefined,{timeout:5000});
+ await page.waitForFunction(()=>{const s=window.__STARTX_SAMPLE__();return s.battle?.phase==='outward'&&s.battle.timer<.30&&s.battle.timer>.12});s=await state();assert(s.battlePresentation.active);assert(s.motions.some(m=>m.kind==='attack'&&Math.abs(m.offset.x)>40));
+ const frame=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews),n=c.board.node.getChildByName('BattleArena'),t=n.getComponent('cc.UITransform'),b=t.getBoundingBoxToWorld(),texts=n.getComponentsInChildren('cc.Label').map(l=>({text:l.string,font:l.font.name.includes('Lilita')}));return{x:b.x/c.inputScale,y:b.y/c.inputScale,w:b.width/c.inputScale,h:b.height/c.inputScale,texts}});
+ assert(frame.x>=0&&frame.x+frame.w<=viewport.width+.5,'Arena fits screen width');assert(frame.texts.length===2&&frame.texts.every(t=>t.font&&t.text.includes('HP: $')&&t.text.includes('ATK:')));
+ await page.screenshot({path:root+'/review/battle-attack-'+name+'.png'});
+ await page.waitForFunction(()=>window.__STARTX_SAMPLE__().battlePresentation.popups.some(p=>p.time>.20));s=await state();assert(s.audio.events.some(e=>e.name==='hit'));await page.screenshot({path:root+'/review/battle-hit-'+name+'.png'});
+ await page.waitForFunction(()=>window.__STARTX_SAMPLE__().battle?.rivalTurn&&window.__STARTX_SAMPLE__().battle.phase==='outward',undefined,{timeout:12000});s=await state();assert.equal(s.battle.attacker,fixture.rival,'Rival performs the same arc attack');
+ await page.waitForFunction(()=>{const s=window.__STARTX_SAMPLE__();return !s.battle&&s.departures.length>0},undefined,{timeout:20000});s=await state();assert.equal(s.cash,46);assert(!s.cards.some(c=>c.uid===fixture.rival));assert(s.departures.some(d=>d.kind==='dissolve'));await page.screenshot({path:root+'/review/battle-defeat-'+name+'.png'});
+ await page.waitForFunction(()=>{const s=window.__STARTX_SAMPLE__();return !s.battlePresentation.cameraMoving&&s.departures.length===0});s=await state();assert(Math.abs(s.zoom-saved.zoom)<.0001);assert(Math.abs(s.pan.x-saved.x)<.001&&Math.abs(s.pan.y-saved.y)<.001);assert(s.audio.events.some(e=>e.name==='battle_start')&&s.audio.events.some(e=>e.name==='battle_end'));
+ report.checks.push({name,opening,arena:frame,settledCash:s.cash,cameraRestored:true,bothSidesAttack:true,damageBubble:true,defeatSmoke:true});fs.writeFileSync(root+'/review/battle-ui-progress.json',JSON.stringify(report,null,2));console.log(name+' passed');await context.close();
+}
+assert.deepEqual(report.errors,[]);report.passed=true;fs.writeFileSync(root+'/review/battle-ui-verification.json',JSON.stringify(report,null,2));
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});

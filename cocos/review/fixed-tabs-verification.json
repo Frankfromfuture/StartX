@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "baseline": [
+    {
+      "name": "Book",
+      "font": 16.5,
+      "width": 33,
+      "height": 138
+    },
+    {
+      "name": "Tasks",
+      "font": 16.5,
+      "width": 33,
+      "height": 138
+    }
+  ],
+  "square": [
+    {
+      "name": "Book",
+      "font": 16.5,
+      "width": 33,
+      "height": 138
+    },
+    {
+      "name": "Tasks",
+      "font": 16.5,
+      "width": 33,
+      "height": 138
+    }
+  ],
+  "portrait": [
+    {
+      "name": "Book",
+      "font": 13,
+      "width": 32,
+      "height": 125.99999999999994
+    },
+    {
+      "name": "Tasks",
+      "font": 13,
+      "width": 32,
+      "height": 125.99999999999994
+    }
+  ],
+  "businessTabOpens": true,
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  }
+}

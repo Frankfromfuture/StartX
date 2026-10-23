@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": [
+    "Existing prefixed/shared-string workbook produces the complete current catalog without rule changes",
+    "Card and SVG rendering work in Creator build sandbox without SharedArrayBuffer",
+    "Editing name, capacity, recipe yield, pack price/name and task updates JSON, card faces, wrapper and founder prefab; adding a card generates PNG and stable Cocos metadata",
+    "Unchanged builds reuse generated resources without rewriting them",
+    "Invalid Excel reference stops synchronization before replacing valid generated assets"
+  ]
+}

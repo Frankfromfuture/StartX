@@ -1,0 +1,10 @@
+{
+  "id": "founder",
+  "name": "创始人",
+  "description": "不用给钱，啥都能干。梦想是改变世界，合伙人是自己的猫。",
+  "salary": 0,
+  "capacity": 5,
+  "usesLeft": -1,
+  "faceSource": "tools/render-cards.cjs",
+  "materialSource": "Cocos FounderFoil"
+}

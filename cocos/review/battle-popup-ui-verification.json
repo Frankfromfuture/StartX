@@ -1,0 +1,115 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 48
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $50.0\nATK: 5",
+          "actual": 48
+        }
+      ],
+      "leftInset": 67.77777777777777,
+      "rightInset": 67.77777777777783,
+      "overlaps": 0,
+      "minVerticalGap": 12.073540047177062,
+      "frames": 262,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "popupNameGap": 10.510091549739059,
+      "popupStatOverlap": 0,
+      "popups": [
+        {
+          "victim": 153,
+          "startY": 296.44386771334206,
+          "lastY": 359,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 1,
+          "startY": 296.5991897996283,
+          "lastY": 359,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    },
+    {
+      "screen": "portrait",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 51
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $50.0\nATK: 6",
+          "actual": 51
+        }
+      ],
+      "leftInset": 24.009009009009,
+      "rightInset": 24.009009009008977,
+      "overlaps": 0,
+      "minVerticalGap": 4.2810449167147,
+      "frames": 330,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "popupNameGap": 3.7248005489197595,
+      "popupStatOverlap": 0,
+      "popups": [
+        {
+          "victim": 156,
+          "startY": 296.5260981716182,
+          "lastY": 359,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 156,
+          "startY": 296.47127813734113,
+          "lastY": 359,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 153,
+          "startY": 248.51696157527064,
+          "lastY": 311,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

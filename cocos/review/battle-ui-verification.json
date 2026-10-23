@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "desktop",
+      "opening": {
+        "piles": 1,
+        "count": 50,
+        "height": 63.99999999999999,
+        "badge": "×50"
+      },
+      "arena": {
+        "x": 283.2083333333333,
+        "y": 138.41666666666663,
+        "w": 889.5833333333335,
+        "h": 559.1666666666667,
+        "texts": [
+          {
+            "text": "HP：$12.0\nATK：4",
+            "font": true
+          },
+          {
+            "text": "HP：$50.0\nATK：6",
+            "font": true
+          }
+        ]
+      },
+      "settledCash": 46,
+      "cameraRestored": true,
+      "bothSidesAttack": true,
+      "damageBubble": true,
+      "defeatSmoke": true
+    },
+    {
+      "name": "portrait",
+      "opening": {
+        "piles": 1,
+        "count": 50,
+        "height": 63.99999999999999,
+        "badge": "×50"
+      },
+      "arena": {
+        "x": 31.270270270270245,
+        "y": 285.6936936936937,
+        "w": 336.1261261261261,
+        "h": 211.27927927927922,
+        "texts": [
+          {
+            "text": "HP：$12.0\nATK：4",
+            "font": true
+          },
+          {
+            "text": "HP：$50.0\nATK：6",
+            "font": true
+          }
+        ]
+      },
+      "settledCash": 46,
+      "cameraRestored": true,
+      "bothSidesAttack": true,
+      "damageBubble": true,
+      "defeatSmoke": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "desktop: aspect weight applied, compatible target has animated dashed outline above dragged card and merges on drop; incompatible bottom card eases away over 0.3s without merging; live resize changes flight probabilities",
+    "portrait: aspect weight applied, compatible target has animated dashed outline above dragged card and merges on drop; incompatible bottom card eases away over 0.3s without merging; cancel clears outline and preserves position"
+  ],
+  "errors": []
+}

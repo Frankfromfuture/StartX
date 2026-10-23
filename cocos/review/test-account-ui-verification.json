@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "opening": {
+    "cash": 50,
+    "cards": [
+      {
+        "id": "founder",
+        "stored": 0
+      },
+      {
+        "id": "p3_account",
+        "stored": 50
+      }
+    ]
+  },
+  "payroll": {
+    "cash": 47,
+    "balance": 46,
+    "month": 2,
+    "flights": 4,
+    "frames": 54,
+    "directAccountOrigin": true,
+    "bothTargetsReached": true,
+    "looseCashPreserved": true
+  },
+  "withdrawal": {
+    "balance": 41,
+    "looseCash": 6,
+    "totalCash": 47
+  }
+}

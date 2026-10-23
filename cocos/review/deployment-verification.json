@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "url": "https://www.iambrizo.com/startx/",
+  "title": "StartX",
+  "gameReady": true,
+  "interactive": true,
+  "reloadRestoredBalance": 45,
+  "portrait": true,
+  "errors": [],
+  "failed": [],
+  "release": "20261023-startx-01",
+  "filesVerified": 780,
+  "slashRedirect": 301,
+  "originalCatLogo": true,
+  "cocosSplashDisabled": true,
+  "brizoHomepageUnchanged": true,
+  "newsletterHealth": 405,
+  "indexSha256": "e313b7ebb1445dba29f3505c3658c139e7906b4e2becfa04e7cac03e1c8b569b"
+}

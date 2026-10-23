@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:4173/",
+  "checks": [
+    {
+      "viewport": "portrait",
+      "catalogAligned": true,
+      "drawnCard": "p1_office",
+      "battleVisible": true,
+      "hpBefore": 50,
+      "hpAfter": 48.593269312359226,
+      "cameraRestored": true
+    }
+  ],
+  "errors": []
+}

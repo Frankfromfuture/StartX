@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop: company task tab opens upward",
+    "Desktop: original task sections",
+    "Desktop: task group folds",
+    "Desktop: business model tab opens notebook",
+    "Desktop: upper view control changes board angle",
+    "Desktop: original research button opens research",
+    "Desktop: original gear opens options",
+    "Desktop: original opening pack still produces nine cards",
+    "Desktop: drag to resource still produces customers",
+    "Desktop: dragging a customer to the original cart sells it",
+    "Mobile: Book is at least 44 CSS pixels",
+    "Mobile: Tasks is at least 44 CSS pixels",
+    "Mobile: ViewFront is at least 44 CSS pixels",
+    "Mobile: ViewBack is at least 44 CSS pixels",
+    "Mobile: ZoomIn is at least 44 CSS pixels",
+    "Mobile: ZoomOut is at least 44 CSS pixels",
+    "Mobile: ResearchPanel is at least 44 CSS pixels",
+    "Mobile: SellZone is at least 44 CSS pixels",
+    "Mobile: Settings is at least 44 CSS pixels"
+  ]
+}

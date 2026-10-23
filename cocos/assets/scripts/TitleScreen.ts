@@ -1,0 +1,183 @@
+import { Color, Font, Graphics, Label, LabelOutline, Node, Sprite, SpriteFrame, UITransform, Vec2, Vec3 } from 'cc';
+import { LayoutMetrics } from './Layout';
+import { Surface } from './Surface';
+
+type Edge = 'left' | 'right' | 'top' | 'bottom';
+interface Piece { node: Node; edge: Edge; x: number; y: number; size: number; angle: number; phase: number; speed: number; depth: number; delay: number; }
+const ink = '281A26', cream = 'FFF4D7', gold = 'FFD54A';
+const color = (hex: string) => Color.fromHEX(new Color(), '#' + hex);
+
+/** Native Cocos title scene: independent art layers, responsive composition and four-edge entrances. */
+export class TitleScreen {
+    readonly node: Node;
+    private background: Node;
+    private content: Node;
+    private heading: Node;
+    private subtitle: Node;
+    private start: Node;
+    private resume: Node;
+    private catalog: Node;
+    private settings: Node;
+    private canContinue = false;
+    private metrics?: LayoutMetrics;
+    private pieces: Piece[] = [];
+    private elapsed = 0;
+    private width = 1440;
+    private height = 900;
+    private pointerX = 0;
+    private pointerY = 0;
+    private parallaxX = 0;
+    private parallaxY = 0;
+    private portrait = false;
+    private reducedMotion = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    constructor(parent: Node, private font: Font, frames: Record<string, SpriteFrame>, controls: Map<string, Node>) {
+        this.node = this.make('TitleScreen', parent, 1440, 900);
+        this.background = this.make('CityBackground', this.node, 1440, 900);
+        this.sprite(this.background, frames.city);
+        this.addPiece('Founder', 'left', 0, .9, frames.founder);
+        this.addPiece('Rival', 'right', .1, .8, frames.rival);
+        this.addPiece('Coins', 'top', .18, .6, frames.coins);
+        this.addPiece('Star', 'top', .12, .4, frames.star);
+        this.addPiece('StarSmall', 'bottom', .38, .5, frames.star);
+        this.addPiece('CoinsSmall', 'bottom', .42, .6, frames.coins);
+        this.content = this.make('TitleContent', this.node, 1440, 900);
+        this.heading = this.make('OriginalLogo', this.content, 990, 300);
+        this.sprite(this.heading, frames.logo);
+        this.subtitle = this.label('GameType', this.content, '商战互动卡牌游戏', 650, 70, 36, cream);
+        const subtitleOutline = this.subtitle.addComponent(LabelOutline); subtitleOutline.color = color(ink); subtitleOutline.width = 3;
+        this.start = this.button('Start', '开始创业  →', gold);
+        this.resume = this.button('Continue', '继续创业  →', gold);
+        this.catalog = this.button('Catalog', '图鉴', cream);
+        this.settings = this.button('Settings', '设置', cream);
+        controls.set('Title:Restart', this.start); controls.set('Title:Continue', this.resume); controls.set('Title:OpenSettings', this.settings);
+        controls.set('Title:Open:catalog', this.catalog);
+        this.node.active = false;
+    }
+    private make(name: string, parent: Node, w: number, h: number) {
+        const node = new Node(name); node.layer = parent.layer; parent.addChild(node);
+        node.addComponent(UITransform).setContentSize(w, h); return node;
+    }
+    private sprite(node: Node, frame: SpriteFrame) {
+        const sprite = node.addComponent(Sprite); sprite.spriteFrame = frame; sprite.sizeMode = Sprite.SizeMode.CUSTOM; sprite.trim = true;
+    }
+    private fit(node: Node, width: number, height: number) {
+        const size = node.getComponent(Sprite)!.spriteFrame!.rect;
+        const scale = Math.min(width / size.width, height / size.height);
+        node.getComponent(UITransform)!.setContentSize(size.width * scale, size.height * scale);
+    }
+    private label(name: string, parent: Node, text: string, w: number, h: number, size: number, hex: string, font = this.font) {
+        const node = this.make(name, parent, w, h), label = node.addComponent(Label);
+        label.font = font; label.string = text; label.fontSize = size; label.lineHeight = size * 1.2;
+        label.color = color(hex); label.horizontalAlign = Label.HorizontalAlign.CENTER; label.verticalAlign = Label.VerticalAlign.CENTER;
+        label.overflow = Label.Overflow.SHRINK; label.enableWrapText = false;
+        node.getComponent(UITransform)!.setContentSize(w, h); return node;
+    }
+    private button(name: string, text: string, hex: string) {
+        const node = this.make(name, this.content, 350, 76);
+        const shadow = this.make('Shadow', node, 350, 76); shadow.setPosition(4, -7);
+        const base = shadow.addComponent(Surface); base.fill = color(ink); base.radius = 24; base.paint();
+        const plate = this.make('Plate', node, 350, 76), surface = plate.addComponent(Surface);
+        surface.fill = color(hex); surface.stroke = color(ink); surface.lineWidth = 4; surface.radius = 24; surface.paint();
+        this.label('Text', node, text, 326, 62, 32, ink); return node;
+    }
+    private resizeButton(node: Node, w: number, h: number, font: number) {
+        node.getComponent(UITransform)!.setContentSize(w, h);
+        for (const name of ['Shadow', 'Plate']) {
+            const n = node.getChildByName(name)!; n.getComponent(UITransform)!.setContentSize(w, h);
+            const s = n.getComponent(Surface)!; s.radius = h * .28; s.lineWidth = name === 'Plate' ? Math.max(3, h * .05) : 0; s.paint();
+        }
+        const label = node.getChildByName('Text')!.getComponent(Label)!; label.fontSize = font; label.lineHeight = font * 1.2;
+        label.node.getComponent(UITransform)!.setContentSize(w - 24, h - 8);
+    }
+    private addPiece(name: string, edge: Edge, delay: number, depth: number, frame: SpriteFrame) {
+        const node = this.make(name, this.node, 280, 280);
+        this.sprite(node, frame);
+        this.pieces.push({ node, edge, x: 0, y: 0, size: 280, angle: 0, phase: Math.random() * Math.PI * 2, speed: .65 + Math.random() * .5, depth, delay });
+    }
+    show(active: boolean, home: boolean, canContinue: boolean) {
+        if (active && !this.node.active) { this.elapsed = 0; this.pointerX = this.pointerY = this.parallaxX = this.parallaxY = 0; }
+        this.canContinue = canContinue;
+        this.node.active = active; this.content.active = home; this.resume.active = canContinue;
+        if (active && home && this.metrics) this.layoutButtons(this.metrics);
+        if (active) this.tick(0);
+    }
+    private layoutButtons(metrics: LayoutMetrics) {
+        const { width: w, height: h, scale, top, bottom } = metrics;
+        const buttonW = Math.min(350 * scale, w * (this.portrait ? .78 : .29)) * .7, primaryY = -h * .1;
+        const fit = Math.min(1, Math.max(1, h * .4 - bottom - 16 * scale) / ((this.canContinue ? 161 : 99) * scale));
+        const primary = this.canContinue ? this.resume : this.start;
+        this.start.getChildByName('Text')!.getComponent(Label)!.string = this.canContinue ? '开始创业' : '开始创业  →';
+        this.start.getChildByName('Plate')!.getComponent(Surface)!.fill = color(this.canContinue ? cream : gold);
+        this.resizeButton(primary, buttonW, 66 * scale * fit, 29 * scale * fit); primary.setPosition(0, primaryY);
+        if (this.canContinue) {
+            this.resizeButton(this.start, buttonW * .84, 48 * scale * fit, 20 * scale * fit);
+            this.start.setPosition(0, primaryY - 75 * scale * fit);
+        }
+        this.resizeButton(this.catalog, buttonW * .84, 48 * scale * fit, 20 * scale * fit);
+        this.catalog.setPosition(0, primaryY - (this.canContinue ? 137 : 75) * scale * fit);
+        this.resizeButton(this.settings, 84 * scale * .7, 44 * scale, 20 * scale); this.settings.setPosition(w / 2 - 65 * scale, h / 2 - top - 36 * scale);
+        this.content.getComponentsInChildren(Graphics).forEach(graphics => graphics.model?.updateWorldBound());
+    }
+    layout(metrics: LayoutMetrics) {
+        this.metrics = metrics;
+        const { width: w, height: h, scale, top, bottom } = metrics;
+        this.width = w; this.height = h; this.portrait = w / h < 1.1;
+        this.node.getComponent(UITransform)!.setContentSize(w, h);
+        const frame = this.background.getComponent(Sprite)!.spriteFrame!, ratio = frame.originalSize.width / frame.originalSize.height;
+        const bw = Math.max(w, h * ratio), bh = bw / ratio;
+        this.background.getComponent(UITransform)!.setContentSize(bw * 1.035, bh * 1.035);
+        const subtitle = this.subtitle.getComponent(Label)!;
+        subtitle.fontSize = (this.portrait ? 26 : 36) * scale; subtitle.lineHeight = subtitle.fontSize * 1.2;
+        this.subtitle.getComponent(UITransform)!.setContentSize(Math.min(w * .84, 650 * scale), subtitle.lineHeight);
+        this.subtitle.getComponent(LabelOutline)!.width = 3 * scale;
+        const buttonH = 66 * scale;
+        const logoY = h * .2, startY = -h * .1, gap = 16 * scale;
+        // Keep the 30% and 60% centers fixed; leave room for the subtitle on short screens.
+        const logoMaxH = Math.min(h * .28, Math.max(1, 2 * (logoY - startY - buttonH / 2 - subtitle.lineHeight - gap * 2)));
+        this.fit(this.heading, this.portrait ? w * .94 : Math.min(w * .65, h * 1.08), logoMaxH);
+        this.heading.setPosition(0, logoY);
+        this.subtitle.setPosition(0, logoY - this.heading.getComponent(UITransform)!.height / 2 - gap - subtitle.lineHeight / 2);
+        this.layoutButtons(metrics);
+        const positions = this.portrait ? [
+            [-.54, 0, 1.12, -6], [.44, 0, 1.10, 6],
+            [-.35, .40, .18, -18], [.34, .39, .12, 9],
+            [-.16, -.35, .12, -14], [.18, -.40, .18, 14],
+        ] : [
+            [-.43, 0, .67, -6], [.41, 0, .65, 6],
+            [-.33, .38, .10, -18], [.33, .36, .075, 9],
+            [-.17, -.30, .075, -14], [.18, -.33, .10, 14],
+        ];
+        this.pieces.forEach((p, i) => {
+            const [x, y, size, angle] = positions[i]; p.x = x * w; p.y = y * h; p.angle = angle;
+            p.size = i < 2 ? Math.min(w * size, h * 1.08) : Math.min(w * size, h * .27);
+            // Anchor enlarged characters to the bottom corners, including safe-area insets.
+            if (i < 2) p.y = -h / 2 + bottom + p.size * (this.portrait ? .32 : .24);
+            this.fit(p.node, p.size, p.size);
+        });
+        this.tick(0);
+    }
+    pointer(point: Vec2) {
+        const p = this.node.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(point.x, point.y));
+        this.pointerX = Math.max(-1, Math.min(1, p.x / (this.width / 2))); this.pointerY = Math.max(-1, Math.min(1, p.y / (this.height / 2)));
+    }
+    tick(dt: number) {
+        if (!this.node.active) return;
+        this.elapsed += Math.min(dt, .05);
+        const response = Math.min(1, dt * 4); this.parallaxX += (this.pointerX - this.parallaxX) * response; this.parallaxY += (this.pointerY - this.parallaxY) * response;
+        this.background.setPosition(this.reducedMotion ? 0 : -this.parallaxX * 6, this.reducedMotion ? 0 : -this.parallaxY * 6);
+        for (const p of this.pieces) {
+            const t = this.reducedMotion ? 1 : Math.max(0, Math.min(1, (this.elapsed - p.delay) / .95));
+            const ease = 1 + 2.4 * Math.pow(t - 1, 3) + 1.4 * Math.pow(t - 1, 2);
+            const fromX = p.edge === 'left' ? -this.width / 2 - p.size : p.edge === 'right' ? this.width / 2 + p.size : p.x;
+            const fromY = p.edge === 'top' ? this.height / 2 + p.size : p.edge === 'bottom' ? -this.height / 2 - p.size : p.y;
+            const time = this.elapsed * p.speed + p.phase, sway = this.reducedMotion ? 0 : Math.min(1, t * t) * p.depth;
+            const amplitude = Math.min(this.width, this.height) * .008;
+            p.node.setPosition(fromX + (p.x - fromX) * ease + sway * (Math.sin(time) * amplitude + this.parallaxX * 12),
+                fromY + (p.y - fromY) * ease + sway * (Math.sin(time * 1.31) * amplitude + this.parallaxY * 9));
+            p.node.angle = p.angle + (this.reducedMotion ? 0 : Math.sin(time * .79) * 2.5 * p.depth + (1 - ease) * (p.edge === 'left' ? 18 : -18));
+        }
+    }
+    snapshot() { return { active: this.node.active, home: this.content.active, portrait: this.portrait, elapsed: this.elapsed, reducedMotion: this.reducedMotion,
+        pieces: this.pieces.map(p => ({ name: p.node.name, edge: p.edge, x: p.node.position.x, y: p.node.position.y, targetX: p.x, targetY: p.y, size: p.size, angle: p.node.angle })) }; }
+}

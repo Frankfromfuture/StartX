@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop: colored icons 10% smaller with unchanged 64px targets; real task completions queue under packs in the hint font; card/background clicks preserve reminders; four-second display fades out; research temporarily hides and pauses reminders, then resumes",
+    "Portrait touch: icons 54px with 64px targets, task text directly below packs matches footer font, normal hints remain visible, background tap preserves toast, toast expires automatically and research icon still opens"
+  ],
+  "errors": []
+}

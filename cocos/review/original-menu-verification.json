@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop: exact original six choices; Continue, Restart, Codex, Recipes, Settings, Main Menu wired; audio adjusts real SFX/music and persists preferences; shared research panel restores its own styling",
+    "Portrait touch: original six choices, transparent outer menu, bold framed buttons above 44px; cancelled press clears feedback; Continue resumes"
+  ],
+  "errors": []
+}

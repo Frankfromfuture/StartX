@@ -1,0 +1,23 @@
+{
+  "interactionChecksPassed": true,
+  "results": [
+    "390×844 touch: detail, long press, drag, zoom buttons, pinch, reset, touch cancellation; toolbar targets at least 44 CSS pixels",
+    "1440×900 → 1100×760 mouse: drag, context menu, wheel, pan, reset, resize and side panel"
+  ],
+  "typecheck": "passed",
+  "builds": {
+    "web-mobile": "passed; Creator 3.8.8",
+    "wechatgame": "passed; Creator 3.8.8; touristappid"
+  },
+  "browserRuntimeExceptions": [],
+  "engineWarnings": [
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchstart event with cancelable=false, for example because scrolling is in progress and cannot be interrupted.",
+    "Ignored attempt to cancel a touchcancel event with cancelable=false, for example because scrolling is in progress and cannot be interrupted."
+  ],
+  "initialHarnessExitCode": 1,
+  "note": "All interaction assertions completed. The initial harness rejected the five known Chromium diagnostics above. Its console classification now records these separately; the unchanged game was not rerun.",
+  "wechatDevTools": "Not imported: CLI service port is disabled. Existing unrelated project was left open. No device preview or upload performed."
+}

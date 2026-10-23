@@ -1,0 +1,234 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "square",
+      "baseline": {
+        "pack": 84,
+        "status": 40,
+        "footer": 33,
+        "line": 26.099999999999998,
+        "icons": [
+          24,
+          24,
+          24,
+          24,
+          24,
+          25.5
+        ],
+        "tabs": [
+          {
+            "font": 16.5,
+            "width": 33,
+            "height": 138
+          },
+          {
+            "font": 16.5,
+            "width": 33,
+            "height": 138
+          }
+        ]
+      },
+      "square": {
+        "pack": 84,
+        "status": 40,
+        "footer": 33,
+        "line": 26.099999999999998,
+        "icons": [
+          24,
+          24,
+          24,
+          24,
+          24,
+          25.5
+        ],
+        "tabs": [
+          {
+            "font": 20.625,
+            "width": 41.25,
+            "height": 172.5
+          },
+          {
+            "font": 20.625,
+            "width": 41.25,
+            "height": 172.5
+          }
+        ]
+      },
+      "menuCentered": true,
+      "samples": {
+        "points": [
+          {
+            "point": {
+              "x": 323,
+              "y": 424
+            },
+            "radius": 209.8285625126145,
+            "expected": [
+              255,
+              250,
+              240
+            ],
+            "actual": [
+              255,
+              250,
+              240
+            ]
+          },
+          {
+            "point": {
+              "x": 265,
+              "y": 424
+            },
+            "radius": 302.85180328524245,
+            "expected": [
+              192,
+              190,
+              186
+            ],
+            "actual": [
+              192,
+              190,
+              186
+            ]
+          },
+          {
+            "point": {
+              "x": 170,
+              "y": 424
+            },
+            "radius": 456.3590688363362,
+            "expected": [
+              133,
+              134,
+              134
+            ],
+            "actual": [
+              133,
+              134,
+              134
+            ]
+          }
+        ],
+        "night": {
+          "enabled": true,
+          "center": {
+            "x": 0,
+            "y": 0
+          },
+          "innerRadius": 220,
+          "outerRadius": 380
+        },
+        "edgeHidden": true,
+        "stored": "true"
+      },
+      "follows": {
+        "expected": {
+          "x": 105.69105691056916,
+          "y": -47.19084429318468
+        },
+        "actual": {
+          "x": 105.69105691056916,
+          "y": -47.19084429318468
+        }
+      },
+      "defaultOff": true,
+      "toggleOff": true,
+      "persisted": true
+    },
+    {
+      "viewport": "portrait",
+      "baseline": {
+        "pack": 64.00000000000001,
+        "status": 39.1666666666667,
+        "footer": 36.83333333333333,
+        "line": 16.9,
+        "icons": [
+          15.166666666666666,
+          15.166666666666666,
+          15.166666666666666,
+          15.166666666666666,
+          15.166666666666666,
+          17.333333333333332
+        ],
+        "tabs": [
+          {
+            "font": 13,
+            "width": 32,
+            "height": 125.99999999999994
+          },
+          {
+            "font": 13,
+            "width": 32,
+            "height": 125.99999999999994
+          }
+        ]
+      },
+      "menuCentered": true,
+      "samples": {
+        "points": [
+          {
+            "point": {
+              "x": 40,
+              "y": 374
+            },
+            "radius": 208.03134854954732,
+            "expected": [
+              255,
+              250,
+              240
+            ],
+            "actual": [
+              255,
+              250,
+              240
+            ]
+          },
+          {
+            "point": {
+              "x": 4,
+              "y": 374
+            },
+            "radius": 303.11737553398467,
+            "expected": [
+              192,
+              190,
+              186
+            ],
+            "pixelCheck": "Occluded by the fixed left tab; not used for fog validation."
+          }
+        ],
+        "night": {
+          "enabled": true,
+          "center": {
+            "x": 0,
+            "y": 0
+          },
+          "innerRadius": 220,
+          "outerRadius": 380
+        },
+        "edgeHidden": true,
+        "stored": "true"
+      },
+      "follows": {
+        "expected": {
+          "x": 112.54899916306044,
+          "y": -46.32101274596107
+        },
+        "actual": {
+          "x": 112.54899916306044,
+          "y": -46.32101274596107
+        }
+      },
+      "defaultOff": true,
+      "toggleOff": true,
+      "persisted": false
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  },
+  "verifiedFogPixels": 4
+}

@@ -1,0 +1,100 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "size": 224,
+      "columns": 5,
+      "margin": 72,
+      "details": {
+        "cardCenterY": 270,
+        "size": 243.00000000000003,
+        "recipeHeading": {
+          "text": "产出配方：",
+          "y": 124.71000000000001
+        },
+        "packHeading": {
+          "text": "可从以下卡包抽到：",
+          "y": -3.289999999999992
+        },
+        "formulaY": 78.71000000000001,
+        "packs": [
+          {
+            "id": "funding_pack",
+            "y": -49.28999999999999,
+            "trim": false,
+            "sourceRatio": 0.7009345794392523,
+            "drawnRatio": 0.7009345794392523,
+            "centered": true
+          },
+          {
+            "id": "ipo_pack",
+            "y": -49.28999999999999,
+            "trim": false,
+            "sourceRatio": 0.7045454545454546,
+            "drawnRatio": 0.7045454545454546,
+            "centered": true
+          },
+          {
+            "id": "fortune500_pack",
+            "y": -49.28999999999999,
+            "trim": false,
+            "sourceRatio": 0.8605769230769231,
+            "drawnRatio": 0.8605769230769231,
+            "centered": true
+          }
+        ]
+      },
+      "emptyHeadingsHidden": true,
+      "restoredCatalogOffset": 0
+    },
+    {
+      "viewport": "portrait",
+      "size": 224,
+      "columns": 1,
+      "margin": 32.00000000000001,
+      "details": {
+        "cardCenterY": 253.19999999999993,
+        "size": 159.89999999999998,
+        "recipeHeading": {
+          "text": "产出配方：",
+          "y": 232.403076923077
+        },
+        "packHeading": {
+          "text": "可从以下卡包抽到：",
+          "y": -3.9046153846153118
+        },
+        "formulaY": 147.48000000000008,
+        "packs": [
+          {
+            "id": "funding_pack",
+            "y": -88.82769230769225,
+            "trim": false,
+            "sourceRatio": 0.7009345794392523,
+            "drawnRatio": 0.7009345794392524,
+            "centered": true
+          },
+          {
+            "id": "ipo_pack",
+            "y": -88.82769230769225,
+            "trim": false,
+            "sourceRatio": 0.7045454545454546,
+            "drawnRatio": 0.7045454545454545,
+            "centered": true
+          },
+          {
+            "id": "fortune500_pack",
+            "y": -88.82769230769225,
+            "trim": false,
+            "sourceRatio": 0.8605769230769231,
+            "drawnRatio": 0.8605769230769231,
+            "centered": true
+          }
+        ]
+      },
+      "emptyHeadingsHidden": true,
+      "restoredCatalogOffset": 184.6153846153846
+    }
+  ],
+  "errors": []
+}

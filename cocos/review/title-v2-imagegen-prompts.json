@@ -1,0 +1,54 @@
+{
+  "mode": "builtin imagegen",
+  "logoSource": "game/assets/menu/startx_logo_comic.png",
+  "assets": [
+    {
+      "key": "opportunity",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive perspective and dimensional inked highlights. No UI, no watermark, no unrelated surrounding objects. Subject: a chunky cream opportunity adventure card floating at a slight three-quarter angle, gold beveled border and a large dimensional golden lightbulb emblem emerging from its center, small blue detail. Top of the card must read exactly the two Chinese characters \"机会\". Premium charming game collectible with curved corners, hand-inked, not a plain vector icon.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-12a166ce-2fbb-4d37-9dc9-5607ef85ed9f.png"
+    },
+    {
+      "key": "contract",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive perspective and dimensional inked highlights. No UI, no watermark, no unrelated surrounding objects. Subject: a thick rolled cream parchment business contract with one curled corner, turquoise header, bold hand-drawn signature lines and an impressive red wax seal with two short gold ribbons. The header reads exactly the two Chinese characters \"合同\". Slight three-quarter angle. Charming premium game collectible with organic ink contours and dimensional cel shading, not a flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-10c39f2d-1938-4f2b-b1ef-b30fef5cb213.png"
+    },
+    {
+      "key": "star",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive perspective and dimensional inked highlights. No UI, no watermark, no unrelated surrounding objects. Subject: ONE exuberant golden five-point adventure star, thick dark outline, chunky dimensional orange side facets, bright cream reflection shapes and warm inner gold cel shading. Rounded lively points, slightly tilted three-quarter perspective. No face, no letters, no other stars. Premium hand-inked game collectible, not a flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-114aab55-152e-4425-b67a-ebda677b3347.png"
+    },
+    {
+      "key": "coins",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive three-quarter perspective and dimensional inked highlights. No text, no UI, no watermark, no unrelated surrounding objects. Subject: a compact tumbling cluster of three thick golden business coins, chunky orange side rims, gleaming cream highlight shapes and an embossed simple rising arrow on the foremost coin. Exuberant curved silhouette, premium hand-inked game collectible, not flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-d36f1971-d39b-4e2e-8077-dbaf6169a492.png"
+    },
+    {
+      "key": "rocket",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive three-quarter perspective and dimensional inked highlights. No text, no UI, no watermark, no unrelated surrounding objects. Subject: ONE charming entrepreneurial adventure rocket, a rounded coral-red nose and fins, warm cream fuselage, turquoise circular window, leaping diagonally up-right with a short golden orange comic flame attached to its base. Chunky optimistic toy proportions, premium cel-shaded illustration, not flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-117e2bdf-2ab8-4473-baf6-bd8d0c4b69d8.png"
+    },
+    {
+      "key": "briefcase",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Bold playful Japanese platform-game promotional comic illustration, thick smooth dark espresso ink outlines, rich flat cel shading, slight hand-drawn printed texture, punchy golden yellow, warm cream, coral red and turquoise highlights. Match the existing cartoon founder/rival game art. Full object isolated on GENUINE TRANSPARENCY, no background, no floor, no drop shadow on a surface. Square canvas; object fills 82 percent with clear transparent padding, crisp silhouette, attractive three-quarter perspective and dimensional inked highlights. No text, no UI, no watermark, no unrelated surrounding objects. Subject: ONE sturdy golden entrepreneur briefcase, a short rounded leather handle, thick dark brown latch and side panels, and a large cream upward chart-arrow emblem on its face. Energetic three-quarter angle, large chunky proportions, warm cel-shaded volume and beautiful ink contours. Premium adventure-game collectible, not flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-a4704451-5b7e-4331-ba2f-5761a7d08b62.png"
+    },
+    {
+      "key": "trophy",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: one independent transparent PNG game-title prop for StartX, a business battle card adventure. Subject: ONE exuberant golden championship trophy with two broad curving handles, an embossed little upward-arrow medallion on its cup, red ribbons tied to the handles and a sturdy dark navy square base. Bold Japanese platform-game promotional comic illustration, very thick smooth dark espresso ink outlines, warm dimensional gold/orange flat cel shading, cream reflections, slight printed ink texture. Full object in lively three-quarter perspective isolated on GENUINE TRANSPARENCY, no background, no floor, no cast ground shadow, no text, no other objects. Square canvas with clear transparent padding, object fills 82 percent, premium hand-inked game collectible, not flat SVG.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-dd5f518c-0f97-4ecd-9bda-0f92b6d52ee5.png"
+    },
+    {
+      "key": "tagline",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Asset type: transparent PNG Chinese subtitle artwork for a bold red-and-gold cartoon business adventure game title. Render EXACTLY this text in ONE HORIZONTAL LINE, with no other text: \"商战互动卡牌冒险游戏\". Carefully preserve all TEN Chinese characters in that order: 商 战 互 动 卡 牌 冒 险 游 戏. Custom bold, playful, clean hand-inked Chinese display lettering, warm cream interior, thick dark espresso outline, a small golden lower-edge dimensional accent. Readable, energetic, gently irregular handmade comic strokes. Wide landscape composition, text fills 90 percent width, no decorative objects, no panel, no banner, no background: GENUINELY TRANSPARENT. No Latin letters, no watermark. Crisp high-resolution letter edges; this image will be displayed as a single subtitle sprite.",
+      "source": "/Users/frankfan/.codex/generated_images/01a16800-aae8-7ab0-ac45-3fef096415d1/exec-f6497c6f-4278-40cf-94fd-d39a3e6f3c5f.png"
+    }
+  ]
+}

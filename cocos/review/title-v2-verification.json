@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "pieces": 14,
+      "originalLogo": true,
+      "imageOnly": true,
+      "largeLowerCornerCharacters": true,
+      "fourEdgeEntrance": true,
+      "idleMotion": true,
+      "buttonsVisible": true
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 844,
+      "pieces": 14,
+      "originalLogo": true,
+      "imageOnly": true,
+      "largeLowerCornerCharacters": true,
+      "fourEdgeEntrance": true,
+      "idleMotion": true,
+      "buttonsVisible": true
+    }
+  ],
+  "settingsAndBack": true,
+  "startGame": true,
+  "errors": [],
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "assetMode": "builtin imagegen",
+  "originalLogo": "byte-identical to game/assets/menu/startx_logo_comic.png",
+  "finalDesktopLayout": {
+    "passed": true,
+    "viewport": "desktop",
+    "pieces": 14,
+    "opportunity": {
+      "name": "Opportunity",
+      "edge": "left",
+      "x": -625.9655640329273,
+      "y": 230.3919156721468,
+      "targetX": -619.2,
+      "targetY": 225,
+      "size": 201.60000000000002,
+      "angle": -13.884665391593494
+    },
+    "contract": {
+      "name": "Contract",
+      "edge": "right",
+      "x": 619.4513612957386,
+      "y": 196.58164807139315,
+      "targetX": 619.2,
+      "targetY": 198,
+      "size": 187.20000000000002,
+      "angle": 15.577435589668077
+    },
+    "errors": []
+  },
+  "visualCheck": "Desktop opportunity and contract moved away from character faces; final desktop and in-app portrait preview inspected.",
+  "screenshots": [
+    "output/playwright/title-v2-desktop.png",
+    "output/playwright/title-v2-portrait.png"
+  ]
+}

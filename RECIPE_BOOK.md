@@ -1,7 +1,7 @@
 # StartX · Recipe Book（配方全集）
 
 > 基于 `Stacklands_like_Enterprise_Resource_Management_GDD_CN.pdf` 第 5.4 / 5.5 节整理。
-> 「切片」列标注是否已在当前 MVP 纵向切片（`game/`）中实现。
+> 本文保留早期配方设计；当前实现以 `cocos/data/startx_data.xlsx` 的 `recipes` 工作表为准。
 > 玩法：把**工人卡**拖到**输入卡/资源节点**所在的栈上，进度条走完即产出；`consume` 的输入会被消耗，资源节点（线索池/客户需求等）不消耗、可反复采集。
 
 ---

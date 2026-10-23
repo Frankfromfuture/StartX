@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "desktop: hand-drawn transparent sprites, centered compact translucent research with click feedback and paging; valid partial stack lights gold only inside sale target, release sells once; founder stays unsold",
+    "portrait: hand-drawn transparent sprites, centered compact translucent research with click feedback and paging; valid partial stack lights gold only inside sale target, release sells once; founder stays unsold; touch cancel clears gold and preserves card"
+  ],
+  "errors": []
+}

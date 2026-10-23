@@ -1,0 +1,168 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "size": 64,
+          "lineHeight": 60,
+          "actual": 64,
+          "text": "HP: $12.0\nATK: 4"
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "size": 64,
+          "lineHeight": 60,
+          "actual": 64,
+          "text": "HP: $50.0\nATK: 5"
+        }
+      ],
+      "topInsets": [
+        52.285714285714334,
+        52.285714285714334
+      ],
+      "sideInsets": [
+        58.095238095238074,
+        58.095238095238074
+      ],
+      "expectedTop": 52.285714285714285,
+      "expectedSide": 58.095238095238095,
+      "frames": 263,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "statCardOverlap": 0,
+      "cardOutsideFrame": 0,
+      "popupStatOverlap": 0,
+      "settledNameGap": 5.564228453699002,
+      "popups": [
+        {
+          "victim": 6,
+          "originY": -36,
+          "centerOriginError": 0,
+          "firstLift": 22.99077651201654,
+          "firstScale": 0.1719753529487178,
+          "lastY": 237.99999881564753,
+          "maxLift": 273.99999881564753,
+          "maxScale": 1.0997328621938776,
+          "maxCenterError": 0,
+          "text": "-5",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 1,
+          "originY": -36,
+          "centerOriginError": 0,
+          "firstLift": 24.227963054467846,
+          "firstScale": 0.18098958366094564,
+          "lastY": 237.99641769012985,
+          "maxLift": 273.9964176901299,
+          "maxScale": 1.0995873596098147,
+          "maxCenterError": 0,
+          "text": "-4",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        }
+      ],
+      "battleCardPositionsRestored": true
+    },
+    {
+      "screen": "portrait",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "size": 64,
+          "lineHeight": 60,
+          "actual": 69,
+          "text": "HP: $12.0\nATK: 4"
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "size": 64,
+          "lineHeight": 60,
+          "actual": 69,
+          "text": "HP: $50.0\nATK: 6"
+        }
+      ],
+      "topInsets": [
+        21.608108108108098,
+        21.608108108108098
+      ],
+      "sideInsets": [
+        24.009009009009006,
+        24.009009009009038
+      ],
+      "expectedTop": 21.60810810810811,
+      "expectedSide": 24.009009009009006,
+      "frames": 328,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "statCardOverlap": 0,
+      "cardOutsideFrame": 0,
+      "popupStatOverlap": 0,
+      "settledNameGap": 2.359419962549964,
+      "popups": [
+        {
+          "victim": 9,
+          "originY": -36,
+          "centerOriginError": 0,
+          "firstLift": 22.99077651201654,
+          "firstScale": 0.1719753529487178,
+          "lastY": 237.99998684053227,
+          "maxLift": 273.9999868405323,
+          "maxScale": 1.0996582892726814,
+          "maxCenterError": 0,
+          "text": "-5",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 9,
+          "originY": -36,
+          "centerOriginError": 0,
+          "firstLift": 23.26606775270615,
+          "firstScale": 0.1739833435321525,
+          "lastY": 238,
+          "maxLift": 274,
+          "maxScale": 1.0996804974591365,
+          "maxCenterError": 0,
+          "text": "-1",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 6,
+          "originY": -84,
+          "centerOriginError": 0,
+          "firstLift": 23.678617837808986,
+          "firstScale": 0.17699015412339736,
+          "lastY": 190,
+          "maxLift": 274,
+          "maxScale": 1.0996913314979386,
+          "maxCenterError": 0,
+          "text": "-4",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        }
+      ],
+      "battleCardPositionsRestored": true
+    }
+  ],
+  "errors": []
+}

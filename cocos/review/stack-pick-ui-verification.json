@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "splits": [
+        {
+          "id": "cash",
+          "index": 0,
+          "moved": 3,
+          "remaining": 0
+        },
+        {
+          "id": "cash",
+          "index": 1,
+          "moved": 2,
+          "remaining": 1
+        },
+        {
+          "id": "cash",
+          "index": 2,
+          "moved": 1,
+          "remaining": 2
+        },
+        {
+          "id": "p1_intern",
+          "index": 1,
+          "moved": 2,
+          "remaining": 1
+        }
+      ],
+      "sameCardHintHidden": true,
+      "recipeHintPreserved": true,
+      "cancellationRestored": true
+    },
+    {
+      "screen": "portrait",
+      "splits": [
+        {
+          "id": "cash",
+          "index": 0,
+          "moved": 3,
+          "remaining": 0
+        },
+        {
+          "id": "cash",
+          "index": 1,
+          "moved": 2,
+          "remaining": 1
+        },
+        {
+          "id": "cash",
+          "index": 2,
+          "moved": 1,
+          "remaining": 2
+        },
+        {
+          "id": "p1_intern",
+          "index": 1,
+          "moved": 2,
+          "remaining": 1
+        }
+      ],
+      "sameCardHintHidden": true,
+      "recipeHintPreserved": true,
+      "cancellationRestored": true
+    }
+  ],
+  "errors": []
+}

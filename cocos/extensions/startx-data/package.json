@@ -1,0 +1,9 @@
+{
+  "package_version": 2,
+  "name": "startx-data",
+  "version": "1.0.0",
+  "editor": ">=3.8.0",
+  "description": "构建前自动同步 Excel 卡牌数据、卡面和图标",
+  "main": "./main.js",
+  "contributions": { "builder": "./builder.js" }
+}

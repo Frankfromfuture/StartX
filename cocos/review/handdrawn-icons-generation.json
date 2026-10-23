@@ -1,0 +1,18 @@
+{
+  "mode": "built-in image_gen",
+  "transparent_background": true,
+  "references": [
+    "assets/content/faces/p1_rawprod.png",
+    "assets/content/faces/p1_wholesale.png"
+  ],
+  "assets": [
+    {
+      "path": "assets/content/ui/research-handdrawn.png",
+      "prompt": "Use case: illustration-story. Asset type: a production-ready transparent PNG button icon for the StartX card game. The attached images are STYLE REFERENCES ONLY: match the bold, slightly wobbly black ink contours, imperfect marker-like outlines, simple economical cartoon detail, warm pale ivory fill inside solid object parts and sketchy black inner hatching of their central card illustrations. Do not include the card frame, text, numbers, colored card panel, circular backplate, drop shadow or any background. Transparent canvas, including empty holes between parts. Single centered icon with a clean silhouette, occupying about 80% of a square canvas, designed to read at 56 CSS px. Monochrome black ink with warm off-white intrinsic object fill; no color accents, no gradient, no typography, no glossy rendering, no thin geometric vector lines. Subject: RESEARCH — one open notebook with a lit light bulb rising from its central fold, short hand-drawn rays around the bulb, a few loose page strokes. Compact upright composition, original game's playful imperfect pen cartoon style. The book and bulb form one coherent icon."
+    },
+    {
+      "path": "assets/content/ui/sell-handdrawn.png",
+      "prompt": "Use case: illustration-story. Asset type: a production-ready transparent PNG button icon for the StartX card game. The attached images are STYLE REFERENCES ONLY: match the bold, slightly wobbly black ink contours, imperfect marker-like outlines, simple economical cartoon detail, warm pale ivory fill inside solid object parts and sketchy black inner hatching of their central card illustrations. Do not include the card frame, text, numbers, colored card panel, circular backplate, drop shadow or any background. Transparent canvas, including empty holes between parts. Single centered icon with a clean silhouette, occupying about 80% of a square canvas, designed to read at 56 CSS px. Monochrome black ink with warm off-white intrinsic object fill; no color accents, no gradient, no typography, no glossy rendering, no thin geometric vector lines. Subject: SELL — a small three-quarter view shopping cart holding one plain cardboard parcel, bold black sketched wire basket, two clearly drawn wheels, short diagonal handle. Compact composition with balanced visual weight and the original game's playful imperfect pen cartoon style. No currency symbols, no text."
+    }
+  ]
+}

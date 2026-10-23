@@ -1,0 +1,39 @@
+{
+  "name": "StartX",
+  "platform": "wechatgame",
+  "buildPath": "project://build",
+  "outputName": "wechatgame",
+  "startScene": "2f839666-0f72-5ee8-8254-14d5bb73465f",
+  "scenes": [
+    {
+      "url": "db://assets/scenes/CardSample.scene",
+      "uuid": "2f839666-0f72-5ee8-8254-14d5bb73465f"
+    }
+  ],
+  "debug": false,
+  "md5Cache": true,
+  "sourceMaps": false,
+  "replaceSplashScreen": false,
+  "includedModules": [
+    "base",
+    "gfx-webgl",
+    "gfx-webgl2",
+    "2d",
+    "ui",
+    "graphics",
+    "mask",
+    "tween",
+    "affine-transform",
+    "intersection-2d",
+    "custom-pipeline",
+    "audio"
+  ],
+  "packages": {
+    "wechatgame": {
+      "appid": "touristappid",
+      "orientation": "portrait",
+      "separateEngine": false,
+      "wasm": false
+    }
+  }
+}

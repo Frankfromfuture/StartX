@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 844,
+      "copy": {
+        "text": "商战互动卡牌游戏",
+        "sprite": false,
+        "width": 720
+      },
+      "characterDistance": 0.98,
+      "startVisible": true
+    },
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "copy": {
+        "text": "商战互动卡牌游戏",
+        "sprite": false,
+        "width": 1440
+      },
+      "characterDistance": 0.84,
+      "startVisible": true
+    }
+  ],
+  "startGame": true,
+  "errors": [],
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "subtitleGlyphs": "All 8 Chinese characters included; 互 added to font subset",
+  "visualCheck": "Portrait preview inspected after refresh; native Chinese subtitle visible and characters spaced farther apart."
+}

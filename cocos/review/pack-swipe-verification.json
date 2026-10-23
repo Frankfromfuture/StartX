@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "touch: 50px travel retained, inertia, whole-pack snapping, intact softly fading edges, edge swipes, cancellation, no accidental purchase and thicker overlapping tabs with ordered shadows (completed in first invocation)",
+    "mouse: 50px finger/mouse travel retained, inertia and whole-pack snapping, intact softly fading edges, edge swipes, no accidental purchase, thicker overlapping tabs and ordered shadows; horizontal wheel, eight sale cash cards slide upper-left, wide resize shows all ten packs"
+  ],
+  "errors": []
+}

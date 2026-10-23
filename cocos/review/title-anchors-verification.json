@@ -1,0 +1,99 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "scenario": "Square to short landscape",
+      "initial": {
+        "viewport": {
+          "width": 900,
+          "height": 900
+        },
+        "logo": {
+          "x": 36.3488372093023,
+          "y": 144,
+          "width": 827.3023255813954,
+          "height": 252.00000000000003
+        },
+        "copy": {
+          "x": 125,
+          "y": 412,
+          "width": 650,
+          "height": 31.2
+        },
+        "start": {
+          "x": 275,
+          "y": 507,
+          "width": 350,
+          "height": 66
+        },
+        "text": "商战互动卡牌游戏",
+        "gap": 15.999999999999972,
+        "logoPercent": 30,
+        "startPercent": 60
+      },
+      "resized": {
+        "viewport": {
+          "width": 1440,
+          "height": 600
+        },
+        "logo": {
+          "x": 484.284496124031,
+          "y": 108.19999999999997,
+          "width": 471.4310077519379,
+          "height": 143.6
+        },
+        "copy": {
+          "x": 395,
+          "y": 267.8,
+          "width": 650,
+          "height": 43.199999999999996
+        },
+        "start": {
+          "x": 545,
+          "y": 327,
+          "width": 350,
+          "height": 66
+        },
+        "text": "商战互动卡牌游戏",
+        "gap": 16.00000000000003,
+        "logoPercent": 29.999999999999993,
+        "startPercent": 60
+      },
+      "startWorks": true
+    },
+    {
+      "scenario": "Portrait touch",
+      "initial": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "logo": {
+          "x": 11.700000000000012,
+          "y": 197.3659976387248,
+          "width": 366.59999999999997,
+          "height": 111.66800472255018
+        },
+        "copy": {
+          "x": 31.20000000000001,
+          "y": 325.0340023612751,
+          "width": 327.59999999999997,
+          "height": 31.199999999999996
+        },
+        "start": {
+          "x": 42.89999999999999,
+          "y": 473.4,
+          "width": 304.2,
+          "height": 66
+        },
+        "text": "商战互动卡牌游戏",
+        "gap": 16.000000000000128,
+        "logoPercent": 29.99999999999999,
+        "startPercent": 60
+      },
+      "startWorks": true
+    }
+  ],
+  "errors": [],
+  "build": "TypeScript check and one scripts-only web-mobile build passed"
+}

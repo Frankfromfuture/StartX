@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "url": "https://iambrizo.com/startx/",
+  "checks": [
+    {
+      "viewport": "square",
+      "catalogAligned": true,
+      "drawnCard": "p1_office",
+      "battleVisible": true,
+      "hpBefore": 50,
+      "hpAfter": 48.001496749232125,
+      "cameraRestored": true
+    }
+  ],
+  "errors": [],
+  "release": "20261024-startx-render-01",
+  "filesVerified": 780,
+  "publicEntryMatchesBuild": true,
+  "indexSha256": "70a6735665a9e5e908337a46c9b417679ef95bb29db29d593b62a9ba9671dd47",
+  "brizoHomepageUnchanged": true,
+  "newsletterHealth": 405,
+  "previousReleaseRetained": true,
+  "saveFormatUnchanged": true
+}

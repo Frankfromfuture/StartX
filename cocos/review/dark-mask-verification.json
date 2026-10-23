@@ -1,0 +1,135 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "colors": {
+        "tint": [
+          42,
+          46,
+          54,
+          100
+        ],
+        "backdrop": [
+          64,
+          68,
+          76,
+          255
+        ]
+      },
+      "corners": [
+        {
+          "x": 1,
+          "y": 1,
+          "bounds": {
+            "x": -2,
+            "y": -2122,
+            "width": 3024,
+            "height": 3024
+          }
+        },
+        {
+          "x": -1,
+          "y": 1,
+          "bounds": {
+            "x": -1582,
+            "y": -2122,
+            "width": 3024,
+            "height": 3024
+          }
+        },
+        {
+          "x": -1,
+          "y": -1,
+          "bounds": {
+            "x": -1582,
+            "y": -2,
+            "width": 3024,
+            "height": 3024
+          }
+        },
+        {
+          "x": 1,
+          "y": -1,
+          "bounds": {
+            "x": -2,
+            "y": -2,
+            "width": 3024,
+            "height": 3024
+          }
+        }
+      ],
+      "noWhiteBorders": true,
+      "completeOverview": true,
+      "cardPositionsPreserved": true
+    },
+    {
+      "viewport": "portrait",
+      "colors": {
+        "tint": [
+          42,
+          46,
+          54,
+          100
+        ],
+        "backdrop": [
+          64,
+          68,
+          76,
+          255
+        ]
+      },
+      "corners": [
+        {
+          "x": 1,
+          "y": 1,
+          "bounds": {
+            "x": -1.0833333333333333,
+            "y": -399.7966666666665,
+            "width": 1638,
+            "height": 1244.8799999999999
+          }
+        },
+        {
+          "x": -1,
+          "y": 1,
+          "bounds": {
+            "x": -1246.9166666666665,
+            "y": -399.7966666666665,
+            "width": 1638,
+            "height": 1244.8799999999999
+          }
+        },
+        {
+          "x": -1,
+          "y": -1,
+          "bounds": {
+            "x": -1246.9166666666665,
+            "y": -1.08333333333321,
+            "width": 1638,
+            "height": 1244.8799999999999
+          }
+        },
+        {
+          "x": 1,
+          "y": -1,
+          "bounds": {
+            "x": -1.0833333333333333,
+            "y": -1.08333333333321,
+            "width": 1638,
+            "height": 1244.8799999999999
+          }
+        }
+      ],
+      "noWhiteBorders": true,
+      "completeOverview": true,
+      "cardPositionsPreserved": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  },
+  "rootCause": "The old camera clamp used the smaller usable play area and exposed 57px of the pale backdrop at desktop pan limits."
+}

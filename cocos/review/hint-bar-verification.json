@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "hint": {
+        "lineWidth": 6,
+        "color": [
+          25,
+          145,
+          65,
+          255
+        ],
+        "belowHeldCards": true,
+        "animated": true
+      },
+      "bar": {
+        "width": 280,
+        "height": 36,
+        "cardWidth": 280,
+        "aboveBase": true
+      },
+      "merge": true
+    },
+    {
+      "viewport": "portrait",
+      "hint": {
+        "lineWidth": 6,
+        "color": [
+          25,
+          145,
+          65,
+          255
+        ],
+        "belowHeldCards": true,
+        "animated": true
+      },
+      "bar": {
+        "width": 280,
+        "height": 36,
+        "cardWidth": 280,
+        "aboveBase": true
+      },
+      "merge": true
+    }
+  ],
+  "errors": []
+}

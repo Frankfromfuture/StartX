@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "pieces": [
+        {
+          "name": "Founder",
+          "size": 964.8000000000001,
+          "targetX": -619.2,
+          "targetY": -218.44799999999998
+        },
+        {
+          "name": "Rival",
+          "size": 936,
+          "targetX": 590.4,
+          "targetY": -225.36
+        },
+        {
+          "name": "Coins",
+          "size": 144,
+          "targetX": -475.20000000000005,
+          "targetY": 342
+        },
+        {
+          "name": "Star",
+          "size": 108,
+          "targetX": 475.20000000000005,
+          "targetY": 324
+        },
+        {
+          "name": "StarSmall",
+          "size": 108,
+          "targetX": -244.8,
+          "targetY": -270
+        },
+        {
+          "name": "CoinsSmall",
+          "size": 144,
+          "targetX": 259.2,
+          "targetY": -297
+        }
+      ],
+      "startVisible": true
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 844,
+      "pieces": [
+        {
+          "name": "Founder",
+          "size": 806.4000000000001,
+          "targetX": -302.4,
+          "targetY": -521.0289230769231
+        },
+        {
+          "name": "Rival",
+          "size": 792.0000000000001,
+          "targetX": 288,
+          "targetY": -525.636923076923
+        },
+        {
+          "name": "Coins",
+          "size": 129.6,
+          "targetX": -251.99999999999997,
+          "targetY": 623.2615384615385
+        },
+        {
+          "name": "Star",
+          "size": 86.39999999999999,
+          "targetX": 244.8,
+          "targetY": 607.6800000000001
+        },
+        {
+          "name": "StarSmall",
+          "size": 86.39999999999999,
+          "targetX": -115.2,
+          "targetY": -545.3538461538461
+        },
+        {
+          "name": "CoinsSmall",
+          "size": 129.6,
+          "targetX": 129.6,
+          "targetY": -623.2615384615385
+        }
+      ],
+      "startVisible": true
+    }
+  ],
+  "startGame": true,
+  "errors": [],
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "visualCheck": "Desktop and portrait inspected; 2 characters, 2 stars and 2 coin clusters, enlarged characters spaced farther apart."
+}

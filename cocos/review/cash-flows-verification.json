@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Pack, production, sale and withdrawal cash all request the same sound",
+    "Month settlement spends loose cash first, then stored cash; account payment flights originate at the account",
+    "Test account pays monthly payroll directly from its position to salary cards without withdrawing loose cash",
+    "Mixed cash sources cover payroll exactly; insufficient total cash creates no deductions or payment flights"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "resources": 7,
+  "checks": [
+    "Desktop: seven original PCM sources, actual AudioSource playback, one grab/drop per gesture, founder/resource/cash/human variants, four unpack sounds and production landing timing",
+    "Portrait touch: audio after user gesture, one grab and drop on touch cancellation, stopped voices on blur and working unpack sound after focus"
+  ],
+  "errors": []
+}

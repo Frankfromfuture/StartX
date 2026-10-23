@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Default rules stay available for normal starts",
+    "Test starts contain one account holding 50 cash next to the founder with no loose cash",
+    "All ten packs bypass unlock gates without forging tasks",
+    "Mode toggles preserve cash and natural progress; real purchases deduct from the account normally"
+  ]
+}

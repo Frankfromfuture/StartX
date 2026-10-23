@@ -1,0 +1,102 @@
+[
+  {
+    "name": "grab",
+    "source": "game/assets/sounds/grab card.ogg",
+    "sourceSha256": "be85da181ac879c20cb667d0f9f156dbdc236d3751737ad27359a15e946430a0",
+    "pcmSha256": "820acc757643773746a4cc06d22be3bca174bea9e654899b145e089322125a42",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.5993650793650793,
+    "bytes": 105772
+  },
+  {
+    "name": "founder",
+    "source": "game/assets/sounds/founder.ogg",
+    "sourceSha256": "a97513d7fd2b12b1210c423be943b4c1ab0e899b11db95855e9b74836e646ae0",
+    "pcmSha256": "e792a04b5660b8ddf7e99d81fc5c749defc4c1f719e8ba417f10c94bdd775d33",
+    "sampleRate": 44100,
+    "channels": 1,
+    "duration": 0.5000453514739229,
+    "bytes": 44148
+  },
+  {
+    "name": "down",
+    "source": "game/assets/sounds/down.ogg",
+    "sourceSha256": "b9524658b52a99a20590f8feefc103088637fd13ea8ec35811aee785e1f2f330",
+    "pcmSha256": "1dc2f78018bb2631ecbdc7e32c812072d8de4681abf02f15a58be59fcd947a4f",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.14188208616780046,
+    "bytes": 25072
+  },
+  {
+    "name": "resource_down",
+    "source": "game/assets/sounds/facility and resource down.ogg",
+    "sourceSha256": "e008f0b6b14f62339c8fe9f9b45cbd6317ba4f66604c4899053b8017020a36f0",
+    "pcmSha256": "4239863f1097fd656e06f62e793dacabe2cbbdbe2f2839dcc96a4c53c7f57152",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.4980498866213152,
+    "bytes": 87900
+  },
+  {
+    "name": "cash_down",
+    "source": "game/assets/sounds/cash down.ogg",
+    "sourceSha256": "5ec35171aa65bf5edd977e293523a649227accf36e682bf1ac9a84286f04c682",
+    "pcmSha256": "6b3f0ed6dcb0e325a27ec3e18e2c5f1a43a399c074f6d21163a681a5de99fa74",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.18396825396825398,
+    "bytes": 32496
+  },
+  {
+    "name": "unpack",
+    "source": "game/assets/sounds/unpack.ogg",
+    "sourceSha256": "1214059fdfbf1c396c0702244fc833739cc346d326a71e450b731f456e54d6fb",
+    "pcmSha256": "3f0ebae3d3c8518271138c66145802ae28a853f5d8147a50af553b043b79cac8",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.9373922902494332,
+    "bytes": 165400
+  },
+  {
+    "name": "aha",
+    "source": "game/assets/sounds/aha.ogg",
+    "sourceSha256": "2379b58f953e3d86982aa8cddcae763022c6258e9820171bf905ce58b4e97766",
+    "pcmSha256": "07afc8f552135e01713466d984f9ccb23967ed5e2cc95aae6c8ba31437651fa1",
+    "sampleRate": 44100,
+    "channels": 1,
+    "duration": 0.6922675736961451,
+    "bytes": 61102
+  },
+  {
+    "name": "battle_start",
+    "source": "game/assets/sounds/battlestart.ogg",
+    "sourceSha256": "f050b3bb77cb0b901bc8df43d2cc1872c353aebae10b4030cf8ae681726ad343",
+    "pcmSha256": "033dc3eb15ce7f1e4e503a7e88671313d4368bac59207e5f7970fdf59d538349",
+    "sampleRate": 44100,
+    "channels": 1,
+    "duration": 0.3799546485260771,
+    "bytes": 33556
+  },
+  {
+    "name": "battle_end",
+    "source": "game/assets/sounds/battleend.ogg",
+    "sourceSha256": "39d7c47855b9642f43548b7b132c20e20a1490c7eb13d10008c32fcb24da19f8",
+    "pcmSha256": "9341b1343e316d38bb7d60c39eb65c85e9c20c797dbe078b6043c3faa994308b",
+    "sampleRate": 44100,
+    "channels": 1,
+    "duration": 0.37732426303854877,
+    "bytes": 33324
+  },
+  {
+    "name": "hit",
+    "source": "game/assets/sounds/hit.ogg",
+    "sourceSha256": "10738707f9300f9b963ceba46d5da2ed4a221faf7d39484a643c2d3bc151c5f2",
+    "pcmSha256": "43485bdb41e6d55e6f134e619169588d49ed5144f815d25fdadbf4001aa50f41",
+    "sampleRate": 44100,
+    "channels": 2,
+    "duration": 0.2837868480725624,
+    "bytes": 50104
+  }
+]

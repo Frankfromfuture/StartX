@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "portrait",
+      "rightEdgeMargin": 2.0000000000000497,
+      "settingsTarget": {
+        "width": 47.99999999999995,
+        "height": 43.9999999999999
+      },
+      "edgeClickOpensSettings": true
+    }
+  ],
+  "desktop": "Passed earlier; see status-right-ui-test.log",
+  "errors": []
+}

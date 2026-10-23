@@ -1,0 +1,137 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 48
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $50.0\nATK: 5",
+          "actual": 48
+        }
+      ],
+      "leftInset": 61,
+      "rightInset": 61,
+      "topInsets": [
+        9.149999999999864,
+        9.149999999999864
+      ],
+      "expectedTop": 9.149999999999999,
+      "expectedSide": 61,
+      "overlaps": 0,
+      "minVerticalGap": 74.94558691587713,
+      "frames": 261,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "popupNameGap": 8.87753324237383,
+      "popupStatOverlap": 0,
+      "popups": [
+        {
+          "victim": 6,
+          "startY": 254.7110757384081,
+          "lastY": 284,
+          "born": 4955.79999999702,
+          "maxCenterError": 0,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 1,
+          "startY": 254.71964128225835,
+          "lastY": 284,
+          "born": 7055.4000000059605,
+          "maxCenterError": 0,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    },
+    {
+      "screen": "portrait",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $12.0\nATK: 4",
+          "actual": 52
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "system": false,
+          "size": 48,
+          "text": "HP: $50.0\nATK: 6",
+          "actual": 52
+        }
+      ],
+      "leftInset": 24.009009009009006,
+      "rightInset": 24.009009009009038,
+      "topInsets": [
+        3.6013513513513495,
+        3.6013513513513495
+      ],
+      "expectedTop": 3.6013513513513513,
+      "expectedSide": 24.009009009009006,
+      "overlaps": 0,
+      "minVerticalGap": 29.496546238117364,
+      "frames": 329,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "popupNameGap": 3.4941110753102906,
+      "popupStatOverlap": 0,
+      "popups": [
+        {
+          "victim": 9,
+          "startY": 254.71535851794602,
+          "lastY": 284,
+          "born": 4954,
+          "maxCenterError": 0,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 9,
+          "startY": 254.71535851794602,
+          "lastY": 284,
+          "born": 6058,
+          "maxCenterError": 0,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 6,
+          "startY": 206.7110757390463,
+          "lastY": 236,
+          "born": 8151.79999999702,
+          "maxCenterError": 0,
+          "rose": true,
+          "popped": true,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

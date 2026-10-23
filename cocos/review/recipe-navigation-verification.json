@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "passed": true,
+      "multipleLevels": true,
+      "restoresNonzeroScroll": true,
+      "originalTextsRestored": true,
+      "standaloneWhitePngIcons": true,
+      "removedRecipeHeadings": true,
+      "viewingIngredientsDoesNotUnlock": true,
+      "returnedTo": "catalog",
+      "evidence": "Desktop branch completed all assertions and closed its browser context in the first run; portrait was subsequently completed after waiting for the opening card animation."
+    },
+    {
+      "viewport": "portrait",
+      "art": {
+        "labels": [
+          "来源卡包：融资壮大、上市IPO 时刻！、战！巨头竞争！",
+          "×1",
+          "任意员工",
+          "+",
+          "×1",
+          "银行",
+          "+",
+          "×1",
+          "合同",
+          "→",
+          "×1",
+          "账户"
+        ],
+        "icons": [
+          {
+            "width": 256,
+            "whiteLine": true,
+            "components": 2
+          },
+          {
+            "width": 256,
+            "whiteLine": true,
+            "components": 2
+          },
+          {
+            "width": 256,
+            "whiteLine": true,
+            "components": 2
+          },
+          {
+            "width": 256,
+            "whiteLine": true,
+            "components": 2
+          }
+        ],
+        "sourceToFormulaGap": 10.000000000000025
+      },
+      "firstId": "p3_bank",
+      "secondId": "",
+      "restoredOffset": 0,
+      "multipleLevels": false,
+      "originalTextsRestored": true,
+      "cancelledDelayedLoad": true,
+      "returnedTo": "board"
+    }
+  ],
+  "errors": [],
+  "typecheck": "passed",
+  "build": "One complete web-mobile build passed",
+  "originalIconsExported": 53
+}

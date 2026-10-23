@@ -1,0 +1,132 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "minimumZoom": 0.06228571428571429,
+      "background": {
+        "cells": 30,
+        "spacing": 168,
+        "width": 5040,
+        "height": 5040,
+        "cityLoaded": true,
+        "cityWidth": 10080,
+        "cityHeight": 10080,
+        "imagePixels": {
+          "width": 1254,
+          "height": 1254
+        },
+        "table": {
+          "x": 0,
+          "y": 0,
+          "borderWidth": 0
+        },
+        "minimumZoom": 0.06228571428571429,
+        "overviewArea": {
+          "left": -663,
+          "right": 696,
+          "top": 261,
+          "bottom": -393
+        },
+        "tint": {
+          "_data": {
+            "0": 202,
+            "1": 206,
+            "2": 212,
+            "3": 64
+          }
+        },
+        "cameraLimitedToCity": true,
+        "cityBounds": {
+          "x": 422.58,
+          "y": 202.07999999999993,
+          "width": 627.8400000000001,
+          "height": 627.8400000000001
+        },
+        "boardBounds": {
+          "x": 579.54,
+          "y": 346.4832,
+          "width": 313.9200000000001,
+          "height": 313.91999999999996
+        },
+        "tintBounds": {
+          "x": -0.1245714285713575,
+          "y": -0.12457142857147119,
+          "width": 1440.249142857143,
+          "height": 900.2491428571429
+        }
+      },
+      "fullBoardAndCityVisible": true,
+      "noDarkSeam": true,
+      "backgroundTint": true,
+      "cardsAboveTint": true,
+      "cardDrag": true
+    },
+    {
+      "viewport": "portrait",
+      "minimumZoom": 0.054505494505494495,
+      "background": {
+        "cells": 30,
+        "spacing": 168,
+        "width": 5040,
+        "height": 5040,
+        "cityLoaded": true,
+        "cityWidth": 10080,
+        "cityHeight": 10080,
+        "imagePixels": {
+          "width": 1254,
+          "height": 1254
+        },
+        "table": {
+          "x": 0,
+          "y": 0,
+          "borderWidth": 0
+        },
+        "minimumZoom": 0.054505494505494495,
+        "overviewArea": {
+          "left": -256.6153846153846,
+          "right": 315.6923076923077,
+          "top": 475.3846153846155,
+          "bottom": -666.7692307692308
+        },
+        "tint": {
+          "_data": {
+            "0": 202,
+            "1": 206,
+            "2": 212,
+            "3": 64
+          }
+        },
+        "cameraLimitedToCity": true,
+        "cityBounds": {
+          "x": 62.20000000000004,
+          "y": 325.0333333333333,
+          "width": 297.5999999999999,
+          "height": 297.5999999999999
+        },
+        "boardBounds": {
+          "x": 136.60000000000002,
+          "y": 393.48133333333334,
+          "width": 148.79999999999995,
+          "height": 148.79999999999995
+        },
+        "tintBounds": {
+          "x": -0.059047619047615754,
+          "y": -0.05904761904764655,
+          "width": 390.1180952380953,
+          "height": 844.1180952380953
+        }
+      },
+      "fullBoardAndCityVisible": true,
+      "noDarkSeam": true,
+      "backgroundTint": true,
+      "cardsAboveTint": true,
+      "cardDrag": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  }
+}

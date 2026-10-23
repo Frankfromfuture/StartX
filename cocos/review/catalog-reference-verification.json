@@ -1,0 +1,163 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "sorts": [
+        {
+          "sort": "rarity",
+          "first": [
+            "founder",
+            "p3_account",
+            "bm_p1_make_rawprod"
+          ],
+          "firstLocked": 3
+        },
+        {
+          "sort": "type",
+          "first": [
+            "founder",
+            "p3_account",
+            "bm_p1_make_rawprod"
+          ],
+          "firstLocked": 3
+        },
+        {
+          "sort": "name",
+          "first": [
+            "bm_p1_make_rawprod",
+            "founder",
+            "p3_account"
+          ],
+          "firstLocked": 3
+        }
+      ],
+      "metadata": {
+        "labels": [
+          "来源卡包：车库创业",
+          "相关配方",
+          "采购粗糙产品",
+          "×1",
+          "任意员工",
+          "+",
+          "×1",
+          "批发市场",
+          "+",
+          "×1",
+          "现金",
+          "→",
+          "×1",
+          "粗糙产品"
+        ],
+        "icons": [
+          {
+            "name": "RecipeIcon-founder",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-p1_wholesale",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-cash",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-p1_rawprod",
+            "width": 282.624,
+            "height": 282.624
+          }
+        ]
+      },
+      "recipeIcons": 4,
+      "sourcePack": "garage_pack",
+      "boardLongPress": true,
+      "scrollableReferences": true,
+      "roundedCatalogAndBack": true
+    },
+    {
+      "viewport": "portrait",
+      "sorts": [
+        {
+          "sort": "rarity",
+          "first": [
+            "founder",
+            "p3_account",
+            "bm_p1_make_rawprod"
+          ],
+          "firstLocked": 3
+        },
+        {
+          "sort": "type",
+          "first": [
+            "founder",
+            "p3_account",
+            "bm_p1_make_rawprod"
+          ],
+          "firstLocked": 3
+        },
+        {
+          "sort": "name",
+          "first": [
+            "bm_p1_make_rawprod",
+            "founder",
+            "p3_account"
+          ],
+          "firstLocked": 3
+        }
+      ],
+      "metadata": {
+        "labels": [
+          "来源卡包：车库创业",
+          "相关配方",
+          "采购粗糙产品",
+          "×1",
+          "任意员工",
+          "+",
+          "×1",
+          "批发市场",
+          "+",
+          "×1",
+          "现金",
+          "→",
+          "×1",
+          "粗糙产品"
+        ],
+        "icons": [
+          {
+            "name": "RecipeIcon-founder",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-p1_wholesale",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-cash",
+            "width": 282.624,
+            "height": 282.624
+          },
+          {
+            "name": "RecipeIcon-p1_rawprod",
+            "width": 282.624,
+            "height": 282.624
+          }
+        ]
+      },
+      "recipeIcons": 4,
+      "sourcePack": "garage_pack",
+      "boardLongPress": true,
+      "scrollableReferences": true,
+      "roundedCatalogAndBack": true
+    }
+  ],
+  "errors": [],
+  "typecheck": "passed",
+  "build": "One complete web-mobile build passed",
+  "rules": "npm run test:rules passed"
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-23",
+  "engine": "Cocos Creator 3.8.8",
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "runtime": "Chrome, http://127.0.0.1:4173/?review=1",
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "initialHome": true,
+      "fourEdgeEntrance": true,
+      "idleMotion": true,
+      "buttonsVisible": true,
+      "startGame": true,
+      "settingsAndBack": true,
+      "returnHomeAndContinue": true,
+      "accountWithdrawal": {
+        "stored": 45,
+        "looseCash": 5,
+        "totalCash": 50
+      },
+      "screenshot": "title-desktop.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "initialHome": true,
+      "responsiveComposition": true,
+      "fourEdgeEntrance": true,
+      "idleMotion": true,
+      "buttonsVisible": true,
+      "startGame": true,
+      "screenshot": "title-portrait.png"
+    }
+  ],
+  "runtimeErrors": [],
+  "notes": [
+    "Desktop checks completed before the portrait touch-target assertion encountered floating-point rounding (43.9999999999999). The portrait check was resumed with 0.01 px tolerance; no source change was needed.",
+    "Startup card views are deferred until entering play so Cocos onLoad runs on active nodes."
+  ],
+  "assets": {
+    "mode": "builtin imagegen",
+    "background": [
+      1672,
+      941
+    ],
+    "transparentCharacters": [
+      1254,
+      1254
+    ],
+    "proceduralProps": "Cocos Graphics"
+  }
+}

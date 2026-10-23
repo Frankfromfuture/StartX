@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "desktop": true,
+      "longPress": true,
+      "continuedHoldRotates": true,
+      "backFace": true,
+      "tapFlip": true,
+      "normalDrag": true,
+      "noCashBadges": true,
+      "cashBelowTarget": true,
+      "looseCashFirst": true,
+      "payroll": 4,
+      "looseSpent": 1,
+      "storedSpent": 3
+    },
+    {
+      "portrait": true,
+      "touchLongPress": true,
+      "sameTouchFlip": true,
+      "secondTouchRotation": true,
+      "touchClose": true,
+      "boardPositionPreserved": true
+    }
+  ],
+  "errors": [],
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "cashPayment": {
+    "before": 46,
+    "after": 42,
+    "payroll": 4,
+    "looseSpent": 1,
+    "accountSpent": 3,
+    "belowRecipientsDuringFlightAndArrival": true
+  },
+  "screenshots": [
+    "output/playwright/inspect-desktop-front.png",
+    "output/playwright/inspect-desktop-back.png",
+    "output/playwright/inspect-portrait-front.png",
+    "output/playwright/inspect-portrait-back.png",
+    "output/playwright/cash-under-card.png"
+  ]
+}

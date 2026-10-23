@@ -1,0 +1,18 @@
+{
+  "size": [
+    560,
+    560
+  ],
+  "mean_absolute_channel_error_255": [
+    1.118583072015571,
+    0.9400039197664359,
+    0.925862348615917
+  ],
+  "rms_channel_error_255": [
+    4.793630222086245,
+    3.8377409284118262,
+    3.8307712104234306
+  ],
+  "basis": "Original Godot spatial material rendered frontally with camera distance 2 face widths; 8 px alpha border excluded",
+  "face_sha256": "92ebae079588f5489b994d8df7f42349ebe92b08d03847c5366f15580cf8e648"
+}

@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "pack": {
+        "sourceWidth": 84,
+        "startWidth": 84.00000000000011,
+        "startScale": 0.40650406504065084,
+        "grew": true,
+        "noOverlap": true,
+        "chargedOnce": true
+      },
+      "group": {
+        "count": 3,
+        "outline": {
+          "width": 314,
+          "height": 410,
+          "stroke": 10,
+          "color": [
+            0,
+            0,
+            0
+          ]
+        },
+        "belowHeld": true,
+        "animated": true,
+        "merge": true
+      }
+    },
+    {
+      "viewport": "portrait",
+      "pack": {
+        "sourceWidth": 64.00000000000001,
+        "startWidth": 63.99999999999996,
+        "startScale": 0.43956043956043933,
+        "grew": true,
+        "noOverlap": true,
+        "chargedOnce": true
+      },
+      "group": {
+        "count": 3,
+        "outline": {
+          "width": 314,
+          "height": 410,
+          "stroke": 10,
+          "color": [
+            0,
+            0,
+            0
+          ]
+        },
+        "belowHeld": true,
+        "animated": true,
+        "merge": true
+      }
+    }
+  ],
+  "errors": []
+}

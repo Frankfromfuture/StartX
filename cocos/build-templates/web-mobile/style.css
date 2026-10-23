@@ -1,0 +1,7 @@
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #171512; }
+body { touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+#GameDiv, #Cocos3dGameContainer { position: absolute; inset: 0; width: 100% !important; height: 100% !important; margin: 0 !important; }
+#GameCanvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+#splash { position: absolute; inset: 0; background: #dae1d5; }
+.progress-bar { position: absolute; left: 25%; bottom: 20%; width: 50%; height: 4px; border-radius: 2px; background: #b9c8ae; }
+.progress-bar span { display: block; height: 100%; background: #40593f; }

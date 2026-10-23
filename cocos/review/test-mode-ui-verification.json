@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop: default test opening has 50 real coins and all 10 packs; menus 30% narrower with complete original font; disabling/restarting restores normal opening; enabling/restarting restores exactly 50 and fresh card faces; formerly gated pack purchase deducts the normal price",
+    "Portrait touch: default on, 50 coins and every pack unlocked; menu 224px, original font covers every label without fallback or volume text shrinking; mode toggles do not grant extra cash and 44px audio controls still work"
+  ],
+  "errors": []
+}

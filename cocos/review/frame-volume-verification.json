@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "previewCssSize": 243.00000000000003,
+      "inverseInput": true,
+      "blackAndColoredBoardThickness": true,
+      "previewThickness": true,
+      "frontAndBackLighting": true,
+      "flipsAndCloses": true
+    },
+    {
+      "viewport": "portrait",
+      "previewCssSize": 159.89999999999998,
+      "inverseInput": true,
+      "blackAndColoredBoardThickness": true,
+      "previewThickness": true,
+      "frontAndBackLighting": true,
+      "flipsAndCloses": true
+    }
+  ],
+  "errors": [],
+  "typecheck": "passed",
+  "build": "web-mobile passed",
+  "visualCheck": "Desktop and portrait tilted views and black-frame preview inspected; rim sidewalls align with the artwork and text stays readable.",
+  "screenshots": [
+    "output/playwright/frame-board-desktop.png",
+    "output/playwright/frame-board-portrait.png",
+    "output/playwright/frame-inspect-desktop-tilt.png",
+    "output/playwright/frame-inspect-portrait-tilt.png",
+    "output/playwright/frame-inspect-black.png"
+  ]
+}

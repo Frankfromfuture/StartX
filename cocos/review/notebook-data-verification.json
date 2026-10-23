@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Original Godot stage groups and all 22 placeholder counts",
+    "Known recipes follow first-seen order",
+    "Business-model card inside an unopened pack is already visible",
+    "Formula strings are the original DataLoader export"
+  ]
+}

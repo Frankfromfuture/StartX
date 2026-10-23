@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "resizeSequence": [
+    {
+      "width": 1440,
+      "height": 900,
+      "columns": 9
+    },
+    {
+      "width": 708,
+      "height": 556,
+      "columns": 4
+    },
+    {
+      "width": 450,
+      "height": 727,
+      "columns": 3
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "columns": 9
+    }
+  ],
+  "size": 112,
+  "allMaskGpuTransformsMatch": true,
+  "completeRoundedCards": true,
+  "regression": {
+    "scrollable": true,
+    "cardClick": true,
+    "restoredOffset": 20
+  }
+}

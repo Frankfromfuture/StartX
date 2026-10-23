@@ -1,0 +1,2662 @@
+{
+  "cards": {
+    "founder": {
+      "name": "创始人",
+      "type": "employee",
+      "workTags": [
+        "sales",
+        "dev",
+        "admin",
+        "market",
+        "data",
+        "finance",
+        "any"
+      ],
+      "salary": 0,
+      "capacity": 5,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "flavor": "不用给钱，啥都能干。梦想是改变世界，合伙人是自己的猫。",
+      "bodyColor": "ffe5e5",
+      "functionText": "产能 5/5、工资 $0"
+    },
+    "cash": {
+      "name": "现金",
+      "type": "cash",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 3,
+      "flavor": "让你又爱又恨的东西。",
+      "bodyColor": "d7b052",
+      "functionText": ""
+    },
+    "p1_neighborhood": {
+      "name": "居住小区",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "maxUsesMin": 3,
+      "maxUsesMax": 5,
+      "maxUses": 5,
+      "flavor": "每个大公司的首批客户都是亲戚朋友和邻居们。",
+      "bodyColor": "adb1af",
+      "functionText": "次数 5/5"
+    },
+    "p1_youth": {
+      "name": "小区青年",
+      "type": "customer",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "workRequired": 30,
+      "flavor": "不看牌子，便宜好用就行。",
+      "bodyColor": "81978d",
+      "functionText": "价值 $1"
+    },
+    "p1_survey": {
+      "name": "初级客户调研",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "送10个鸡蛋，消费者会在问卷里说实话吗？",
+      "bodyColor": "83949f",
+      "functionText": "价值 $1"
+    },
+    "p1_customer": {
+      "name": "靠谱客户",
+      "type": "customer",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 2,
+      "cost": 0,
+      "workRequired": 30,
+      "flavor": "关注高性价比产品的人。",
+      "bodyColor": "81978d",
+      "functionText": "价值 $2"
+    },
+    "p1_university": {
+      "name": "大学",
+      "type": "facility",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "flavor": "真好，又回到校园了！",
+      "bodyColor": "6e7071",
+      "functionText": ""
+    },
+    "p1_intern": {
+      "name": "实习生",
+      "type": "employee",
+      "workTags": [
+        "any"
+      ],
+      "salary": 1,
+      "capacity": 1,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 30,
+      "flavor": "懵懂的眼神，管饭就行。",
+      "bodyColor": "c19799",
+      "functionText": "产能 1/1、工资 $1"
+    },
+    "p1_wholesale": {
+      "name": "批发市场",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "maxUsesMin": 3,
+      "maxUsesMax": 5,
+      "maxUses": 5,
+      "flavor": "“能再便宜点吗，不能我走了啊！”",
+      "bodyColor": "adb1af",
+      "functionText": "次数 5/5"
+    },
+    "p1_rawprod": {
+      "name": "粗糙产品",
+      "type": "product",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 1,
+      "workRequired": 30,
+      "flavor": "就这个价格还要啥自行车？",
+      "bodyColor": "d5ab8a",
+      "functionText": "价值 $1、成本 $1"
+    },
+    "p1_marketing": {
+      "name": "初级产品策划",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "“真正好的产品不需要包装。”但我们的不是",
+      "bodyColor": "83949f",
+      "functionText": "价值 $1"
+    },
+    "p1_package": {
+      "name": "带包装的产品",
+      "type": "product",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 2,
+      "cost": 2,
+      "workRequired": 30,
+      "flavor": "带包装的自行车。",
+      "bodyColor": "d5ab8a",
+      "functionText": "价值 $2、成本 $2"
+    },
+    "p1_office": {
+      "name": "创始人办公桌",
+      "type": "facility",
+      "workTags": [],
+      "salary": 2,
+      "capacity": 0,
+      "spaceCapacity": 30,
+      "value": 0,
+      "cost": 0,
+      "flavor": "联合办公里最便宜的非固定工位，咖啡管够",
+      "bodyColor": "6e7071",
+      "functionText": "空间容量 +30"
+    },
+    "rival1": {
+      "name": "银牌销售员",
+      "type": "rival",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 2,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "hp": 2,
+      "flavor": "经常尾随你们的人。",
+      "bodyColor": "9c7071",
+      "functionText": "产能 2、资金 6/6"
+    },
+    "p2_law_firm": {
+      "name": "律师事务所",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "maxUsesMin": 3,
+      "maxUsesMax": 5,
+      "maxUses": 5,
+      "flavor": "Better Call Me!",
+      "bodyColor": "adb1af",
+      "functionText": "次数 5/5"
+    },
+    "p2_document": {
+      "name": "文书",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 20,
+      "flavor": "写字楼的特产。",
+      "bodyColor": "83949f",
+      "functionText": "价值 $0"
+    },
+    "p2_contract": {
+      "name": "合同",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 25,
+      "flavor": "希望你认真看一下。",
+      "bodyColor": "83949f",
+      "functionText": "价值 $0"
+    },
+    "p2_grad": {
+      "name": "毕业生",
+      "type": "employee",
+      "workTags": [
+        "any"
+      ],
+      "salary": 1,
+      "capacity": 2,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 6,
+      "flavor": "以管理培训生的名义招来的通用年轻人。",
+      "bodyColor": "c19799",
+      "functionText": "产能 2/2、工资 $1"
+    },
+    "p2_admin_management": {
+      "name": "初级行政管理",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "workRequired": 15,
+      "bodyColor": "83949f",
+      "functionText": "价值 $1"
+    },
+    "p2_sales_course": {
+      "name": "销售技巧课程",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 2,
+      "cost": 0,
+      "workRequired": 40,
+      "flavor": "“听懂掌声！”",
+      "bodyColor": "83949f",
+      "functionText": "价值 $2"
+    },
+    "p2_product_course": {
+      "name": "产品策划课程",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 2,
+      "cost": 0,
+      "workRequired": 40,
+      "bodyColor": "83949f",
+      "functionText": "价值 $2"
+    },
+    "p2_legal_admin_course": {
+      "name": "法务行政课程",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 2,
+      "cost": 0,
+      "workRequired": 40,
+      "bodyColor": "83949f",
+      "functionText": "价值 $2"
+    },
+    "p2_sales_specialist": {
+      "name": "销售专员",
+      "type": "employee",
+      "workTags": [
+        "sales",
+        "any"
+      ],
+      "salary": 2,
+      "capacity": 3,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 6,
+      "flavor": "公司里最活跃的那批人。",
+      "bodyColor": "c19799",
+      "functionText": "产能 3/3、工资 $2"
+    },
+    "p2_product_specialist": {
+      "name": "产品专员",
+      "type": "employee",
+      "workTags": [
+        "dev",
+        "any"
+      ],
+      "salary": 2,
+      "capacity": 3,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 6,
+      "flavor": "专门负责产品升级。",
+      "bodyColor": "c19799",
+      "functionText": "产能 3/3、工资 $2"
+    },
+    "p2_admin_specialist": {
+      "name": "行政专员",
+      "type": "employee",
+      "workTags": [
+        "admin",
+        "any"
+      ],
+      "salary": 2,
+      "capacity": 3,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 6,
+      "flavor": "老板的好助手。",
+      "bodyColor": "c19799",
+      "functionText": "产能 3/3、工资 $2"
+    },
+    "p2_orderly_workstation": {
+      "name": "井井有条的工位",
+      "type": "facility",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 5,
+      "value": 1,
+      "cost": 0,
+      "workRequired": 40,
+      "flavor": "几个空的工位和柜子。",
+      "bodyColor": "6e7071",
+      "functionText": "价值 $1、空间容量 +5"
+    },
+    "rival2": {
+      "name": "金牌销售员",
+      "type": "rival",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 4,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "hp": 4,
+      "flavor": "经常大声嘲笑你们的人。",
+      "bodyColor": "9c7071",
+      "functionText": "产能 4、资金 12/12"
+    },
+    "p3_large_neighborhood": {
+      "name": "大型居住小区",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 60,
+      "flavor": "源源不断的顾客。",
+      "bodyColor": "adb1af",
+      "functionText": "无限次"
+    },
+    "p3_wholesale_city": {
+      "name": "大型商品批发城",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 60,
+      "flavor": "基本什么都能买到。",
+      "bodyColor": "adb1af",
+      "functionText": "无限次"
+    },
+    "p3_bank": {
+      "name": "银行",
+      "type": "resource",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "flavor": "大家经常去的地方。",
+      "bodyColor": "adb1af",
+      "functionText": "无限次"
+    },
+    "p3_account": {
+      "name": "账户",
+      "type": "tool",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 50,
+      "flavor": "开户以后就能存一笔钱了。",
+      "bodyColor": "8a6a24",
+      "functionText": "账户余额 $0/50、点击取出最多 5 个现金"
+    },
+    "bm_p2_specialist_make_customer": {
+      "name": "拓展靠谱客户",
+      "type": "business_model",
+      "recipeId": "p2_specialist_make_customer",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "销售专员*1+居住小区*1 → 靠谱客户*1"
+    },
+    "bm_p2_specialist_package_product": {
+      "name": "采购包装产品",
+      "type": "business_model",
+      "recipeId": "p2_specialist_package_product",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "产品专员*1+批发市场*1+现金*1 → 带包装的产品*1"
+    },
+    "bm_p1_recruit_youth": {
+      "name": "招募小区青年",
+      "type": "business_model",
+      "recipeId": "p1_recruit_youth",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "居住小区*1 → 小区青年*1"
+    },
+    "bm_p1_make_customer": {
+      "name": "转化靠谱客户",
+      "type": "business_model",
+      "recipeId": "p1_make_customer",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "初级客户调研*1+小区青年*1 → 靠谱客户*1"
+    },
+    "bm_p1_recruit_intern": {
+      "name": "招募实习生",
+      "type": "business_model",
+      "recipeId": "p1_recruit_intern",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "大学*1 → 实习生*1"
+    },
+    "bm_p1_make_rawprod": {
+      "name": "采购粗糙产品",
+      "type": "business_model",
+      "recipeId": "p1_make_rawprod",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "批发市场*1+现金*1 → 粗糙产品*1"
+    },
+    "bm_p1_package_prod": {
+      "name": "包装粗糙产品",
+      "type": "business_model",
+      "recipeId": "p1_package_prod",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "粗糙产品*1+初级产品策划*1 → 带包装的产品*1"
+    },
+    "bm_p1_cash_pkg_cust": {
+      "name": "成交",
+      "type": "business_model",
+      "recipeId": "p1_cash_pkg_cust",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "带包装的产品*1+靠谱客户*1 → 现金*6"
+    },
+    "bm_p1_cash_pkg_youth": {
+      "name": "成交",
+      "type": "business_model",
+      "recipeId": "p1_cash_pkg_youth",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "带包装的产品*1+小区青年*1 → 现金*5"
+    },
+    "bm_p1_cash_raw_cust": {
+      "name": "成交",
+      "type": "business_model",
+      "recipeId": "p1_cash_raw_cust",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "粗糙产品*1+靠谱客户*1 → 现金*5"
+    },
+    "bm_p1_cash_raw_youth": {
+      "name": "成交",
+      "type": "business_model",
+      "recipeId": "p1_cash_raw_youth",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "粗糙产品*1+小区青年*1 → 现金*3"
+    },
+    "bm_p2_make_document": {
+      "name": "起草文书",
+      "type": "business_model",
+      "recipeId": "p2_make_document",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "创始人办公桌*1 → 文书*1"
+    },
+    "bm_p2_train_grad": {
+      "name": "毕业转正",
+      "type": "business_model",
+      "recipeId": "p2_train_grad",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "合同*1+实习生*1 → 毕业生*1"
+    },
+    "bm_p2_make_sales_course": {
+      "name": "编写销售技巧课程",
+      "type": "business_model",
+      "recipeId": "p2_make_sales_course",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "文书*1+初级客户调研*1 → 销售技巧课程*1"
+    },
+    "bm_p2_make_product_course": {
+      "name": "编写产品技能课程",
+      "type": "business_model",
+      "recipeId": "p2_make_product_course",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "文书*1+初级产品策划*1 → 产品策划课程*1"
+    },
+    "bm_p2_make_legal_admin_course": {
+      "name": "编写法务行政课程",
+      "type": "business_model",
+      "recipeId": "p2_make_legal_admin_course",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "文书*1+初级行政管理*1 → 法务行政课程*1"
+    },
+    "bm_p2_train_sales_specialist": {
+      "name": "培养销售专员",
+      "type": "business_model",
+      "recipeId": "p2_train_sales_specialist",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "毕业生*1+销售技巧课程*1 → 销售专员*1"
+    },
+    "bm_p2_train_product_specialist": {
+      "name": "培养产品专员",
+      "type": "business_model",
+      "recipeId": "p2_train_product_specialist",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "毕业生*1+产品策划课程*1 → 产品专员*1"
+    },
+    "bm_p2_train_admin_specialist": {
+      "name": "培养行政专员",
+      "type": "business_model",
+      "recipeId": "p2_train_admin_specialist",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "毕业生*1+法务行政课程*1 → 行政专员*1"
+    },
+    "bm_p2_build_orderly_workstation": {
+      "name": "增加办公空间",
+      "type": "business_model",
+      "recipeId": "p2_build_orderly_workstation",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "创始人办公桌*1+初级行政管理*1+现金*1 → 井井有条的工位*1"
+    },
+    "bm_p2_make_contract": {
+      "name": "起草合同",
+      "type": "business_model",
+      "recipeId": "p2_make_contract",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "文书*1+律师事务所*1 → 合同*1"
+    },
+    "bm_p3_open_account": {
+      "name": "开设账户",
+      "type": "business_model",
+      "recipeId": "p3_open_account",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "6b4ca0",
+      "functionText": "银行*1+合同*1 → 账户*1"
+    }
+  },
+  "recipes": [
+    {
+      "id": "p2_specialist_make_customer",
+      "name": "拓展靠谱客户",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_sales_specialist",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "p1_neighborhood",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_customer",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "销售专员*1+居住小区*1 → 靠谱客户*1"
+    },
+    {
+      "id": "p2_specialist_package_product",
+      "name": "采购包装产品",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_product_specialist",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "p1_wholesale",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "cash",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_package",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "产品专员*1+批发市场*1+现金*1 → 带包装的产品*1"
+    },
+    {
+      "id": "p1_recruit_youth",
+      "name": "招募小区青年",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p1_neighborhood",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_youth",
+          "count": 1
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "居住小区*1 → 小区青年*1"
+    },
+    {
+      "id": "p1_make_customer",
+      "name": "转化靠谱客户",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_survey",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_youth",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_customer",
+          "count": 1
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "初级客户调研*1+小区青年*1 → 靠谱客户*1"
+    },
+    {
+      "id": "p1_recruit_intern",
+      "name": "招募实习生",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p1_university",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_intern",
+          "count": 1
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "大学*1 → 实习生*1"
+    },
+    {
+      "id": "p1_make_rawprod",
+      "name": "采购粗糙产品",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p1_wholesale",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "cash",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_rawprod",
+          "count": 1
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "批发市场*1+现金*1 → 粗糙产品*1"
+    },
+    {
+      "id": "p1_package_prod",
+      "name": "包装粗糙产品",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_rawprod",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_marketing",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p1_package",
+          "count": 1
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "粗糙产品*1+初级产品策划*1 → 带包装的产品*1"
+    },
+    {
+      "id": "p1_cash_pkg_cust",
+      "name": "成交",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_package",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_customer",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 6
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "带包装的产品*1+靠谱客户*1 → 现金*6"
+    },
+    {
+      "id": "p1_cash_pkg_youth",
+      "name": "成交",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_package",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_youth",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 5
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "带包装的产品*1+小区青年*1 → 现金*5"
+    },
+    {
+      "id": "p1_cash_raw_cust",
+      "name": "成交",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_rawprod",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_customer",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 5
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "粗糙产品*1+靠谱客户*1 → 现金*5"
+    },
+    {
+      "id": "p1_cash_raw_youth",
+      "name": "成交",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_rawprod",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_youth",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 3
+        }
+      ],
+      "packId": "garage_pack",
+      "formula": "粗糙产品*1+小区青年*1 → 现金*3"
+    },
+    {
+      "id": "p2_make_document",
+      "name": "起草文书",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p1_office",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_document",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "创始人办公桌*1 → 文书*1"
+    },
+    {
+      "id": "p2_train_grad",
+      "name": "毕业转正",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_contract",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_intern",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_grad",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "合同*1+实习生*1 → 毕业生*1"
+    },
+    {
+      "id": "p2_make_sales_course",
+      "name": "编写销售技巧课程",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_document",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_survey",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_sales_course",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "文书*1+初级客户调研*1 → 销售技巧课程*1"
+    },
+    {
+      "id": "p2_make_product_course",
+      "name": "编写产品技能课程",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_document",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_marketing",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_product_course",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "文书*1+初级产品策划*1 → 产品策划课程*1"
+    },
+    {
+      "id": "p2_make_legal_admin_course",
+      "name": "编写法务行政课程",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_document",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_admin_management",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_legal_admin_course",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "文书*1+初级行政管理*1 → 法务行政课程*1"
+    },
+    {
+      "id": "p2_train_sales_specialist",
+      "name": "培养销售专员",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_grad",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_sales_course",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_sales_specialist",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "毕业生*1+销售技巧课程*1 → 销售专员*1"
+    },
+    {
+      "id": "p2_train_product_specialist",
+      "name": "培养产品专员",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_grad",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_product_course",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_product_specialist",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "毕业生*1+产品策划课程*1 → 产品专员*1"
+    },
+    {
+      "id": "p2_train_admin_specialist",
+      "name": "培养行政专员",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_grad",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_legal_admin_course",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_admin_specialist",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "毕业生*1+法务行政课程*1 → 行政专员*1"
+    },
+    {
+      "id": "p2_build_orderly_workstation",
+      "name": "增加办公空间",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p1_office",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "p2_admin_management",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "cash",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_orderly_workstation",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "创始人办公桌*1+初级行政管理*1+现金*1 → 井井有条的工位*1"
+    },
+    {
+      "id": "p2_make_contract",
+      "name": "起草合同",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_document",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_law_firm",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p2_contract",
+          "count": 1
+        }
+      ],
+      "packId": "Developemnt_pack",
+      "formula": "文书*1+律师事务所*1 → 合同*1"
+    },
+    {
+      "id": "p3_open_account",
+      "name": "开设账户",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p3_bank",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "p2_contract",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p3_account",
+          "count": 1
+        }
+      ],
+      "packId": "channel_pack",
+      "formula": "银行*1+合同*1 → 账户*1"
+    }
+  ],
+  "packs": {
+    "garage_pack": {
+      "name": "车库创业",
+      "stage": 0,
+      "price": 3,
+      "minCards": 3,
+      "maxCards": 4,
+      "slots": [
+        [
+          {
+            "id": "p1_neighborhood",
+            "w": 40
+          },
+          {
+            "id": "p1_university",
+            "w": 60
+          },
+          {
+            "id": "p1_youth",
+            "w": 25
+          }
+        ],
+        [
+          {
+            "id": "p1_survey",
+            "w": 40
+          },
+          {
+            "id": "p1_customer",
+            "w": 35
+          },
+          {
+            "id": "p1_intern",
+            "w": 25
+          }
+        ],
+        [
+          {
+            "id": "p1_wholesale",
+            "w": 40
+          },
+          {
+            "id": "p1_marketing",
+            "w": 35
+          },
+          {
+            "id": "p1_rawprod",
+            "w": 25
+          }
+        ],
+        [
+          {
+            "id": "p1_package",
+            "w": 34
+          },
+          {
+            "id": "p1_office",
+            "w": 33
+          },
+          {
+            "id": "founder",
+            "w": 33
+          }
+        ]
+      ]
+    },
+    "Developemnt_pack": {
+      "name": "起步发展",
+      "stage": 1,
+      "price": 5,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p1_neighborhood",
+            "w": 30
+          },
+          {
+            "id": "p1_wholesale",
+            "w": 30
+          },
+          {
+            "id": "p2_law_firm",
+            "w": 25
+          },
+          {
+            "id": "p1_university",
+            "w": 15
+          }
+        ],
+        [
+          {
+            "id": "p2_document",
+            "w": 40
+          },
+          {
+            "id": "p1_intern",
+            "w": 25
+          },
+          {
+            "id": "p1_survey",
+            "w": 15
+          },
+          {
+            "id": "p1_marketing",
+            "w": 15
+          },
+          {
+            "id": "p2_admin_management",
+            "w": 5
+          }
+        ],
+        [
+          {
+            "id": "p2_grad",
+            "w": 20
+          },
+          {
+            "id": "p2_sales_course",
+            "w": 20
+          },
+          {
+            "id": "p2_product_course",
+            "w": 20
+          },
+          {
+            "id": "p2_legal_admin_course",
+            "w": 20
+          },
+          {
+            "id": "p2_document",
+            "w": 20
+          }
+        ]
+      ]
+    },
+    "channel_pack": {
+      "name": "供应链管理",
+      "stage": 2,
+      "price": 6,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p3_large_neighborhood",
+            "w": 40
+          },
+          {
+            "id": "p3_wholesale_city",
+            "w": 40
+          },
+          {
+            "id": "p2_law_firm",
+            "w": 10
+          },
+          {
+            "id": "p3_bank",
+            "w": 10
+          }
+        ],
+        [
+          {
+            "id": "p1_survey",
+            "w": 40
+          },
+          {
+            "id": "p2_grad",
+            "w": 25
+          },
+          {
+            "id": "p2_sales_specialist",
+            "w": 20
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 15
+          }
+        ],
+        [
+          {
+            "id": "p2_admin_specialist",
+            "w": 40
+          },
+          {
+            "id": "p1_intern",
+            "w": 35
+          },
+          {
+            "id": "p2_document",
+            "w": 25
+          }
+        ]
+      ]
+    },
+    "product_pack": {
+      "name": "产品升级",
+      "stage": 2,
+      "price": 10,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p1_marketing",
+            "w": 35
+          },
+          {
+            "id": "p2_product_course",
+            "w": 35
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p1_rawprod",
+            "w": 35
+          },
+          {
+            "id": "p1_package",
+            "w": 35
+          },
+          {
+            "id": "p1_wholesale",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p1_survey",
+            "w": 35
+          },
+          {
+            "id": "p2_document",
+            "w": 35
+          },
+          {
+            "id": "p2_grad",
+            "w": 30
+          }
+        ]
+      ]
+    },
+    "office_pack": {
+      "name": "办公空间扩大",
+      "stage": 2,
+      "price": 8,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p1_office",
+            "w": 35
+          },
+          {
+            "id": "p2_orderly_workstation",
+            "w": 35
+          },
+          {
+            "id": "p2_admin_management",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p2_admin_specialist",
+            "w": 30
+          },
+          {
+            "id": "p1_intern",
+            "w": 35
+          },
+          {
+            "id": "p2_grad",
+            "w": 35
+          }
+        ],
+        [
+          {
+            "id": "p2_document",
+            "w": 35
+          },
+          {
+            "id": "p2_contract",
+            "w": 30
+          },
+          {
+            "id": "p2_law_firm",
+            "w": 35
+          }
+        ]
+      ]
+    },
+    "rival_pack": {
+      "name": "急！商战来袭！",
+      "stage": 3,
+      "price": 12,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "rival1",
+            "w": 100
+          }
+        ],
+        [
+          {
+            "id": "rival2",
+            "w": 100
+          }
+        ],
+        [
+          {
+            "id": "rival1",
+            "w": 50
+          },
+          {
+            "id": "rival2",
+            "w": 50
+          }
+        ]
+      ]
+    },
+    "funding_pack": {
+      "name": "融资壮大",
+      "stage": 4,
+      "price": 16,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "cash",
+            "w": 50
+          },
+          {
+            "id": "p3_account",
+            "w": 20
+          },
+          {
+            "id": "p3_bank",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p2_contract",
+            "w": 40
+          },
+          {
+            "id": "p2_document",
+            "w": 30
+          },
+          {
+            "id": "p2_law_firm",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p2_sales_specialist",
+            "w": 35
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 35
+          },
+          {
+            "id": "p2_admin_specialist",
+            "w": 30
+          }
+        ]
+      ]
+    },
+    "ipo_pack": {
+      "name": "上市IPO 时刻！",
+      "stage": 5,
+      "price": 24,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p3_account",
+            "w": 35
+          },
+          {
+            "id": "cash",
+            "w": 45
+          },
+          {
+            "id": "p3_bank",
+            "w": 20
+          }
+        ],
+        [
+          {
+            "id": "p2_contract",
+            "w": 35
+          },
+          {
+            "id": "p2_admin_specialist",
+            "w": 35
+          },
+          {
+            "id": "p2_orderly_workstation",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p2_sales_specialist",
+            "w": 34
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 33
+          },
+          {
+            "id": "p2_admin_specialist",
+            "w": 33
+          }
+        ]
+      ]
+    },
+    "international_pack": {
+      "name": "国际扩张",
+      "stage": 5,
+      "price": 34,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "p3_large_neighborhood",
+            "w": 35
+          },
+          {
+            "id": "p3_wholesale_city",
+            "w": 35
+          },
+          {
+            "id": "p3_bank",
+            "w": 30
+          }
+        ],
+        [
+          {
+            "id": "p2_sales_specialist",
+            "w": 40
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 35
+          },
+          {
+            "id": "p2_grad",
+            "w": 25
+          }
+        ],
+        [
+          {
+            "id": "p1_package",
+            "w": 35
+          },
+          {
+            "id": "p1_customer",
+            "w": 35
+          },
+          {
+            "id": "p2_contract",
+            "w": 30
+          }
+        ]
+      ]
+    },
+    "fortune500_pack": {
+      "name": "战！巨头竞争！",
+      "stage": 6,
+      "price": 50,
+      "minCards": 3,
+      "maxCards": 3,
+      "slots": [
+        [
+          {
+            "id": "rival2",
+            "w": 55
+          },
+          {
+            "id": "rival1",
+            "w": 45
+          }
+        ],
+        [
+          {
+            "id": "p2_sales_specialist",
+            "w": 34
+          },
+          {
+            "id": "p2_product_specialist",
+            "w": 33
+          },
+          {
+            "id": "p2_admin_specialist",
+            "w": 33
+          }
+        ],
+        [
+          {
+            "id": "cash",
+            "w": 45
+          },
+          {
+            "id": "p3_account",
+            "w": 30
+          },
+          {
+            "id": "p2_contract",
+            "w": 25
+          }
+        ]
+      ]
+    }
+  },
+  "packOrder": [
+    "garage_pack",
+    "Developemnt_pack",
+    "channel_pack",
+    "product_pack",
+    "office_pack",
+    "rival_pack",
+    "funding_pack",
+    "ipo_pack",
+    "international_pack",
+    "fortune500_pack"
+  ],
+  "tasks": [
+    {
+      "id": "main_start",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "创业啦",
+      "content": "下定决心这次一定成功",
+      "triggerType": "game_start",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 1
+    },
+    {
+      "id": "main_open_garage",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "打开车库创业包",
+      "content": "打开开始卡包",
+      "triggerType": "pack_opened",
+      "targetId": "garage_pack",
+      "targetCount": 1,
+      "unlockPack": "Developemnt_pack",
+      "order": 2
+    },
+    {
+      "id": "main_raw_product",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "初次选货",
+      "content": "创始人带着一笔现金去批发市场，并生产出粗糙产品",
+      "triggerType": "founder_recipe",
+      "targetId": "p1_make_rawprod",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 3
+    },
+    {
+      "id": "main_first_youth",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "初次找客户",
+      "content": "将创始人放到居住小区并生产出小区青年",
+      "triggerType": "founder_recipe",
+      "targetId": "p1_recruit_youth",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 4
+    },
+    {
+      "id": "main_first_sale",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "人生首单",
+      "content": "将粗糙产品卖给小区青年",
+      "triggerType": "recipe_complete",
+      "targetId": "p1_cash_raw_youth",
+      "targetCount": 1,
+      "unlockPack": "channel_pack",
+      "order": 5
+    },
+    {
+      "id": "main_sell_card",
+      "section": "主任务",
+      "group": "创业啦",
+      "title": "出售一张卡牌",
+      "content": "将任意可出售卡牌卖出",
+      "triggerType": "card_sold",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 6
+    },
+    {
+      "id": "main_recruit_intern",
+      "section": "主任务",
+      "group": "公司发展",
+      "title": "你不再孤独了",
+      "content": "通过大学招募实习生",
+      "triggerType": "recipe_complete",
+      "targetId": "p1_recruit_intern",
+      "targetCount": 1,
+      "unlockPack": "product_pack",
+      "order": 7
+    },
+    {
+      "id": "main_expand_office",
+      "section": "主任务",
+      "group": "公司发展",
+      "title": "办公室扩租",
+      "content": "空间容量上限首次增加",
+      "triggerType": "space_increased",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "office_pack",
+      "order": 8
+    },
+    {
+      "id": "main_supply_chain",
+      "section": "主任务",
+      "group": "公司发展",
+      "title": "建立供应链",
+      "content": "成功连接一条供应链",
+      "triggerType": "supply_chain_created",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "rival_pack",
+      "order": 9
+    },
+    {
+      "id": "side_packaged",
+      "section": "支线任务",
+      "group": "关注客户",
+      "title": "完成带包装产品",
+      "content": "生产一张带包装的产品",
+      "triggerType": "card_produced",
+      "targetId": "p1_package",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 10
+    },
+    {
+      "id": "side_reliable_customer",
+      "section": "支线任务",
+      "group": "关注客户",
+      "title": "找到靠谱客户",
+      "content": "获得一名靠谱客户",
+      "triggerType": "card_produced",
+      "targetId": "p1_customer",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 11
+    },
+    {
+      "id": "side_best_sale",
+      "section": "支线任务",
+      "group": "关注客户",
+      "title": "赚更多钱",
+      "content": "将带包装产品卖给靠谱客户",
+      "triggerType": "recipe_complete",
+      "targetId": "p1_cash_pkg_cust",
+      "targetCount": 1,
+      "unlockPack": "funding_pack",
+      "order": 12
+    },
+    {
+      "id": "org_grad",
+      "section": "支线任务",
+      "group": "组织发展",
+      "title": "未来靠你们了",
+      "content": "将实习生转正为毕业生",
+      "triggerType": "recipe_complete",
+      "targetId": "p2_train_grad",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 13
+    },
+    {
+      "id": "org_sales",
+      "section": "支线任务",
+      "group": "组织发展",
+      "title": "销售专员培训完成",
+      "content": "培养一名销售专员",
+      "triggerType": "recipe_complete",
+      "targetId": "p2_train_sales_specialist",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 14
+    },
+    {
+      "id": "org_product",
+      "section": "支线任务",
+      "group": "组织发展",
+      "title": "产品专员培训完成",
+      "content": "培养一名产品专员",
+      "triggerType": "recipe_complete",
+      "targetId": "p2_train_product_specialist",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 15
+    },
+    {
+      "id": "org_admin",
+      "section": "支线任务",
+      "group": "组织发展",
+      "title": "行政专员培训完成",
+      "content": "培养一名行政专员",
+      "triggerType": "recipe_complete",
+      "targetId": "p2_train_admin_specialist",
+      "targetCount": 1,
+      "unlockPack": "ipo_pack",
+      "order": 16
+    },
+    {
+      "id": "org_all",
+      "section": "支线任务",
+      "group": "组织发展",
+      "title": "组织架构雏形",
+      "content": "同时拥有销售、产品和行政专员",
+      "triggerType": "card_state",
+      "targetId": "specialists_all",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 17
+    },
+    {
+      "id": "partner_contract",
+      "section": "支线任务",
+      "group": "合作伙伴",
+      "title": "让律师事务所出一份合同",
+      "content": "通过律师事务所起草合同",
+      "triggerType": "recipe_complete",
+      "targetId": "p2_make_contract",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 18
+    },
+    {
+      "id": "partner_account",
+      "section": "支线任务",
+      "group": "合作伙伴",
+      "title": "让银行开一个账户",
+      "content": "通过银行开设账户",
+      "triggerType": "recipe_complete",
+      "targetId": "p3_open_account",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 19
+    },
+    {
+      "id": "battle_one",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "友谊为主",
+      "content": "赶走一名竞争对手",
+      "triggerType": "rival_defeated",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "international_pack",
+      "order": 20
+    },
+    {
+      "id": "battle_team",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "人多力量大",
+      "content": "多人合力赶走竞争对手",
+      "triggerType": "team_rival_defeated",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 21
+    },
+    {
+      "id": "battle_three",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "最好别来",
+      "content": "累积赶走 3 名竞争对手",
+      "triggerType": "rival_defeated",
+      "targetId": "",
+      "targetCount": 3,
+      "unlockPack": "",
+      "order": 22
+    },
+    {
+      "id": "battle_ten",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "享受竞争",
+      "content": "累积赶走 10 名竞争对手",
+      "triggerType": "rival_defeated",
+      "targetId": "",
+      "targetCount": 10,
+      "unlockPack": "",
+      "order": 23
+    },
+    {
+      "id": "battle_twenty",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "吵架大师",
+      "content": "累积赶走 20 名竞争对手",
+      "triggerType": "rival_defeated",
+      "targetId": "",
+      "targetCount": 20,
+      "unlockPack": "fortune500_pack",
+      "order": 24
+    },
+    {
+      "id": "battle_thirty",
+      "section": "支线任务",
+      "group": "商战",
+      "title": "谁敢惹我",
+      "content": "累积赶走 30 名竞争对手",
+      "triggerType": "rival_defeated",
+      "targetId": "",
+      "targetCount": 30,
+      "unlockPack": "",
+      "order": 25
+    },
+    {
+      "id": "supply_large_home",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "获得大型居住小区",
+      "content": "从供应链管理包抽到大型居住小区",
+      "triggerType": "card_drawn",
+      "targetId": "p3_large_neighborhood",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 26
+    },
+    {
+      "id": "supply_wholesale",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "获得小商品批发城",
+      "content": "从供应链管理包抽到小商品批发城",
+      "triggerType": "card_drawn",
+      "targetId": "p3_wholesale_city",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 27
+    },
+    {
+      "id": "supply_ten",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "供应链生产 10 次",
+      "content": "通过供应链累积完成 10 次生产",
+      "triggerType": "supply_production",
+      "targetId": "",
+      "targetCount": 10,
+      "unlockPack": "",
+      "order": 28
+    },
+    {
+      "id": "supply_twenty",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "供应链生产 20 次",
+      "content": "通过供应链累积完成 20 次生产",
+      "triggerType": "supply_production",
+      "targetId": "",
+      "targetCount": 20,
+      "unlockPack": "",
+      "order": 29
+    },
+    {
+      "id": "supply_beginner",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "供应链管理新手",
+      "content": "供应链节点大于等于 3",
+      "triggerType": "supply_nodes",
+      "targetId": "",
+      "targetCount": 3,
+      "unlockPack": "",
+      "order": 30
+    },
+    {
+      "id": "supply_expert",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "供应链管理专家",
+      "content": "供应链节点大于等于 4",
+      "triggerType": "supply_nodes",
+      "targetId": "",
+      "targetCount": 4,
+      "unlockPack": "",
+      "order": 31
+    },
+    {
+      "id": "supply_master",
+      "section": "支线任务",
+      "group": "供应链",
+      "title": "供应链管理大师",
+      "content": "供应链节点大于等于 5",
+      "triggerType": "supply_nodes",
+      "targetId": "",
+      "targetCount": 5,
+      "unlockPack": "",
+      "order": 32
+    }
+  ],
+  "balance": {
+    "start_cash": 50,
+    "month_seconds": 180,
+    "office_opex": 1,
+    "emergency_seconds": 30,
+    "discovery_reward": 1,
+    "research_discovery_reward": 12,
+    "start_cards": [
+      "founder",
+      "sales_rep",
+      "dev_rep",
+      "admin_rep",
+      "market_lead_pool",
+      "office"
+    ]
+  },
+  "research": {
+    "basic_onboarding": {
+      "name": "基础操作",
+      "chain": "basic",
+      "tier": 1,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 0,
+      "cost": 10,
+      "prereq": [],
+      "desc": "理解卡牌、堆叠、工作进度与月度结算。"
+    },
+    "basic_cashflow": {
+      "name": "现金循环",
+      "chain": "basic",
+      "tier": 2,
+      "lane": 0,
+      "kind": "recipe",
+      "stage": 0,
+      "cost": 18,
+      "prereq": [
+        "basic_onboarding"
+      ],
+      "desc": "强化从资源到产品再到现金的基础循环。"
+    },
+    "basic_recipe_a": {
+      "name": "配方识别",
+      "chain": "basic",
+      "tier": 3,
+      "lane": -1,
+      "kind": "recipe",
+      "stage": 1,
+      "cost": 32,
+      "prereq": [
+        "basic_cashflow"
+      ],
+      "desc": "更快识别可组合卡牌，减少试错成本。"
+    },
+    "basic_board_a": {
+      "name": "桌面整理",
+      "chain": "basic",
+      "tier": 4,
+      "lane": -1,
+      "kind": "feature",
+      "stage": 2,
+      "cost": 56,
+      "prereq": [
+        "basic_recipe_a"
+      ],
+      "desc": "让常用卡牌布局更清晰，降低运营混乱。"
+    },
+    "basic_mastery_a": {
+      "name": "创业手册",
+      "chain": "basic",
+      "tier": 5,
+      "lane": -1,
+      "kind": "feature",
+      "stage": 3,
+      "cost": 92,
+      "prereq": [
+        "basic_board_a"
+      ],
+      "desc": "形成一套稳定的早期公司运营方法。"
+    },
+    "basic_signal_b": {
+      "name": "状态提示",
+      "chain": "basic",
+      "tier": 3,
+      "lane": 1,
+      "kind": "feature",
+      "stage": 1,
+      "cost": 32,
+      "prereq": [
+        "basic_cashflow"
+      ],
+      "desc": "更早看到资金、空间、任务和阶段的变化信号。"
+    },
+    "basic_rhythm_b": {
+      "name": "节奏规划",
+      "chain": "basic",
+      "tier": 4,
+      "lane": 1,
+      "kind": "event",
+      "stage": 2,
+      "cost": 56,
+      "prereq": [
+        "basic_signal_b"
+      ],
+      "desc": "把生产、销售和招聘安排成更稳定的节奏。"
+    },
+    "basic_dash_b": {
+      "name": "经营仪表盘",
+      "chain": "basic",
+      "tier": 5,
+      "lane": 1,
+      "kind": "valuation",
+      "stage": 3,
+      "cost": 92,
+      "prereq": [
+        "basic_rhythm_b"
+      ],
+      "desc": "用核心指标判断公司下一步该投入哪里。"
+    },
+    "org_recruit": {
+      "name": "招聘入口",
+      "chain": "org",
+      "tier": 1,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 0,
+      "cost": 12,
+      "prereq": [],
+      "desc": "建立从实习生到毕业生的基础人才通道。"
+    },
+    "org_training": {
+      "name": "培训体系",
+      "chain": "org",
+      "tier": 2,
+      "lane": 0,
+      "kind": "recipe",
+      "stage": 1,
+      "cost": 34,
+      "prereq": [
+        "org_recruit"
+      ],
+      "desc": "让课程和员工成长形成固定生产线。"
+    },
+    "org_sales_track": {
+      "name": "销售梯队",
+      "chain": "org",
+      "tier": 3,
+      "lane": -1,
+      "kind": "feature",
+      "stage": 2,
+      "cost": 66,
+      "prereq": [
+        "org_training"
+      ],
+      "desc": "二选一方向：强化销售岗位和成交效率。"
+    },
+    "org_product_track": {
+      "name": "产品梯队",
+      "chain": "org",
+      "tier": 3,
+      "lane": 1,
+      "kind": "feature",
+      "stage": 2,
+      "cost": 66,
+      "prereq": [
+        "org_training"
+      ],
+      "desc": "二选一方向：强化产品岗位和研发产能。"
+    },
+    "org_management": {
+      "name": "管理制度",
+      "chain": "org",
+      "tier": 4,
+      "lane": 0,
+      "kind": "event",
+      "stage": 3,
+      "cost": 105,
+      "prereq": [],
+      "anyPrereq": [
+        "org_sales_track",
+        "org_product_track"
+      ],
+      "desc": "统一管理规范，把专员能力沉淀为组织能力。"
+    },
+    "org_departments": {
+      "name": "部门化",
+      "chain": "org",
+      "tier": 5,
+      "lane": 0,
+      "kind": "valuation",
+      "stage": 4,
+      "cost": 165,
+      "prereq": [
+        "org_management"
+      ],
+      "desc": "把重复岗位合并为部门，支撑规模化扩张。"
+    },
+    "supply_source": {
+      "name": "上游资源",
+      "chain": "supply",
+      "tier": 1,
+      "lane": 0,
+      "kind": "recipe",
+      "stage": 0,
+      "cost": 14,
+      "prereq": [],
+      "desc": "认识居住小区、批发市场、律师事务所等资源节点。"
+    },
+    "supply_link": {
+      "name": "供应连接",
+      "chain": "supply",
+      "tier": 2,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 1,
+      "cost": 38,
+      "prereq": [
+        "supply_source"
+      ],
+      "desc": "把产出自动送往下游卡牌，减少搬运。"
+    },
+    "supply_capacity": {
+      "name": "产能路线",
+      "chain": "supply",
+      "tier": 3,
+      "lane": -1,
+      "kind": "feature",
+      "stage": 2,
+      "cost": 72,
+      "prereq": [
+        "supply_link"
+      ],
+      "desc": "二选一方向：扩大基础资源节点的吞吐量。"
+    },
+    "supply_quality": {
+      "name": "质检路线",
+      "chain": "supply",
+      "tier": 3,
+      "lane": 1,
+      "kind": "recipe",
+      "stage": 2,
+      "cost": 72,
+      "prereq": [
+        "supply_link"
+      ],
+      "desc": "二选一方向：提高产品链条的稳定性。"
+    },
+    "supply_network": {
+      "name": "节点网络",
+      "chain": "supply",
+      "tier": 4,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 3,
+      "cost": 118,
+      "prereq": [],
+      "anyPrereq": [
+        "supply_capacity",
+        "supply_quality"
+      ],
+      "desc": "供应链节点成网，生产链条更耐波动。"
+    },
+    "supply_platform": {
+      "name": "供应平台",
+      "chain": "supply",
+      "tier": 5,
+      "lane": 0,
+      "kind": "valuation",
+      "stage": 4,
+      "cost": 178,
+      "prereq": [
+        "supply_network"
+      ],
+      "desc": "让供应链成为公司估值的一部分。"
+    },
+    "comp_watch": {
+      "name": "市场侦察",
+      "chain": "competition",
+      "tier": 1,
+      "lane": 0,
+      "kind": "event",
+      "stage": 0,
+      "cost": 14,
+      "prereq": [],
+      "desc": "提前识别竞争者、风险与市场冲突。"
+    },
+    "comp_response": {
+      "name": "应对预案",
+      "chain": "competition",
+      "tier": 2,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 1,
+      "cost": 40,
+      "prereq": [
+        "comp_watch"
+      ],
+      "desc": "形成基础商战应对方式。"
+    },
+    "comp_defense": {
+      "name": "防守打法",
+      "chain": "competition",
+      "tier": 3,
+      "lane": -1,
+      "kind": "event",
+      "stage": 2,
+      "cost": 78,
+      "prereq": [
+        "comp_response"
+      ],
+      "desc": "二选一方向：稳住现金流和已有客户。"
+    },
+    "comp_attack": {
+      "name": "进攻打法",
+      "chain": "competition",
+      "tier": 3,
+      "lane": 1,
+      "kind": "event",
+      "stage": 2,
+      "cost": 78,
+      "prereq": [
+        "comp_response"
+      ],
+      "desc": "二选一方向：主动抢占市场机会。"
+    },
+    "comp_moat": {
+      "name": "竞争壁垒",
+      "chain": "competition",
+      "tier": 4,
+      "lane": 0,
+      "kind": "valuation",
+      "stage": 3,
+      "cost": 122,
+      "prereq": [],
+      "anyPrereq": [
+        "comp_defense",
+        "comp_attack"
+      ],
+      "desc": "建立别人难以复制的流程和资源组合。"
+    },
+    "comp_dominance": {
+      "name": "行业优势",
+      "chain": "competition",
+      "tier": 5,
+      "lane": 0,
+      "kind": "valuation",
+      "stage": 4,
+      "cost": 188,
+      "prereq": [
+        "comp_moat"
+      ],
+      "desc": "把竞争胜利转化为长期估值优势。"
+    },
+    "cap_accounting": {
+      "name": "财务记账",
+      "chain": "capital",
+      "tier": 1,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 0,
+      "cost": 12,
+      "prereq": [],
+      "desc": "把现金、成本、工资和账户管理接入统一口径。"
+    },
+    "cap_budget": {
+      "name": "预算纪律",
+      "chain": "capital",
+      "tier": 2,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 1,
+      "cost": 36,
+      "prereq": [
+        "cap_accounting"
+      ],
+      "desc": "让扩张前先看到真实资金压力。"
+    },
+    "cap_finance": {
+      "name": "融资路线",
+      "chain": "capital",
+      "tier": 3,
+      "lane": -1,
+      "kind": "valuation",
+      "stage": 2,
+      "cost": 80,
+      "prereq": [
+        "cap_budget"
+      ],
+      "desc": "二选一方向：通过融资提升现金储备。"
+    },
+    "cap_profit": {
+      "name": "利润路线",
+      "chain": "capital",
+      "tier": 3,
+      "lane": 1,
+      "kind": "valuation",
+      "stage": 2,
+      "cost": 80,
+      "prereq": [
+        "cap_budget"
+      ],
+      "desc": "二选一方向：通过利润和复投提升估值。"
+    },
+    "cap_structure": {
+      "name": "资本结构",
+      "chain": "capital",
+      "tier": 4,
+      "lane": 0,
+      "kind": "valuation",
+      "stage": 3,
+      "cost": 130,
+      "prereq": [],
+      "anyPrereq": [
+        "cap_finance",
+        "cap_profit"
+      ],
+      "desc": "管理股权、现金和扩张速度之间的平衡。"
+    },
+    "cap_ipo": {
+      "name": "上市路径",
+      "chain": "capital",
+      "tier": 5,
+      "lane": 0,
+      "kind": "feature",
+      "stage": 4,
+      "cost": 210,
+      "prereq": [
+        "cap_structure"
+      ],
+      "desc": "为 IPO、国际化和巨头竞争准备资本能力。"
+    }
+  },
+  "ideaPools": {
+    "0": [
+      "basic_onboarding",
+      "basic_cashflow",
+      "org_recruit",
+      "supply_source",
+      "comp_watch",
+      "cap_accounting"
+    ],
+    "1": [
+      "basic_recipe_a",
+      "basic_signal_b",
+      "org_training",
+      "supply_link",
+      "comp_response",
+      "cap_budget"
+    ],
+    "2": [
+      "basic_board_a",
+      "basic_rhythm_b",
+      "org_sales_track",
+      "org_product_track",
+      "supply_capacity",
+      "supply_quality",
+      "comp_defense",
+      "comp_attack",
+      "cap_finance",
+      "cap_profit"
+    ],
+    "3": [
+      "basic_mastery_a",
+      "basic_dash_b",
+      "org_management",
+      "supply_network",
+      "comp_moat",
+      "cap_structure"
+    ],
+    "4": [
+      "org_departments",
+      "supply_platform",
+      "comp_dominance",
+      "cap_ipo"
+    ],
+    "5": [],
+    "6": []
+  },
+  "source": "data/startx_data.xlsx; tools/sync-content.cjs"
+}

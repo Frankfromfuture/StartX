@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "mainBytes": 1926853,
+  "subpackages": [
+    {
+      "name": "content",
+      "bytes": 40238603
+    },
+    {
+      "name": "sample",
+      "bytes": 834665
+    }
+  ],
+  "runtimeVerified": false,
+  "appId": "touristappid"
+}

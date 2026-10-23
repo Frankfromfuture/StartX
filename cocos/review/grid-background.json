@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Positive and negative pan: repeated grid periods pixel-identical",
+    "Wheel zoom and reset",
+    "Desktop and portrait rendering"
+  ],
+  "errors": []
+}

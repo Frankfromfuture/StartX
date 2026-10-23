@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "cards": [
+    {
+      "id": "founder",
+      "bounds": {
+        "x": 633.9,
+        "y": 363.9,
+        "width": 172.20000000000005,
+        "height": 172.20000000000005
+      }
+    },
+    {
+      "id": "p3_account",
+      "bounds": {
+        "x": 843,
+        "y": 573,
+        "width": 172.20000000000005,
+        "height": 172.2
+      }
+    }
+  ],
+  "errors": [],
+  "checks": {
+    "border": {
+      "saturation": 0.31,
+      "RGBChangeWithView": 18.977
+    },
+    "faceRGBDifference": 0.0,
+    "ordinaryCardRGBDifference": 0.0
+  }
+}

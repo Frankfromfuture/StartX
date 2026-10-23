@@ -1,0 +1,460 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "account": {
+        "recipes": [
+          "p3_open_account"
+        ],
+        "packs": [
+          "funding_pack",
+          "ipo_pack",
+          "fortune500_pack"
+        ],
+        "centered": true,
+        "formula": [
+          {
+            "id": "founder",
+            "bounds": {
+              "x": 588,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p3_bank",
+            "bounds": {
+              "x": 670,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p2_contract",
+            "bounds": {
+              "x": 752,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p3_account",
+            "bounds": {
+              "x": 834,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          }
+        ],
+        "packRows": [
+          {
+            "id": "funding_pack",
+            "text": "融资壮大",
+            "centered": true,
+            "bounds": {
+              "x": 576,
+              "y": 159.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "ipo_pack",
+            "text": "上市IPO 时刻！",
+            "centered": true,
+            "bounds": {
+              "x": 720,
+              "y": 159.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "fortune500_pack",
+            "text": "战！巨头竞争！",
+            "centered": true,
+            "bounds": {
+              "x": 864,
+              "y": 159.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          }
+        ],
+        "legacy": false,
+        "recipeMode": 0
+      },
+      "withoutRecipe": {
+        "recipes": [],
+        "packs": [
+          "channel_pack",
+          "product_pack",
+          "funding_pack",
+          "ipo_pack",
+          "international_pack",
+          "fortune500_pack"
+        ],
+        "centered": true,
+        "formula": [],
+        "packRows": [
+          {
+            "id": "channel_pack",
+            "text": "供应链管理",
+            "centered": true,
+            "bounds": {
+              "x": 432,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "product_pack",
+            "text": "产品升级",
+            "centered": true,
+            "bounds": {
+              "x": 576,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "funding_pack",
+            "text": "融资壮大",
+            "centered": true,
+            "bounds": {
+              "x": 720,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "ipo_pack",
+            "text": "上市IPO 时刻！",
+            "centered": true,
+            "bounds": {
+              "x": 864,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "international_pack",
+            "text": "国际扩张",
+            "centered": true,
+            "bounds": {
+              "x": 1008,
+              "y": 249.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "fortune500_pack",
+            "text": "战！巨头竞争！",
+            "centered": true,
+            "bounds": {
+              "x": 432,
+              "y": 157.96,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          }
+        ],
+        "legacy": false,
+        "recipeMode": 0
+      },
+      "founder": {
+        "recipes": [],
+        "packs": [],
+        "centered": true,
+        "formula": [],
+        "packRows": [],
+        "legacy": false,
+        "recipeMode": 0
+      },
+      "restoredOffset": 0,
+      "returnedTo": "board"
+    },
+    {
+      "viewport": "portrait",
+      "account": {
+        "recipes": [
+          "p3_open_account"
+        ],
+        "packs": [
+          "funding_pack",
+          "ipo_pack",
+          "fortune500_pack"
+        ],
+        "centered": true,
+        "formula": [
+          {
+            "id": "founder",
+            "bounds": {
+              "x": 62.99999999999997,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p3_bank",
+            "bounds": {
+              "x": 144.99999999999997,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p2_contract",
+            "bounds": {
+              "x": 226.99999999999997,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          },
+          {
+            "id": "p3_account",
+            "bounds": {
+              "x": 309,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "components": 2
+          }
+        ],
+        "packRows": [
+          {
+            "id": "funding_pack",
+            "text": "融资壮大",
+            "centered": true,
+            "bounds": {
+              "x": 79.66666666666667,
+              "y": 170.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "ipo_pack",
+            "text": "上市IPO 时刻！",
+            "centered": true,
+            "bounds": {
+              "x": 195.00000000000003,
+              "y": 170.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "fortune500_pack",
+            "text": "战！巨头竞争！",
+            "centered": true,
+            "bounds": {
+              "x": 310.33333333333337,
+              "y": 170.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          }
+        ],
+        "legacy": false,
+        "recipeMode": 0
+      },
+      "withoutRecipe": {
+        "recipes": [],
+        "packs": [
+          "channel_pack",
+          "product_pack",
+          "funding_pack",
+          "ipo_pack",
+          "international_pack",
+          "fortune500_pack"
+        ],
+        "centered": true,
+        "formula": [],
+        "packRows": [
+          {
+            "id": "channel_pack",
+            "text": "供应链管理",
+            "centered": true,
+            "bounds": {
+              "x": 79.66666666666667,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "product_pack",
+            "text": "产品升级",
+            "centered": true,
+            "bounds": {
+              "x": 195.00000000000003,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "funding_pack",
+            "text": "融资壮大",
+            "centered": true,
+            "bounds": {
+              "x": 310.33333333333337,
+              "y": 260.15,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "ipo_pack",
+            "text": "上市IPO 时刻！",
+            "centered": true,
+            "bounds": {
+              "x": 79.66666666666667,
+              "y": 168.14999999999998,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "international_pack",
+            "text": "国际扩张",
+            "centered": true,
+            "bounds": {
+              "x": 195.00000000000003,
+              "y": 168.14999999999998,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          },
+          {
+            "id": "fortune500_pack",
+            "text": "战！巨头竞争！",
+            "centered": true,
+            "bounds": {
+              "x": 310.33333333333337,
+              "y": 168.14999999999998,
+              "width": 40,
+              "height": 40
+            },
+            "width": 256,
+            "material": true,
+            "mode": 1,
+            "components": 2
+          }
+        ],
+        "legacy": false,
+        "recipeMode": 0
+      },
+      "founder": null,
+      "restoredOffset": 0,
+      "returnedTo": "board"
+    }
+  ],
+  "errors": []
+}

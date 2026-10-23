@@ -1,0 +1,25 @@
+{
+  "__type__": "cc.Material",
+  "_name": "FounderFoil",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "2518d225-e206-5aeb-9723-e791ebf186b1",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {}
+  ],
+  "_states": [
+    {}
+  ],
+  "_props": [
+    {
+      "holoTexture": {
+        "__uuid__": "b1aedefa-3fe0-502c-a5f9-dbffba56ef4e@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "background": {
+        "cells": 40,
+        "spacing": 168,
+        "width": 6720,
+        "height": 6720,
+        "cityLoaded": true,
+        "cityWidth": 13440,
+        "cityHeight": 13440,
+        "table": {
+          "x": 0,
+          "y": 0
+        },
+        "cameraLimitedToCity": true
+      },
+      "sharedPanAndZoom": true,
+      "cameraStopsAtImageEdge": true,
+      "cardDrag": true
+    },
+    {
+      "viewport": "portrait",
+      "background": {
+        "cells": 40,
+        "spacing": 168,
+        "width": 6720,
+        "height": 6720,
+        "cityLoaded": true,
+        "cityWidth": 13440,
+        "cityHeight": 13440,
+        "table": {
+          "x": 0,
+          "y": 0
+        },
+        "cameraLimitedToCity": true
+      },
+      "sharedPanAndZoom": true,
+      "cameraStopsAtImageEdge": true,
+      "cardDrag": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  },
+  "screenshots": [
+    "output/playwright/city-board-desktop.png",
+    "output/playwright/city-board-portrait.png"
+  ]
+}

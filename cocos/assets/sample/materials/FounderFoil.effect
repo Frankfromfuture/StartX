@@ -1,0 +1,125 @@
+// Port of Board.gd::_holo_coat_shader; the face is baked by the original Godot renderer.
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: founder-vs:vert
+      frag: founder-fs:frag
+      depthStencilState: { depthTest: false, depthWrite: false }
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState: { cullMode: none }
+      properties:
+        holoTexture: { value: white }
+        viewAndStrength: { value: [0, 0, 0.22, 0.12] }
+        foilAndProjection: { value: [0.15, 2, 0, 0] }
+        inspectionLight: { value: [0, 0, 0, 1] }
+}%
+
+CCProgram founder-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+  out vec2 uv0;
+  out vec2 screenPosition;
+  out vec4 color;
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+    uv0 = a_texCoord;
+    color = a_color;
+    vec4 clip = cc_matViewProj * pos;
+    // A virtual eye above the screen makes the coating react to pan and zoom
+    // even though the UI camera itself is orthographic.
+    screenPosition = clip.xy / clip.w * vec2(cc_screenSize.x / cc_screenSize.y, 1.0);
+    return clip;
+  }
+}%
+
+CCProgram founder-fs %{
+  precision highp float;
+  in vec2 uv0;
+  in vec2 screenPosition;
+  in vec4 color;
+  #pragma builtin(local)
+  layout(set = 2, binding = 12) uniform sampler2D cc_spriteTexture;
+  uniform sampler2D holoTexture;
+  uniform Hologram {
+    vec4 viewAndStrength;
+    vec4 foilAndProjection;
+    vec4 inspectionLight;
+  };
+  vec3 toLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c));
+  }
+  vec3 toSRGB(vec3 c) {
+    return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+  }
+  vec3 rainbow(float t) {
+    return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
+  }
+  vec3 illuminate(vec3 base, vec2 uv) {
+    if (inspectionLight.x < 0.5) return base;
+    vec3 normal = normalize(inspectionLight.yzw);
+    vec3 lightDirection = normalize(vec3(-0.40, 0.60, 1.0));
+    float diffuse = max(0.0, dot(normal, lightDirection));
+    float specular = pow(max(0.0, dot(normal, normalize(lightDirection + vec3(0.0, 0.0, 1.0)))), 24.0);
+    vec2 highlight = uv - (vec2(0.5) + normal.xy * vec2(0.45, -0.45));
+    float gloss = exp(-dot(highlight * vec2(1.4, 3.0), highlight * vec2(1.4, 3.0)) * 6.0);
+    float grazing = pow(1.0 - abs(normal.z), 3.0);
+    return base * (0.72 + 0.28 * diffuse) + vec3(0.90, 0.96, 1.0) * (gloss * specular * 0.22 + grazing * 0.025);
+  }
+  vec4 frag () {
+    vec4 face = texture(cc_spriteTexture, uv0);
+    if (face.a < 0.5) discard;
+    if (foilAndProjection.z > 1.5) return vec4(illuminate(face.rgb, uv0), face.a) * color;
+    // Keep the original glass response for cash and business-model cards.
+    vec2 view = normalize(vec3(0.5 - uv0.x, uv0.y - 0.5, foilAndProjection.y)).xy + viewAndStrength.xy;
+    if (foilAndProjection.z > 0.5) {
+      float off = view.x * 0.65 + view.y * 0.35;
+      float t = uv0.x * 0.72 + (1.0 - uv0.y) * 0.72 + off;
+      float d1 = fract(t) - 0.5;
+      float d2 = fract(t + 0.34) - 0.5;
+      float band = (exp(-(d1*d1)/(2.0*0.060*0.060)) + 0.45*exp(-(d2*d2)/(2.0*0.035*0.035))) * 0.1;
+      return vec4(illuminate(toSRGB(toLinear(face.rgb) + vec3(band)), uv0), face.a) * color;
+    }
+    view = normalize(vec3(-screenPosition, foilAndProjection.y)).xy + viewAndStrength.xy;
+    float view_offset = view.x * 1.8 + view.y * 1.8;
+    vec3 foil = toLinear(texture(holoTexture, uv0 + view * 0.15).rgb);
+    float t = uv0.x * 0.5 + uv0.y * 0.5 + view_offset * 0.5;
+    float sparkle1 = sin(uv0.x * 150.0) * sin(uv0.y * 150.0);
+    float sparkle2 = sin(uv0.x * 80.0 - view.x * 75.0) * sin(uv0.y * 80.0 - view.y * 75.0);
+    float sparkle = clamp((sparkle1 * sparkle2) * 4.0 - 2.8, 0.0, 1.0);
+    float t2 = (1.0 - uv0.x) * 0.4 + uv0.y * 0.4 - view_offset * 0.3;
+    vec3 rainbow_color = mix(rainbow(t), rainbow(t2), 0.4);
+    vec3 coat = rainbow_color * (0.35 + 1.35 * foil) * viewAndStrength.z;
+    coat += foil * foilAndProjection.x + vec3(sparkle * viewAndStrength.w);
+    // Preserve the dark type and illustration beneath the colored foil.
+    float ink = smoothstep(0.035, 0.24, max(face.r, max(face.g, face.b)));
+    vec3 faceColor = toLinear(face.rgb) * mix(vec3(1.0), 0.45 + rainbow_color * 0.55, 0.35);
+    faceColor = toSRGB(faceColor + coat * mix(0.12, 1.0, ink));
+
+    // Replace only the baked 44px outer frame; retain the title divider and art.
+    vec2 inner = abs(uv0 - 0.5) - vec2(0.446);
+    float innerDistance = length(max(inner, vec2(0.0))) + min(max(inner.x, inner.y), 0.0) - 0.010;
+    float frame = smoothstep(-0.001, 0.001, innerDistance);
+    // Pastel lavender / ice-blue rim with continuous white light rails.
+    float rimPhase = (uv0.x * 0.55 + uv0.y * 0.30 + view_offset * 0.45) * 6.28318;
+    vec3 frameColor = mix(vec3(0.75, 0.44, 1.0), vec3(0.36, 0.94, 1.0), 0.5 + 0.5 * sin(rimPhase));
+    frameColor = mix(frameColor, vec3(1.0, 0.56, 0.88), 0.28 * (0.5 + 0.5 * cos(rimPhase + 1.2)));
+    float innerLight = 1.0 - smoothstep(0.002, 0.012, innerDistance);
+    float outerLight = exp(-pow((innerDistance - 0.030) / 0.007, 2.0));
+    frameColor = mix(frameColor, vec3(0.98, 1.0, 1.0), innerLight * 0.65 + outerLight * 0.40);
+    return vec4(illuminate(mix(faceColor, frameColor, frame), uv0), face.a) * color;
+  }
+}%

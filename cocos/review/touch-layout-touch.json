@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": [
+    "Original folder tabs, right vertical view/zoom controls, research/cart and gear; all targets at least 44 CSS px",
+    "Touch opens task/business notebooks and folds original task groups",
+    "Touch controls change view/zoom and open research/options",
+    "Card and board taps show original text in the dark bottom strip",
+    "Opening the original pack updates task progress and shows completion text"
+  ],
+  "errors": []
+}

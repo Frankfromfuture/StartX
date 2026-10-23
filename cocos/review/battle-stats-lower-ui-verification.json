@@ -1,0 +1,160 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "screen": "desktop",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "size": 56,
+          "actual": 56,
+          "text": "HP: $12.0\nATK: 4"
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "size": 56,
+          "actual": 56,
+          "text": "HP: $50.0\nATK: 5"
+        }
+      ],
+      "topInsets": [
+        34.85714285714289,
+        34.85714285714289
+      ],
+      "sideInsets": [
+        58.095238095238074,
+        58.095238095238074
+      ],
+      "expectedTop": 34.857142857142854,
+      "expectedSide": 58.095238095238095,
+      "frames": 264,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "statCardOverlap": 0,
+      "popupStatOverlap": 0,
+      "settledNameGap": 6.911702920806874,
+      "popups": [
+        {
+          "victim": 6,
+          "originY": 0,
+          "centerOriginError": 0,
+          "firstLift": 23.541152684985974,
+          "firstScale": 0.1759885735629414,
+          "lastY": 285.98845734976413,
+          "maxLift": 285.98845734976413,
+          "maxScale": 1.0996913314979386,
+          "maxCenterError": 0,
+          "text": "-5",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 1,
+          "originY": 0,
+          "centerOriginError": 0,
+          "firstLift": 23.678617837808986,
+          "firstScale": 0.17699015412339736,
+          "lastY": 285.9999984208633,
+          "maxLift": 285.9999984208633,
+          "maxScale": 1.099646915564257,
+          "maxCenterError": 0,
+          "text": "-4",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    },
+    {
+      "screen": "portrait",
+      "fonts": [
+        {
+          "name": "LilitaOne-Regular",
+          "size": 56,
+          "actual": 60,
+          "text": "HP: $12.0\nATK: 4"
+        },
+        {
+          "name": "LilitaOne-Regular",
+          "size": 56,
+          "actual": 60,
+          "text": "HP: $50.0\nATK: 6"
+        }
+      ],
+      "topInsets": [
+        14.405405405405398,
+        14.405405405405398
+      ],
+      "sideInsets": [
+        24.009009009009006,
+        24.009009009009038
+      ],
+      "expectedTop": 14.405405405405405,
+      "expectedSide": 24.009009009009006,
+      "frames": 328,
+      "attackers": [
+        "player",
+        "rival"
+      ],
+      "statCardOverlap": 0,
+      "popupStatOverlap": 0,
+      "settledNameGap": 2.6755963915224705,
+      "popups": [
+        {
+          "victim": 9,
+          "originY": 0,
+          "centerOriginError": 0,
+          "firstLift": 22.715278906085622,
+          "firstScale": 0.1699646002116404,
+          "lastY": 285.9999680224908,
+          "maxLift": 285.9999680224908,
+          "maxScale": 1.0997227507776053,
+          "maxCenterError": 0,
+          "text": "-5",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 9,
+          "originY": 0,
+          "centerOriginError": 0,
+          "firstLift": 23.678617837808986,
+          "firstScale": 0.17699015412339736,
+          "lastY": 285.9891224230005,
+          "maxLift": 285.9891224230005,
+          "maxScale": 1.099611718596805,
+          "maxCenterError": 0,
+          "text": "-1",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        },
+        {
+          "victim": 6,
+          "originY": -48,
+          "centerOriginError": 0,
+          "firstLift": 23.678617837808986,
+          "firstScale": 0.17699015412339736,
+          "lastY": 237.98912242300048,
+          "maxLift": 285.9891224230005,
+          "maxScale": 1.0996236300075586,
+          "maxCenterError": 0,
+          "text": "-4",
+          "font": 82,
+          "outlineFadeError": 0,
+          "faded": true,
+          "gone": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

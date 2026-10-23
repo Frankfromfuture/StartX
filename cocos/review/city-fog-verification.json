@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "paper": {
+        "point": {
+          "x": 151,
+          "y": 708
+        },
+        "expected": [
+          248,
+          244,
+          232
+        ],
+        "tint": [
+          62,
+          66,
+          74,
+          158
+        ],
+        "parent": "CitySurroundings",
+        "actual": [
+          248,
+          244,
+          232
+        ]
+      },
+      "minimumZoom": 0.14325396825396824,
+      "imageOnlyFog": true,
+      "coverAtAllEdges": true,
+      "cardDrag": true
+    },
+    {
+      "viewport": "portrait",
+      "paper": {
+        "point": {
+          "x": 85,
+          "y": 672
+        },
+        "expected": [
+          255,
+          250,
+          240
+        ],
+        "tint": [
+          62,
+          66,
+          74,
+          158
+        ],
+        "parent": "CitySurroundings",
+        "actual": [
+          255,
+          250,
+          240
+        ]
+      },
+      "minimumZoom": 0.15497557997557998,
+      "imageOnlyFog": true,
+      "coverAtAllEdges": true,
+      "cardDrag": true
+    }
+  ],
+  "errors": [],
+  "build": {
+    "typecheck": "passed",
+    "web-mobile": "passed"
+  }
+}

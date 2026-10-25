@@ -17,9 +17,11 @@ import { CardInspector } from './CardInspector';
 import { CardCatalog } from './CardCatalog';
 import { MenuBackdrop } from './MenuBackdrop';
 import { FounderSpeech } from './FounderSpeech';
+import { MonthEndPanel } from './MonthEndPanel';
 import { PROGRESS_KEY, readProgress, SavedGame, SavedView } from './ProgressSave';
 const { ccclass } = _decorator;
 const MENU_SCALE = .8;
+const MONTH_PAYMENT_CARD_SIZE = 180;
 type Modal = 'none' | 'detail' | 'inspect' | 'packs' | 'book' | 'catalog' | 'recipes' | 'tasks' | 'settings' | 'home';
 interface Entry { title: string; text?: string; action?: string; muted?: boolean; }
 interface ViewState { view: CardView; patch: string; packCount?: number; badges?: string; }
@@ -38,6 +40,23 @@ export class Sample extends Component implements InputTarget {
     private content!: AssetManager.Bundle;
     private views = new Map<number, ViewState>();
     private cashFlights = new Map<CardView, CashSpend>();
+    private monthEndPanel!: MonthEndPanel;
+    private monthEndKey = '';
+    private monthlyFocus = 0;
+    private monthlyReturnView: SavedView | null = null;
+    private monthlyReturnStarted = false;
+    private lastMonthKey = 0;
+    private monthShortcut = (event: KeyboardEvent) => {
+        if (event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+        const target = event.target as HTMLElement | null;
+        if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName || '')) return;
+        if (event.key.toLowerCase() !== 'u') { this.lastMonthKey = 0; return; }
+        if (!this.ready || this.atTitle || this.modal !== 'none' || this.dragging || this.heldBadge || this.model.monthSettlement || this.model.gameOver) { this.lastMonthKey = 0; return; }
+        const now = Date.now();
+        if (this.lastMonthKey && now - this.lastMonthKey <= 700) {
+            this.lastMonthKey = 0; this.router.cancel(); this.model.skipToMonthEnd(); this.updateMonthEnd(); this.saveProgress();
+        } else this.lastMonthKey = now;
+    };
     private frames = new Map<string, Promise<SpriteFrame>>();
     private pending = 0;
     private modal: Modal = 'none';
@@ -123,7 +142,7 @@ export class Sample extends Component implements InputTarget {
         const label = this.loading.addComponent(Label); label.string = ''; label.fontSize = 28; label.color = new Color(55, 66, 57);
         this.loading.on(Node.EventType.TOUCH_END, () => { if (this.lastError) void this.loadSample(); });
         if (typeof document !== 'undefined') { document.addEventListener('contextmenu', this.preventContext); document.addEventListener('visibilitychange', this.visibilityChanged); }
-        if (typeof window !== 'undefined') { window.addEventListener('pagehide', this.flushProgress); window.addEventListener('beforeunload', this.flushProgress); window.addEventListener('resize', this.layoutWindow); }
+        if (typeof window !== 'undefined') { window.addEventListener('pagehide', this.flushProgress); window.addEventListener('beforeunload', this.flushProgress); window.addEventListener('resize', this.layoutWindow); window.addEventListener('keydown', this.monthShortcut, true); }
         game.on(Game.EVENT_HIDE, this.flushProgress, this);
         screen.on('window-resize', this.layout, this); void this.loadSample();
     }
@@ -141,6 +160,7 @@ export class Sample extends Component implements InputTarget {
             const restored = readProgress(data.json as Catalog, raw);
             this.model = restored?.model || new GameModel(data.json as Catalog, Math.random, this.testMode);
             this.hasStarted = !!restored; this.restoredView = restored?.view || null; this.savedProgress = restored ? raw! : '';
+            if (restored && ['paying', 'ready'].includes(this.model.monthSettlement?.phase || '')) this.monthlyReturnView = restored.view;
             if (restored) this.testMode = this.model.testMode;
             this.audio = this.node.addComponent(OriginalAudio); await this.audio.preload(content);
             this.backdrop = this.makeNode('Backdrop', this.node, 720, 1280);
@@ -178,6 +198,7 @@ export class Sample extends Component implements InputTarget {
             this.cardCatalog = new CardCatalog(this.node, this.font, backFrame, path => this.loadFrame(path), e => { this.lastError = String(e); console.error('[StartX] Catalog', e); });
             this.menuBackdrop = new MenuBackdrop(this.hud, ['Panel', 'Scrim', 'Toolbar', 'TaskDrawer'].map(name => this.find(name)));
             this.cardInspector = new CardInspector(this.node, this.font, this.cardPrefab, backFrame, packBackFrame, lineEffect, path => this.loadFrame(path));
+            this.monthEndPanel = new MonthEndPanel(this.node, this.font);
             this.router = this.node.addComponent(InputRouter); this.router.target = this;
             this.ready = true; this.loading.active = false; this.selected = this.model.cards[0].uid;
             this.layout();
@@ -202,12 +223,17 @@ export class Sample extends Component implements InputTarget {
         const p = this.board.node.position;
         this.board.pan(new Vec2(-view.centerX * this.board.zoom - p.x, -view.centerY * this.board.zoom * this.board.pitch - p.y));
     }
+    private captureBoardView(): SavedView {
+        const p = this.board.node.position;
+        return { zoom: this.board.zoom / this.inputScale, pitch: this.board.pitch,
+            centerX: -p.x / this.board.zoom, centerY: -p.y / (this.board.zoom * this.board.pitch) };
+    }
     private saveProgress() {
         if (!this.ready || !this.hasStarted || this.dragging) return;
         const paused = this.plainMenu || ['inspect', 'catalog'].includes(this.modal) ? this.menuPauseBefore : this.model.paused;
-        const p = this.board.node.position;
-        const save: SavedGame = { version: 1, model: this.model.saveProgress(paused), view: { zoom: this.board.zoom / this.inputScale,
-            pitch: this.board.pitch, centerX: -p.x / this.board.zoom, centerY: -p.y / (this.board.zoom * this.board.pitch) } };
+        // Keep the player's view in the save, rather than the temporary payment close-up.
+        const save: SavedGame = { version: 1, model: this.model.saveProgress(paused),
+            view: this.model.monthSettlement && this.monthlyReturnView || this.captureBoardView() };
         const serialized = JSON.stringify(save);
         if (serialized === this.savedProgress) return;
         try { sys.localStorage.setItem(PROGRESS_KEY, serialized); this.savedProgress = serialized; this.saveWarning = false; }
@@ -343,16 +369,16 @@ export class Sample extends Component implements InputTarget {
         if (this.supplyStep !== 'none' && this.supplyAnchor && !this.model.card(this.supplyAnchor)) this.cancelSupply();
         this.titleScreen.tick(dt);
         this.cardInspector.tick(dt);
-        this.model.update(Math.min(dt, .1)); this.syncViews();
+        this.model.update(Math.min(dt, .1)); this.updateMonthEnd(); this.syncViews();
         this.updatePausePresentation();
         const bottomBar = this.find('BottomBar');
-        this.battleView.update(this.model, this.model.paused ? 0 : Math.min(dt, .1), this.board.planeArea({
+        if (!this.model.monthSettlement) this.battleView.update(this.model, this.model.paused ? 0 : Math.min(dt, .1), this.board.planeArea({
             left: -this.metrics.width / 2 + 40, right: this.metrics.width / 2 - 24, top: this.boardTop - 24,
             bottom: bottomBar.position.y + bottomBar.getComponent(UITransform)!.height / 2 + 80,
         }));
         this.updateCornerFeedback(dt);
         this.updateDropHint(dt);
-        this.originalHud.tick(dt, this.modal === 'none' && !this.atTitle);
+        this.originalHud.tick(dt, this.modal === 'none' && !this.atTitle && !this.monthLocked);
         let milestone = false;
         for (const id of this.model.completed) if (!this.spokenMilestones.has(id)) { this.spokenMilestones.add(id); milestone = true; }
         if (this.model.operationNotice) {
@@ -362,7 +388,7 @@ export class Sample extends Component implements InputTarget {
         if (milestone && !this.atTitle) this.founderSpeech.celebrate();
         const founder = this.model.cards.find(c => c.id === 'founder');
         this.founderSpeech.tick(dt, founder ? this.views.get(founder.uid)?.view.frontNode : undefined,
-            this.modal === 'none' && !this.atTitle && !this.originalHud.open, {
+            this.modal === 'none' && !this.atTitle && !this.originalHud.open && !this.monthLocked, {
                 left: -this.metrics.width / 2 + 12 * this.metrics.scale, right: this.metrics.width / 2 - 12 * this.metrics.scale,
                 top: this.metrics.width > this.metrics.height ? this.find('Status').position.y - this.find('Status').getComponent(UITransform)!.height / 2 - 4 * this.metrics.scale : this.boardTop - 56 * this.metrics.scale,
                 bottom: bottomBar.position.y + bottomBar.getComponent(UITransform)!.height / 2 + 12 * this.metrics.scale,
@@ -384,6 +410,55 @@ export class Sample extends Component implements InputTarget {
         this.find('Hint').active = !this.atTitle;
         if (this.atTitle) this.find('TaskReminder').active = false;
         this.updateHint();
+    }
+    private get monthLocked() { return !this.atTitle && !!this.model.monthSettlement && !this.model.cleanup; }
+    private updateMonthEnd() {
+        const settlement = this.model.monthSettlement;
+        if (!settlement) { this.monthlyReturnView = null; this.monthlyReturnStarted = false; }
+        const key = this.monthLocked ? settlement!.phase : '';
+        if (key && !this.monthEndKey) {
+            this.router.cancel(); this.releaseHeldBadge(); this.founderSpeech.dismiss(); this.show('none');
+        }
+        this.monthEndKey = key;
+        if (key === 'paying' && settlement) {
+            if (!this.monthlyReturnView) this.monthlyReturnView = this.captureBoardView();
+            if (settlement.activeTarget) {
+                if (!this.cashFlights.size && !this.pending && !this.model.cashSpends.length && !this.board.moving) {
+                    this.model.completeMonthlyPayment(); this.monthlyFocus = 0;
+                }
+            } else {
+                const target = this.model.card(settlement.payments[settlement.index]?.targetUid);
+                if (target && this.monthlyFocus !== target.uid) {
+                    this.monthlyFocus = target.uid;
+                    const p = this.model.position(target), world = this.node.worldPosition;
+                    const center = this.board.pointerOnPlane(new Vec2(world.x, world.y));
+                    const zoom = Math.max(this.board.minimumZoom, Math.min(2.4, MONTH_PAYMENT_CARD_SIZE / 280 * this.inputScale));
+                    this.board.animateTo(zoom, center.x - p.x * zoom, center.y - p.y * zoom * this.board.pitch, .45);
+                } else if (!this.board.moving && !this.cashFlights.size && !this.pending) {
+                    this.model.payNextMonthlyRecipient(); this.saveProgress();
+                }
+            }
+        } else this.monthlyFocus = 0;
+        if (this.monthLocked && this.monthlyReturnView && ['ready', 'failed'].includes(settlement!.phase) && !this.monthlyReturnStarted) {
+            this.monthlyReturnStarted = true;
+            const view = this.monthlyReturnView, zoom = Math.max(this.board.minimumZoom, Math.min(2.4, view.zoom * this.inputScale));
+            this.board.setPitch(view.pitch);
+            this.board.animateTo(zoom, -view.centerX * zoom, -view.centerY * zoom * view.pitch, .6);
+        }
+        const returning = this.monthlyReturnStarted && this.board.moving;
+        this.monthEndPanel.render(this.monthLocked && !returning ? settlement!.phase : null, this.model.month,
+            this.metrics.width, this.metrics.height, this.inputScale);
+    }
+    private confirmMonthEnd() {
+        const phase = this.model.monthSettlement?.phase;
+        if (phase === 'confirm') this.model.confirmMonthlyPayments();
+        else if (phase === 'ready') { this.model.startNextMonth(); this.menuPauseBefore = false; this.model.paused = false; }
+        else if (phase === 'failed') {
+            this.hasStarted = false; this.savedProgress = ''; this.atTitle = true;
+            try { sys.localStorage.removeItem(PROGRESS_KEY); } catch (e) { console.warn('[StartX] Could not clear failed game', e); }
+            this.show('home');
+        }
+        this.updateMonthEnd(); this.syncViews(); this.saveProgress();
     }
     private get gameplayPaused() { return this.plainMenu || ['inspect', 'catalog'].includes(this.modal) ? this.menuPauseBefore : this.model.paused; }
     private updatePausePresentation() {
@@ -435,10 +510,10 @@ export class Sample extends Component implements InputTarget {
         if (this.statusHelpKey === name) { this.hideStatusInfo(); return; }
         const info: Record<string, [string, string]> = {
             Stage: ['创业阶段', '完成经营里程碑并达到对应月份后进入下一阶段。卡包使用同一套阶段与发展里程碑条件解锁。'],
-            Month: ['月份', '显示当前月份。获得办公室后开始计时，顶部进度条走完时结算工资。'],
+            Month: ['月份', '显示当前月份。获得办公室后开始计时，月末确认发工资及付租金，结算后开始下个月。'],
             Supply: ['供应链', '显示已连接的供应链数量。点左下角供应链按钮选择主体，再点另一组牌堆，自动识别上下游并完成连接。'],
             Space: ['空间', '前一项是占用空间的卡牌数量，后一项是空间上限。散装现金不占空间；月末超出上限时需要清理卡牌。'],
-            Cash: ['现金', '前一项是本月工资，后一项是可用现金总额（含账户），也是商战 HP。工资、消费和商战受击均先扣散装现金，再扣账户。'],
+            Cash: ['现金', '前一项是本月工资及租金，后一项是可用现金总额（含账户），也是商战 HP。'],
         };
         const entry = info[name]; if (!entry) return;
         const { width: w, scale } = this.metrics;
@@ -636,6 +711,7 @@ export class Sample extends Component implements InputTarget {
         this.find('PauseControl').active = modal === 'none' && !this.atTitle;
         this.find('Toolbar').active = modal === 'none' && !this.atTitle;
         this.titleScreen.show(this.atTitle, modal === 'home', this.hasStarted);
+        this.audio.setGameplayActive(!this.atTitle);
         this.viewport.active = !this.atTitle;
         for (const name of ['Status', 'PackStrip', 'BottomBar', 'Hint', 'TaskReminder', 'SupplyChain', 'SellZone']) this.find(name).active = !this.atTitle;
         this.originalHud.setVisible(!this.atTitle);
@@ -784,6 +860,7 @@ export class Sample extends Component implements InputTarget {
         return v.x >= -t.width / 2 && v.x <= t.width / 2 && v.y >= -t.height / 2 && v.y <= t.height / 2;
     }
     private actionAt(p: Vec2) {
+        if (this.monthLocked) return this.monthEndPanel.node.active && this.hit(this.monthEndPanel.button, p) ? 'MonthEndConfirm' : 'Noop';
         if (this.modal === 'inspect') {
             if (this.heldBadge) return this.cardInspector.containsFace(p) ? 'InspectPlaceBadge' : 'ExitWithBadge';
             if (this.hit(this.cardInspector.closeNode, p)) return 'InspectClose';
@@ -853,6 +930,7 @@ export class Sample extends Component implements InputTarget {
     }
     press(p: Vec2): 'card' | 'board' | 'ui' {
         this.releaseMenuPress();
+        if (this.monthLocked) { this.audio.prime(); this.pressedCard = this.pressedPack = 0; this.pressedAction = this.actionAt(p); return 'ui'; }
         if (this.modal === 'none') this.originalHud.dismissPacksAt(p);
         if (this.atTitle) this.titleScreen.pointer(p);
         this.audio.prime();
@@ -880,6 +958,7 @@ export class Sample extends Component implements InputTarget {
     }
     tap(p: Vec2, kind: string) {
         this.releaseMenuPress();
+        if (this.monthLocked) { if (this.pressedAction === 'MonthEndConfirm' && this.actionAt(p) === this.pressedAction) this.confirmMonthEnd(); return; }
         if (this.heldBadge && this.modal === 'none') { this.moveHeldBadge(p); this.placeHeldBadge(p); return; }
         if (this.modal === 'inspect' && (this.heldBadge || this.pressedAction.startsWith('InspectBadge:'))) this.heldBadgePoint.set(p);
         if (kind === 'card') {
@@ -893,6 +972,7 @@ export class Sample extends Component implements InputTarget {
         const action = this.actionAt(p); if (action && action === this.pressedAction) this.perform(action.replace(/^(Row|Title):/, ''));
     }
     private perform(action: string) {
+        if (this.monthLocked) return;
         const [verb, arg] = action.split(':'); const c = this.model.card(this.selected);
         const entering = verb === 'Restart' || verb === 'Continue' && this.atTitle;
         if (entering) { this.menuPauseBefore = false; this.model.paused = false; }
@@ -995,6 +1075,7 @@ export class Sample extends Component implements InputTarget {
         this.saveProgress();
     }
     hold(_p: Vec2) {
+        if (this.monthLocked) return;
         const held = this.model.card(this.pressedCard); if (held && this.model.isPassive(held)) return;
         const source = this.views.get(this.pressedCard || this.pressedPack)?.view; if (!source) return;
         this.inspectorReturn = 'none';
@@ -1135,18 +1216,18 @@ export class Sample extends Component implements InputTarget {
         this.saveProgress();
     }
     pan(delta: Vec2, point?: Vec2) {
-        if (this.modal !== 'none' || this.model.battle || this.battleView.restoring) return;
+        if (this.monthLocked || this.modal !== 'none' || this.model.battle || this.battleView.restoring) return;
         const current = point || new Vec2(this.metrics.width / 2, this.metrics.height / 2);
         const to = this.board.pointerOnPlane(current), from = this.board.pointerOnPlane(new Vec2(current.x - delta.x, current.y - delta.y));
         this.board.pan(new Vec2(to.x - from.x, to.y - from.y));
     }
-    uiDrag(delta: Vec2) { this.releaseMenuPress(); if (this.heldBadge) this.moveHeldBadge(new Vec2(this.heldBadgePoint.x + delta.x, this.heldBadgePoint.y + delta.y)); else if (this.modal === 'inspect' && (this.pressedAction === 'InspectDetails' || this.pressedAction.startsWith('InspectCard:'))) this.cardInspector.dragDetails(delta); else if (this.modal === 'inspect' && this.pressedAction === 'InspectFlip') this.cardInspector.drag(delta); else if (this.modal === 'catalog') this.cardCatalog.drag(delta); else if (this.modal === 'none') this.originalHud.drag(delta); }
+    uiDrag(delta: Vec2) { if (this.monthLocked) return; this.releaseMenuPress(); if (this.heldBadge) this.moveHeldBadge(new Vec2(this.heldBadgePoint.x + delta.x, this.heldBadgePoint.y + delta.y)); else if (this.modal === 'inspect' && (this.pressedAction === 'InspectDetails' || this.pressedAction.startsWith('InspectCard:'))) this.cardInspector.dragDetails(delta); else if (this.modal === 'inspect' && this.pressedAction === 'InspectFlip') this.cardInspector.drag(delta); else if (this.modal === 'catalog') this.cardCatalog.drag(delta); else if (this.modal === 'none') this.originalHud.drag(delta); }
     uiDragThreshold() { return (this.modal === 'inspect' ? 2 : this.originalHud.isPackGesture ? 3 : 8) * this.inputScale; }
     uiEnd(cancelled: boolean) { this.releaseMenuPress(); if (this.modal === 'catalog') this.cardCatalog.end(); else if (this.modal === 'inspect') this.cardInspector.end(); else this.originalHud.end(cancelled); }
-    hover(p: Vec2) { if (this.heldBadge) this.moveHeldBadge(p); else if (this.atTitle) this.titleScreen.pointer(p); else if (this.modal === 'none') this.originalHud.hover(p); }
-    uiScroll(p: Vec2, delta: number, horizontal = 0) { return this.modal === 'inspect' ? this.cardInspector.wheel(p, delta) : this.modal === 'catalog' ? this.cardCatalog.wheel(p, delta) : this.modal === 'none' && this.originalHud.wheel(p, delta, horizontal); }
-    zoom(factor: number, p: Vec2) { if (this.model.battle || this.battleView.restoring) return; const local = this.board.pointerOnPlane(p); this.board.setZoom(this.board.zoom * factor, new Vec2(local.x, local.y)); }
-    canZoom(p: Vec2) { return this.ready && this.modal === 'none' && !this.model.battle && !this.battleView.restoring && !this.actionAt(p) && this.hit(this.viewport, p); }
+    hover(p: Vec2) { if (this.monthLocked) return; if (this.heldBadge) this.moveHeldBadge(p); else if (this.atTitle) this.titleScreen.pointer(p); else if (this.modal === 'none') this.originalHud.hover(p); }
+    uiScroll(p: Vec2, delta: number, horizontal = 0) { if (this.monthLocked) return true; return this.modal === 'inspect' ? this.cardInspector.wheel(p, delta) : this.modal === 'catalog' ? this.cardCatalog.wheel(p, delta) : this.modal === 'none' && this.originalHud.wheel(p, delta, horizontal); }
+    zoom(factor: number, p: Vec2) { if (this.monthLocked) return; if (this.model.battle || this.battleView.restoring) return; const local = this.board.pointerOnPlane(p); this.board.setZoom(this.board.zoom * factor, new Vec2(local.x, local.y)); }
+    canZoom(p: Vec2) { return !this.monthLocked && this.ready && this.modal === 'none' && !this.model.battle && !this.battleView.restoring && !this.actionAt(p) && this.hit(this.viewport, p); }
     private frameOpening() {
         const founder = this.model.cards[0], stack = this.model.stack(founder.sid)!; stack.x = 0; stack.y = 0;
         for (const funds of this.model.stacks.filter(s => this.model.members(s.sid).every(c => c.id === 'cash' || c.id === 'p3_account'))) { funds.x = 340; funds.y = -340; }
@@ -1253,7 +1334,7 @@ export class Sample extends Component implements InputTarget {
             packs: m.packs.map(p => ({ ...p, bounds: this.views.has(p.uid) ? bounds(this.views.get(p.uid)!.view.node) : null,
                 faceBounds: this.views.has(p.uid) ? bounds(this.views.get(p.uid)!.view.frontNode) : null })),
             battle: m.battle ? { ...m.battle, rect: m.battleRect } : null, battlePresentation: this.battleView.snapshot(),
-            cash: m.cash, month: m.month, paused: this.gameplayPaused, pauseWash: { active: this.pauseWash.node.active, strength: .3 }, testMode: m.testMode, titleScreen: this.titleScreen.snapshot(), inspector: { ...this.cardInspector.snapshot(), bounds: bounds(this.cardInspector.cardNode), close: bounds(this.cardInspector.closeNode), detailsBounds: bounds(this.cardInspector.detailsNode) }, models: Array.from(m.models), tasks: Array.from(m.completed), notice: m.notice, links: m.links,
+            monthSettlement: m.monthSettlement, monthEnd: { ...this.monthEndPanel.snapshot(), focus: this.monthlyFocus, buttonBounds: bounds(this.monthEndPanel.button), panelBounds: bounds(this.monthEndPanel.panel) }, monthTime: m.monthTime, gameOver: m.gameOver, cash: m.cash, month: m.month, paused: this.gameplayPaused, pauseWash: { active: this.pauseWash.node.active, strength: .3 }, testMode: m.testMode, titleScreen: this.titleScreen.snapshot(), inspector: { ...this.cardInspector.snapshot(), bounds: bounds(this.cardInspector.cardNode), close: bounds(this.cardInspector.closeNode), detailsBounds: bounds(this.cardInspector.detailsNode) }, models: Array.from(m.models), tasks: Array.from(m.completed), notice: m.notice, links: m.links,
             supply: { step: this.supplyStep, subject: this.supplyAnchor, candidate: this.supplyCandidate, direction: this.supplyDirection, message: this.supplyMessage,
                 markers: [], deliveries: this.model.deliveries, transit: this.supplyTransit, frames: Array.from(this.supplyFrames.keys()), toast: '',
                 connector: { lineWidth: SUPPLY_LINE_WIDTH, arrowLength: SUPPLY_ARROW_LENGTH, cornerRadius: SUPPLY_CORNER_RADIUS, routes: this.supplyRoutes } },
@@ -1302,7 +1383,7 @@ export class Sample extends Component implements InputTarget {
     }
     onDestroy() {
         this.flushProgress(); game.off(Game.EVENT_HIDE, this.flushProgress, this);
-        if (typeof window !== 'undefined') { window.removeEventListener('pagehide', this.flushProgress); window.removeEventListener('beforeunload', this.flushProgress); window.removeEventListener('resize', this.layoutWindow); }
+        if (typeof window !== 'undefined') { window.removeEventListener('pagehide', this.flushProgress); window.removeEventListener('beforeunload', this.flushProgress); window.removeEventListener('resize', this.layoutWindow); window.removeEventListener('keydown', this.monthShortcut, true); }
         if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.visibilityChanged);
         this.menuBackdrop?.destroy();
         this.cardCatalog?.destroy();

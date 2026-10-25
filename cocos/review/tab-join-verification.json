@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "typecheck": true,
+  "build": "web-mobile",
+  "results": [
+    {
+      "case": "landscape-business-open",
+      "panelWidth": 1.8,
+      "panelX": 238.53333333333325,
+      "tabs": [
+        {
+          "name": "Book",
+          "width": 1.8,
+          "shoulderX": 238.5333333333333,
+          "openLeft": true
+        },
+        {
+          "name": "Tasks",
+          "width": 1.8,
+          "shoulderX": 238.5333333333333,
+          "openLeft": true
+        }
+      ]
+    },
+    {
+      "case": "portrait-milestones-open",
+      "panelWidth": 1.8,
+      "panelX": 130.2,
+      "tabs": [
+        {
+          "name": "Book",
+          "width": 1.8,
+          "shoulderX": 130.2,
+          "openLeft": true
+        },
+        {
+          "name": "Tasks",
+          "width": 1.8,
+          "shoulderX": 130.2,
+          "openLeft": true
+        }
+      ]
+    },
+    {
+      "case": "portrait-collapsed",
+      "panelWidth": 1.8,
+      "panelX": 0.19999999999999996,
+      "tabs": [
+        {
+          "name": "Book",
+          "width": 1.8,
+          "shoulderX": -1.61259894326804e-14,
+          "openLeft": true
+        },
+        {
+          "name": "Tasks",
+          "width": 1.8,
+          "shoulderX": -1.61259894326804e-14,
+          "openLeft": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

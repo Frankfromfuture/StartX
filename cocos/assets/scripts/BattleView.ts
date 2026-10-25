@@ -3,6 +3,7 @@ import { BoardView } from './BoardView';
 import { GameModel } from './GameModel';
 import { BATTLE_BUBBLE_OUTLINE } from './BattleBubbleOutline';
 import { BATTLE_CARD_Y } from './CardView';
+import { crayonStroke } from './Surface';
 
 interface PlayArea { left: number; right: number; top: number; bottom: number; }
 interface Popup { node: Node; ink: Graphics; time: number; y: number; }
@@ -125,11 +126,8 @@ export class BattleView {
     private drawBubbleOutline(ink: Graphics, opacity: number) {
         const { width, height } = ink.node.getComponent(UITransform)!;
         ink.clear(); ink.strokeColor = new Color(0, 0, 0, opacity);
-        for (let i = 0; i < BATTLE_BUBBLE_OUTLINE.length; i++) {
-            const [px, py] = BATTLE_BUBBLE_OUTLINE[i];
-            if (i) ink.lineTo(px * width, py * height); else ink.moveTo(px * width, py * height);
-        }
-        ink.close(); ink.stroke();
+        const points = BATTLE_BUBBLE_OUTLINE.map(([px, py]) => ({ x: px * width, y: py * height }));
+        crayonStroke(ink, [...points, points[0]], ink.strokeColor, ink.lineWidth, new Color(255, 248, 229, opacity));
     }
     private drawFrame(width: number, height: number) {
         const g = this.art, radius = 28, x = width / 2, y = height / 2;

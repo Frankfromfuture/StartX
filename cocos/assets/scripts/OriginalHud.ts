@@ -179,10 +179,10 @@ export class OriginalHud {
         });
         this.packOffset = -Math.round(index) * step; this.packVelocity = 0; this.packSnap = null;
         this.scrollPacks(0);
-        const drawer = this.get('TaskDrawer'), dw = Math.min(440 * unit, w / 3);
+        const drawer = this.get('TaskDrawer'), dw = landscape ? Math.min(440 * unit, w / 3) : w * 2 / 5;
         const dh = h - 4 * scale;
         this.screenWidth = w; this.drawerWidth = dw; this.drawerY = 0; this.drawerInset = 2 * scale;
-        this.tabWidth = landscape ? 40 * scale : Math.max(44 * unit, 32 * scale); this.tabHeight = landscape ? 84 * scale : Math.max(184 * unit, 126 * scale);
+        this.tabWidth = (landscape ? 40 : 28) * scale; this.tabHeight = landscape ? 84 * scale : Math.max(184 * unit, 126 * scale);
         this.tabGap = landscape ? -24 * scale : -(this.tabWidth * .4 + 12 * scale);
         const taskTabHeight = this.tabHeight + (landscape ? 0 : Math.max(24 * unit, 16 * scale));
         this.tabOffsets = [(taskTabHeight + this.tabGap) / 2, -(this.tabHeight + this.tabGap) / 2];
@@ -198,7 +198,9 @@ export class OriginalHud {
             const tab = this.get('Toolbar/' + name), text = this.get('Toolbar/' + name + '/Text');
             const tabHeight = name === 'Tasks' ? taskTabHeight : this.tabHeight;
             tab.getComponent(UITransform)!.setContentSize(this.tabWidth, tabHeight);
-            tab.getComponent(Surface)!.lineWidth = 1.8 * scale; tab.getComponent(Surface)!.crayon = true; tab.getComponent(Surface)!.paint();
+            const tabSurface = tab.getComponent(Surface)!;
+            tabSurface.lineWidth = drawerSurface.lineWidth; tabSurface.stroke = Color.BLACK.clone();
+            tabSurface.crayon = true; tabSurface.paint();
             const shadow = this.tabShadows.get(name)!;
             shadow.getComponent(UITransform)!.setContentSize(this.tabWidth + 2 * scale, tabHeight + 2 * scale);
             shadow.getComponent(Surface)!.paint();
@@ -260,13 +262,14 @@ export class OriginalHud {
         this.get('TaskDrawer/Help').getComponent(Surface)!.fill = Color.fromHEX(new Color(), colors.base);
         ['Book', 'Tasks'].forEach((name, i) => {
             const active = this.open && this.mode === (i ? 'tasks' : 'recipes'), surface = this.get('Toolbar/' + name).getComponent(Surface)!;
-            surface.openLeft = active;
+            surface.openLeft = true;
+            surface.leftExtension = surface.lineWidth + (this.open ? 0 : this.drawerInset - drawer.lineWidth);
             const palette = NOTEBOOK_COLORS[i ? 'tasks' : 'recipes'];
             surface.fill = Color.fromHEX(new Color(), active ? palette.base : palette.secondary); surface.paint();
         });
         const active = this.mode === 'recipes' ? 'Book' : 'Tasks', inactive = active === 'Book' ? 'Tasks' : 'Book';
         const tab = this.get('Toolbar/' + active), half = tab.getComponent(UITransform)!.height / 2;
-        const inset = tab.getComponent(Surface)!.lineWidth / 2, y = this.tabOffsets[active === 'Book' ? 0 : 1];
+        const inset = tab.getComponent(Surface)!.lineWidth, y = this.tabOffsets[active === 'Book' ? 0 : 1];
         this.get('TaskDrawer').getComponent(Surface)!.setEdgeGaps(this.open ? [[y - half + inset, y + half - inset]] : []);
         for (const name of [inactive, active]) {
             this.tabShadows.get(name)!.setSiblingIndex(this.get('Toolbar').children.length - 1);

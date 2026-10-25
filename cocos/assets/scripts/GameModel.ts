@@ -35,6 +35,11 @@ export interface PackState { uid: number; id: string; contents: string[]; x: num
 export type SoundName = 'grab' | 'founder' | 'down' | 'resource_down' | 'cash_down' | 'unpack' | 'aha' | 'battle_start' | 'battle_end' | 'hit';
 export interface Appearance { kind: 'pop' | 'fly' | 'cash' | 'pack'; x: number; y: number; delay: number; landSound?: SoundName; slide?: boolean; startScale?: number; }
 export interface CashSpend { uid?: number; from: { x: number; y: number }; to: { x: number; y: number }; targetUid: number; delay: number; }
+export interface MonthSettlement {
+    phase: 'confirm' | 'paying' | 'ready' | 'failed';
+    payments: { targetUid: number; amount: number }[];
+    index: number; activeTarget: number;
+}
 export interface Production { recipe: Recipe; target: CardState; }
 export interface SupplyEndpoint { x: number; y: number; height: number; }
 export interface SupplyDelivery { source: number; target: number; id: string; count: number; elapsed: number; duration: number;
@@ -56,7 +61,7 @@ export const BOARD_CELL_SIZE = 168;
 export const BOARD_HALF = BOARD_CELLS * BOARD_CELL_SIZE / 2;
 export const DEFAULT_HINT = '「公司的地板光亮如新，有可能是创始人晚上擦的」';
 const PROGRESS_FIELDS = ['cards', 'stacks', 'packs', 'links', 'deliveries', 'counters', 'month', 'monthTime', 'timerStarted', 'revenue',
-    'cleanup', 'gameOver', 'paused', 'battle', 'notice', 'noticeVersion', 'revision', 'testMode', 'taskNotices'] as const;
+    'cleanup', 'gameOver', 'paused', 'battle', 'notice', 'noticeVersion', 'revision', 'testMode', 'taskNotices', 'monthSettlement'] as const;
 const PROGRESS_SETS = ['discovered', 'models', 'drawn', 'completed', 'unlocked'] as const;
 export interface GameProgress {
     version: 1;
@@ -87,6 +92,7 @@ export class GameModel {
     counters: Record<string, number> = {};
     month = 1; monthTime: number; timerStarted = false; revenue = 0;
     cleanup = false; gameOver = false; paused = false; heldStack = -1;
+    monthSettlement: MonthSettlement | null = null;
     battle: Battle | null = null;
     notice = DEFAULT_HINT; noticeVersion = 0; revision = 0;
     noticeKind: 'hint' | 'operation' = 'hint';
@@ -157,9 +163,17 @@ export class GameModel {
                 || !nonnegative(b.enemyHp) || !nonnegative(b.playerHp) || !nonnegative(b.damage) || typeof b.rivalTurn !== 'boolean'
                 || !['entry', 'outward', 'return', 'member-gap', 'interval'].includes(b.phase))) return null;
             if (b !== null && !b) return null;
+            const settlement = s.monthSettlement;
+            if (settlement != null && (!['confirm', 'paying', 'ready', 'failed'].includes(settlement.phase)
+                || !Array.isArray(settlement.payments) || !settlement.payments.every(v => cards.has(v.targetUid) && id(v.amount))
+                || !Number.isInteger(settlement.index) || settlement.index < 0 || settlement.index > settlement.payments.length
+                || settlement.activeTarget !== 0 && !settlement.payments.slice(0, settlement.index).some(v => v.targetUid === settlement.activeTarget))) return null;
             const copy = JSON.parse(JSON.stringify(p)) as GameProgress, model = new GameModel(data, random, s.testMode);
             for (const key of PROGRESS_FIELDS) Object.assign(model, { [key]: copy.state[key] });
             model.deliveries = copy.state.deliveries || [];
+            model.monthSettlement = copy.state.monthSettlement || null;
+            // The index is advanced with the debit. A reload must never charge an in-flight payment again.
+            if (model.monthSettlement?.phase === 'paying') model.completeMonthlyPayment();
             for (const key of PROGRESS_SETS) model[key] = new Set(copy.sets[key]);
             model.sequence = copy.sequence; model.maxSpace = copy.maxSpace; model.rivalClock = copy.rivalClock;
             model.appearances.clear(); model.displacements.clear(); model.soundCues = []; model.cashSpends = []; model.battleHits = [];
@@ -496,7 +510,8 @@ export class GameModel {
     }
     update(dt: number) {
         if (this.paused || this.gameOver) return;
-        if (this.cleanup) { if (this.count <= this.capacity) this.finishMonth(); return; }
+        if (this.cleanup) { if (this.count <= this.capacity) { this.cleanup = false; if (!this.monthSettlement) this.finishMonth(); } return; }
+        if (this.monthSettlement) return;
         this.updateStackMotions(dt);
         this.updateRivals(dt);
         this.updateBattle(dt);
@@ -510,8 +525,7 @@ export class GameModel {
         this.updateCustomerCards(dt);
         if (this.timerStarted) { this.monthTime -= dt; if (this.monthTime <= 0) {
             this.monthTime = 0;
-            if (this.count > this.capacity) { this.cleanup = true; this.say(`空间超出 ${this.count - this.capacity} 张，请出售卡牌或解雇员工后结算`); }
-            else this.finishMonth();
+            this.finishMonth();
         } }
         if (this.battle) this.battle.playerHp = this.cash;
     }
@@ -565,8 +579,44 @@ export class GameModel {
     }
     private finishMonth() {
         this.cleanup = false;
-        if (!this.spend(this.payroll, this.cards.filter(c => this.def(c).salary > 0))) { this.gameOver = true; this.say(`现金不足以支付本月工资 $${this.payroll}，资金链断裂`); return; }
-        this.month++; this.monthTime = this.data.balance.month_seconds || 180; this.say(`进入第 ${this.month} 月`);
+        this.monthTime = 0;
+        this.monthSettlement = { phase: 'confirm', payments: [], index: 0, activeTarget: 0 };
+        this.revision++;
+    }
+    skipToMonthEnd() {
+        if (this.gameOver || this.monthSettlement || this.cleanup) return;
+        this.timerStarted = true; this.finishMonth();
+    }
+    confirmMonthlyPayments() {
+        const s = this.monthSettlement;
+        if (!s || s.phase !== 'confirm') return;
+        if (this.count > this.capacity) {
+            this.cleanup = true; this.say(`空间超出 ${this.count - this.capacity} 张，请出售卡牌或解雇员工后结算`); return;
+        }
+        s.payments = this.cards.filter(c => this.def(c).salary > 0)
+            .map(c => ({ targetUid: c.uid, amount: this.def(c).salary }));
+        if (this.cash < s.payments.reduce((total, p) => total + p.amount, 0)) {
+            s.phase = 'failed'; this.gameOver = true;
+        } else s.phase = s.payments.length ? 'paying' : 'ready';
+        this.revision++;
+    }
+    payNextMonthlyRecipient() {
+        const s = this.monthSettlement;
+        if (!s || s.phase !== 'paying' || s.activeTarget) return;
+        const payment = s.payments[s.index], target = payment && this.card(payment.targetUid);
+        if (!target || !this.spend(payment.amount, [target])) { s.phase = 'failed'; this.gameOver = true; return; }
+        s.activeTarget = target.uid; s.index++; this.revision++;
+    }
+    completeMonthlyPayment() {
+        const s = this.monthSettlement;
+        if (!s || s.phase !== 'paying') return;
+        s.activeTarget = 0;
+        if (s.index === s.payments.length) s.phase = 'ready';
+    }
+    startNextMonth() {
+        if (this.monthSettlement?.phase !== 'ready') return;
+        this.monthSettlement = null; this.month++; this.monthTime = this.data.balance.month_seconds || 180;
+        this.revision++;
     }
     spend(amount: number, targets: CardState[] = []) {
         if (!Number.isSafeInteger(amount) || amount < 0) return false;

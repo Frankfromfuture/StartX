@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "build": "web-mobile",
+  "typecheck": true,
+  "normalDuration": 107.904,
+  "sourceMatches": true,
+  "checks": [
+    "开始页点击及调整音乐音量均保持静音",
+    "开始游戏后播放 BGM1，实际跨过曲尾并回到开头继续播放",
+    "手动暂停切换到同曲 0.7 倍速，继续恢复正常速度",
+    "返回开始页停止音乐，继续游戏恢复播放"
+  ],
+  "errors": []
+}

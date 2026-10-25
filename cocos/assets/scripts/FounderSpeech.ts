@@ -1,5 +1,6 @@
 import { Color, Font, Graphics, Label, Node, UIOpacity, UITransform, Vec2, Vec3 } from 'cc';
 import { viewShadowOffset } from './ViewShadow';
+import { crayonStroke } from './Surface';
 
 interface SpeechArea { left: number; right: number; top: number; bottom: number; scale: number; landscape?: boolean; fontSize?: number; }
 type TailDirection = 'down' | 'left' | 'right';
@@ -156,7 +157,6 @@ export class FounderSpeech {
             const wobble = Math.sin(i * .21 + phase) * .36 + (random() - .5) * .38;
             return { x: p.x + nx * wobble, y: p.y + ny * wobble, nx, ny, half: 3.2 * (.40 + random() * .20 + .05 * Math.sin(i * .37 + phase)) };
         });
-        const edge = (sign: number) => marks.map(p => new Vec2(p.x + p.nx * p.half * sign, p.y + p.ny * p.half * sign));
         const polygon = (path: Vec2[], color: Color) => {
             g.fillColor = color; path.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.close(); g.fill();
         };
@@ -186,22 +186,9 @@ export class FounderSpeech {
             g.stroke();
         }
         g = this.art; g.clear(); g.lineJoin = Graphics.LineJoin.ROUND;
-        polygon(edge(1), new Color(20, 20, 20));
-        polygon(edge(-1), new Color(255, 248, 229));
-        // The same uneven width, paper flecks and fine side strokes as the card rims.
-        for (let pass = 0; pass < 3; pass++) {
-            g.fillColor = new Color(255, 247, 227, 32 + pass * 28);
-            for (const p of marks) {
-                const across = (random() * 2 - 1) * p.half * .85;
-                g.rect(p.x + p.nx * across + (random() - .5) * .8, p.y + p.ny * across + (random() - .5) * .8, .16 + random() * .44, .12 + random() * .32);
-            }
-            g.fill();
-        }
-        g.lineWidth = .3; g.strokeColor = new Color(20, 20, 20, 77);
-        for (const sign of [-1, 1]) {
-            marks.forEach((p, i) => { const d = sign * (p.half + random() * .38), x = p.x + p.nx * d, y = p.y + p.ny * d; if (i) g.lineTo(x, y); else g.moveTo(x, y); });
-            g.close(); g.stroke();
-        }
+        const paper = new Color(255, 248, 229);
+        polygon(points, paper);
+        crayonStroke(g, [...points, points[0]], new Color(20, 20, 20), 3.2, paper);
     }
 
     snapshot() { return { visible: this.node.active, text: this.text, queued: this.queued, age: this.age, width: this.width, height: this.height,

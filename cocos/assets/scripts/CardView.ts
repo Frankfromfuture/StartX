@@ -326,9 +326,9 @@ export class CardView extends Component {
             if (time >= 0 && motion.started) { const started = motion.started; motion.started = null; started(); }
             const t = Math.max(0, Math.min(1, time / .4)), travel = 1 - (1 - t) * (1 - t), target = motion.target();
             x = (target.x - this.node.position.x) * travel; y = (target.y - this.node.position.y) * travel;
-            sx = sy = 1; rotation = 0;
-            const fade = Math.max(0, Math.min(1, (time - .4) / .35));
-            this.node.getComponent(UIOpacity)!.opacity = 255 * (1 - fade) * (1 - fade);
+            const shrink = Math.max(0, Math.min(1, (time - .4) / .35));
+            sx = sy = 1 - shrink * shrink * (3 - 2 * shrink); rotation = 0;
+            this.node.getComponent(UIOpacity)!.opacity = 255;
             if (time >= .75) { this.spending = null; motion.done(); return; }
         }
         if (this.glide) {

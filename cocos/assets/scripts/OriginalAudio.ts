@@ -12,14 +12,17 @@ export class OriginalAudio extends Component {
     private cursor = 0;
     private active = true;
     private primed = false;
+    private gameplayActive = false;
     sfxVolume = .8;
     musicVolume = .6;
     private music!: AudioSource;
     private slowMusic!: AudioSource;
+    private theme!: AudioSource;
     private slowed = false;
-    private get musicSource() { return this.slowed ? this.slowMusic : this.music; }
+    private get gameplayMusicSource() { return this.slowed ? this.slowMusic : this.music; }
+    private get musicSource() { return this.gameplayActive ? this.gameplayMusicSource : this.theme; }
     private events: { type: string; name: string; time: number; volume: number }[] = [];
-    private hide = () => { this.active = false; this.voices.forEach(v => { if (v.source.isValid) v.source.stop(); }); this.music?.pause(); this.slowMusic?.pause(); };
+    private hide = () => { this.active = false; this.voices.forEach(v => { if (v.source.isValid) v.source.stop(); }); this.music?.pause(); this.slowMusic?.pause(); this.theme?.pause(); };
     private show = () => { this.active = true; this.primed = false; };
     onLoad() {
         try {
@@ -31,6 +34,8 @@ export class OriginalAudio extends Component {
         this.music = music.addComponent(AudioSource); this.music.playOnAwake = false; this.music.loop = true; this.music.volume = this.musicVolume;
         const slow = new Node('SlowBackgroundMusic'); this.node.addChild(slow);
         this.slowMusic = slow.addComponent(AudioSource); this.slowMusic.playOnAwake = false; this.slowMusic.loop = true; this.slowMusic.volume = this.musicVolume;
+        const theme = new Node('MainTheme'); this.node.addChild(theme);
+        this.theme = theme.addComponent(AudioSource); this.theme.playOnAwake = false; this.theme.loop = true; this.theme.volume = this.musicVolume;
         for (let i = 0; i < 10; i++) {
             const n = new Node('SfxVoice-' + i); this.node.addChild(n);
             const source = n.addComponent(AudioSource); source.playOnAwake = false; source.volume = this.sfxVolume;
@@ -45,8 +50,16 @@ export class OriginalAudio extends Component {
             bundle.load('audio/' + name, AudioClip, (e, clip) => {
                 if (e) { reject(e); return; } this.clips.set(name, clip); resolve();
             }))));
-        this.music.clip = await new Promise<AudioClip>((resolve, reject) => bundle.load('audio/daily1', AudioClip, (e, clip) => e ? reject(e) : resolve(clip)));
-        this.slowMusic.clip = await new Promise<AudioClip>((resolve, reject) => bundle.load('audio/daily1-slow', AudioClip, (e, clip) => e ? reject(e) : resolve(clip)));
+        this.music.clip = await new Promise<AudioClip>((resolve, reject) => bundle.load('audio/bgm1', AudioClip, (e, clip) => e ? reject(e) : resolve(clip)));
+        this.slowMusic.clip = await new Promise<AudioClip>((resolve, reject) => bundle.load('audio/bgm1-slow', AudioClip, (e, clip) => e ? reject(e) : resolve(clip)));
+        this.theme.clip = await new Promise<AudioClip>((resolve, reject) => bundle.load('audio/theme', AudioClip, (e, clip) => e ? reject(e) : resolve(clip)));
+    }
+    setGameplayActive(active: boolean) {
+        if (this.gameplayActive !== active) {
+            this.musicSource.pause();
+            this.gameplayActive = active;
+        }
+        this.prime();
     }
     prime() {
         const clip = this.clips.get('grab');
@@ -58,10 +71,10 @@ export class OriginalAudio extends Component {
     }
     setPaused(paused: boolean) {
         if (this.slowed === paused) return;
-        const previous = this.musicSource, position = previous.currentTime * (this.slowed ? PAUSED_MUSIC_SPEED : 1), playing = previous.playing;
+        const previous = this.gameplayMusicSource, position = previous.currentTime * (this.slowed ? PAUSED_MUSIC_SPEED : 1), playing = previous.playing;
         previous.pause(); this.slowed = paused;
-        this.musicSource.currentTime = position / (paused ? PAUSED_MUSIC_SPEED : 1);
-        if ((playing || this.primed) && this.active && this.musicVolume > 0) this.musicSource.play();
+        this.gameplayMusicSource.currentTime = position / (paused ? PAUSED_MUSIC_SPEED : 1);
+        if (this.gameplayActive && (playing || this.primed) && this.active && this.musicVolume > 0) this.gameplayMusicSource.play();
     }
     adjustVolume(kind: 'sfx' | 'music', delta: number) {
         if (kind === 'sfx') {
@@ -71,6 +84,7 @@ export class OriginalAudio extends Component {
             this.musicVolume = Math.max(0, Math.min(1, Math.round((this.musicVolume + delta) * 10) / 10));
             this.music.volume = this.musicVolume;
             this.slowMusic.volume = this.musicVolume;
+            this.theme.volume = this.musicVolume;
         }
         try { sys.localStorage.setItem('startx.audio', JSON.stringify({ sfx: this.sfxVolume, music: this.musicVolume })); } catch { /* Session values still apply. */ }
         this.prime(); if (kind === 'sfx') this.play('grab');
@@ -86,10 +100,12 @@ export class OriginalAudio extends Component {
         if (this.events.length > 128) this.events.shift();
     }
     snapshot() {
+        const speed = this.gameplayActive && this.slowed ? PAUSED_MUSIC_SPEED : 1;
         return { loaded: this.clips.size, active: this.active, sfxVolume: this.sfxVolume, musicVolume: this.musicVolume,
             music: { loaded: !!this.musicSource.clip, playing: this.musicSource.playing, volume: this.musicSource.volume,
-                speed: this.slowed ? PAUSED_MUSIC_SPEED : 1, position: this.musicSource.currentTime * (this.slowed ? PAUSED_MUSIC_SPEED : 1),
-                duration: this.musicSource.duration, normalDuration: this.music.duration }, events: this.events.slice(),
+                track: this.gameplayActive ? 'bgm1' : 'theme', loop: this.musicSource.loop,
+                speed, position: this.musicSource.currentTime * speed,
+                duration: this.musicSource.duration, normalDuration: this.gameplayActive ? this.music.duration : this.theme.duration }, events: this.events.slice(),
             voices: this.voices.map(v => ({ name: v.name, playing: v.source.playing, volume: v.source.volume })) };
     }
     onDestroy() {

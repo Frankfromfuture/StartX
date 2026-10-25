@@ -49,9 +49,10 @@ const supply = model(); supply.packs = []; supply.cards = []; supply.stacks = []
 const source = add(supply, ['p1_neighborhood','founder']), dest = add(supply, ['p1_rawprod']);
 supply.event('recipe_complete','p1_cash_raw_youth'); supply.event('recipe_complete','p2_train_product_specialist'); assert(supply.connect(source.uid, dest.uid)); tick(supply, 6.1); assert.equal(supply.links.length, 1); assert(supply.counters['supply_production|'] > 0);
 results.push('Supply output reaches compatible target stack and records task progress');
-const payroll = model(); payroll.packs = []; payroll.spawn('p1_office',0,0); add(payroll,Array(5).fill('cash')); payroll.monthTime=.05; payroll.update(.1); assert.equal(payroll.month,2); assert.equal(payroll.cash,3);
-payroll.monthTime=.05; payroll.update(.1); payroll.monthTime=.05; payroll.update(.1); assert(payroll.gameOver);
-const cleanup = model(); cleanup.packs=[]; cleanup.spawn('p1_office',0,0); add(cleanup,Array(30).fill('p1_youth')); cleanup.monthTime=.05; cleanup.update(.1); assert(cleanup.cleanup); const youths=cleanup.cards.find(c=>c.id==='p1_youth'); cleanup.sell(youths.sid); cleanup.update(.1); assert.equal(cleanup.month,2);
+const settleMonth = m => { m.confirmMonthlyPayments(); while (m.monthSettlement?.phase === 'paying') { m.payNextMonthlyRecipient(); m.completeMonthlyPayment(); } m.startNextMonth(); };
+const payroll = model(); payroll.packs = []; payroll.spawn('p1_office',0,0); add(payroll,Array(5).fill('cash')); payroll.monthTime=.05; payroll.update(.1); settleMonth(payroll); assert.equal(payroll.month,2); assert.equal(payroll.cash,3);
+payroll.monthTime=.05; payroll.update(.1); settleMonth(payroll); payroll.monthTime=.05; payroll.update(.1); settleMonth(payroll); assert(payroll.gameOver);
+const cleanup = model(); cleanup.packs=[]; cleanup.spawn('p1_office',0,0); add(cleanup,Array(30).fill('p1_youth')); cleanup.monthTime=.05; cleanup.update(.1); cleanup.confirmMonthlyPayments(); assert(cleanup.cleanup); const youths=cleanup.cards.find(c=>c.id==='p1_youth'); cleanup.sell(youths.sid); cleanup.update(.1); settleMonth(cleanup); assert.equal(cleanup.month,2);
 results.push('Monthly payroll, insolvency and capacity cleanup settlement');
 for (const [id] of Object.entries(data.cards)) assert(fs.existsSync(path.join(root,'assets/content/faces',id+'.png')));
 assert.equal(Object.keys(data.cards).length, 66);

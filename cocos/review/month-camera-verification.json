@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "scenario": "landscape",
+      "paymentCardPixels": 180,
+      "restored": {
+        "zoom": 0.42,
+        "pitch": 1,
+        "centerX": 130,
+        "centerY": -95
+      },
+      "passed": true
+    },
+    {
+      "scenario": "portrait",
+      "paymentCardPixels": 180,
+      "restored": {
+        "zoom": 0.58,
+        "pitch": 1,
+        "centerX": 130,
+        "centerY": -95
+      },
+      "passed": true
+    }
+  ],
+  "errors": []
+}

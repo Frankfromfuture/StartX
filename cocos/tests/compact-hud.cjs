@@ -65,16 +65,18 @@ const root=path.resolve(__dirname,'..'),center=r=>({x:r.x+r.width/2,y:r.y+r.heig
     await page.waitForFunction(()=>window.__STARTX_SAMPLE__().ready&&window.__STARTX_SAMPLE__().motions.every(m=>!m.kind));
     const sounds=(await state()).audio.events.filter(e=>e.type==='started'&&e.name==='cash_down').length;
     await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews);c.model.monthTime=.001;});
-    await page.waitForFunction(()=>window.__STARTX_SAMPLE__().cashFlights.length>0);
-    s=await state();assert.equal(s.month,payment.month+1);assert.equal(s.cash,payment.cash-payment.payroll);assert.equal(s.cashFlights.length,payment.payroll);
-    assert(s.cashFlights.some(f=>f.uid===undefined),'Stored cash creates visual cash');
-    assert.deepEqual([...new Set(s.cashFlights.map(f=>f.targetUid))].sort(),payment.targets.sort());
-    for(const f of s.cashFlights){assert.equal(f.kind,'spend');assert(Math.abs(f.scale-1)<.001);}
-    await page.waitForFunction(()=>{const s=window.__STARTX_SAMPLE__();return s.cashFlights.length&&s.cashFlights.every(f=>f.time-f.delay>.4);});
-    s=await state();for(const f of s.cashFlights){const target=s.cards.find(c=>c.uid===f.targetUid);assert(Math.hypot(center(f.bounds).x-center(target.bounds).x,center(f.bounds).y-center(target.bounds).y)<2);assert(f.opacity<255);}
+    await page.waitForFunction(()=>window.__STARTX_SAMPLE__().monthSettlement?.phase==='confirm');
+    s=await state();assert.equal(s.month,payment.month);assert.equal(s.cash,payment.cash);await click(s.monthEnd.buttonBounds);
+    await page.waitForFunction(()=>{
+     const s=window.__STARTX_SAMPLE__();window.__paymentTargets ||= [];
+     for(const flight of s.cashFlights)if(!window.__paymentTargets.includes(flight.targetUid))window.__paymentTargets.push(flight.targetUid);
+     return s.monthSettlement?.phase==='ready'&&s.monthEnd.visible;
+    });
+    s=await state();assert.equal(s.cash,payment.cash-payment.payroll);assert.equal(s.month,payment.month);
+    assert.deepEqual((await page.evaluate(()=>window.__paymentTargets)).sort(),payment.targets.sort());
+    assert.equal(s.audio.events.filter(e=>e.type==='started'&&e.name==='cash_down').length,sounds+payment.payroll);
     await page.screenshot({path:path.join(root,'review/cash-settlement.png')});
-    await page.waitForFunction(()=>window.__STARTX_SAMPLE__().cashFlights.length===0);
-    s=await state();assert.equal(s.audio.events.filter(e=>e.type==='started'&&e.name==='cash_down').length,sounds+payment.payroll);
+    await click(s.monthEnd.buttonBounds);s=await state();assert.equal(s.month,payment.month+1);
     checks.push('Desktop: each pack cash plays cash_down; monthly loose and stored cash fly at full size to salaried cards, fade and deduct once; production bar matches card width with doubled height; centered overlapping drawer tabs put active tab on top');
    }else checks.push('Portrait touch: centered drawer and overlapping tabs, active tab in front, drawer width at most one third, settings moved right and original slim bars retained');
    await ctx.close();

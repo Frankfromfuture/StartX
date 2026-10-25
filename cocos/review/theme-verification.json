@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "typecheck": true,
+  "build": "web-mobile",
+  "themeDuration": 32.064,
+  "sourceMatches": true,
+  "checks": [
+    "开始页播放 32 秒 Theme，实际跨过曲尾循环；主菜单设置沿用 Theme 和音乐音量",
+    "开始游戏切换到 BGM1；暂停降速，返回开始页切回原速 Theme，继续游戏恢复原速 BGM1；始终只有一首播放"
+  ],
+  "errors": []
+}

@@ -1,0 +1,30 @@
+const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict'), ts = require('typescript');
+const root = path.resolve(__dirname, '..'), data = JSON.parse(fs.readFileSync(path.join(root, 'assets/content/catalog.json')));
+const exportsModel = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, 'assets/scripts/GameModel.ts'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
+}).outputText, { exports: exportsModel, Math, Set });
+const { GameModel } = exportsModel;
+const m = new GameModel(data, () => .5);
+m.packs = []; const office = m.spawn('p1_office', 0, 0), worker = m.spawn('p2_sales_specialist', 400, 0);
+const cash = m.spawn('cash', -400, 0), account = m.spawn('p3_account', -400, -300); account.stored = 3;
+m.monthTime = .01; m.update(.1);
+assert.equal(m.monthSettlement.phase, 'confirm'); assert.equal(m.month, 1); assert.equal(m.cash, 4);
+m.update(100); assert.equal(m.monthTime, 0); assert.equal(m.cash, 4);
+m.confirmMonthlyPayments(); m.payNextMonthlyRecipient();
+assert.equal(m.monthSettlement.activeTarget, office.uid); assert.equal(m.cash, 2);
+assert.equal(m.cashSpends[0].uid, cash.uid); assert(m.cashSpends.every(p => p.targetUid === office.uid));
+m.payNextMonthlyRecipient(); assert.equal(m.cash, 2, 'Repeated payment call cannot double debit');
+const resumed = GameModel.fromProgress(data, m.saveProgress(), () => .5);
+assert(resumed); assert.equal(resumed.cash, 2); assert.equal(resumed.monthSettlement.activeTarget, 0);
+resumed.payNextMonthlyRecipient(); assert.equal(resumed.monthSettlement.activeTarget, worker.uid);
+assert.equal(resumed.cash, 0); assert(resumed.cashSpends.every(p => p.targetUid === worker.uid));
+resumed.completeMonthlyPayment(); assert.equal(resumed.monthSettlement.phase, 'ready'); assert.equal(resumed.month, 1);
+resumed.update(100); assert.equal(resumed.month, 1);
+resumed.startNextMonth(); resumed.startNextMonth(); assert.equal(resumed.month, 2); assert.equal(resumed.monthTime, data.balance.month_seconds);
+resumed.skipToMonthEnd(); resumed.confirmMonthlyPayments();
+assert.equal(resumed.monthSettlement.phase, 'failed'); assert(resumed.gameOver); assert.equal(resumed.cash, 0);
+assert(GameModel.fromProgress(data, resumed.saveProgress()), 'Failure dialog survives reload');
+const legacy = new GameModel(data).saveProgress(); delete legacy.state.monthSettlement;
+assert.equal(GameModel.fromProgress(data, legacy).monthSettlement, null, 'Existing saves stay compatible');
+console.log('Month end passed: confirmation gate, frozen time, sequential recipients, cash-first exact balance, idempotent debit, in-flight save recovery, next-month confirmation and insolvency.');

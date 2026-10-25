@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Landscape: uu confirmation, centered crayon panel, cash/account flights to centered office then employee, reload during payment without double debit, explicit next-month confirmation",
+    "Portrait: natural month expiry, failure with no partial deduction, confirmation returns to title and removes failed save"
+  ],
+  "errors": []
+}

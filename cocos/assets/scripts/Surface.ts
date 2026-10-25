@@ -4,26 +4,41 @@ export const FILE_TAB_RADIUS = .26;
 export const DIMMED_BACKGROUND_COLOR = new Color(16, 19, 25, 190);
 
 type StrokePoint = { x: number; y: number };
-/** Stable wax marks: irregular pressure and fine overlapping strokes, without animated noise. */
-export function crayonStroke(g: Graphics, path: StrokePoint[], color: Color, width: number) {
-    if (path.length < 2) return;
-    const points: StrokePoint[] = [path[0]];
+/** Dense wax with uneven pressure, paper pinholes and loose pigment at the edge. */
+export function crayonStroke(g: Graphics, path: StrokePoint[], color: Color, width: number, paper = new Color(255, 248, 229)) {
+    if (path.length < 2 || width <= 0) return;
+    const points = [{ ...path[0], distance: 0 }];
+    let distance = 0;
     for (let i = 1; i < path.length; i++) {
-        const a = path[i - 1], b = path[i], count = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / Math.max(1.5, width)));
-        for (let j = 1; j <= count; j++) points.push({ x: a.x + (b.x - a.x) * j / count, y: a.y + (b.y - a.y) * j / count });
+        const a = path[i - 1], b = path[i], length = Math.hypot(b.x - a.x, b.y - a.y);
+        const count = Math.max(1, Math.ceil(length / (width * .24)));
+        for (let j = 1; j <= count; j++) points.push({ x: a.x + (b.x - a.x) * j / count, y: a.y + (b.y - a.y) * j / count, distance: distance + length * j / count });
+        distance += length;
     }
-    g.lineCap = Graphics.LineCap.ROUND; g.lineJoin = Graphics.LineJoin.ROUND;
-    for (let pass = 0; pass < 3; pass++) {
-        g.lineWidth = width * (pass ? .30 : .78);
-        g.strokeColor = new Color(color.r, color.g, color.b, Math.round(color.a * (pass ? .62 : .95)));
-        points.forEach((p, i) => {
-            const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)], length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-            const rub = width * (Math.sin(i * 1.73 + pass * 2.1) * .12 + Math.sin(i * .27 + pass) * .15 + (pass - 1) * .22);
-            const x = p.x - (b.y - a.y) / length * rub, y = p.y + (b.x - a.x) / length * rub;
-            if (i) g.lineTo(x, y); else g.moveTo(x, y);
-        });
-        g.stroke();
-    }
+    const grain = (i: number, seed: number) => { const n = Math.sin(i * 127.1 + seed * 311.7) * 43758.5453; return n - Math.floor(n); };
+    const ribbon = points.map((p, i) => {
+        const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)];
+        const length = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / length, ny = (b.x - a.x) / length;
+        const t = p.distance / width, drift = width * (.07 * Math.sin(t * .47) + .025 * Math.sin(t * 3.1));
+        const half = width * (.44 + .08 * Math.sin(t * .31) + .035 * Math.sin(t * 2.3));
+        return { x: p.x + nx * drift, y: p.y + ny * drift, nx, ny, half };
+    });
+    g.fillColor = color;
+    ribbon.forEach((p, i) => { const x = p.x + p.nx * p.half, y = p.y + p.ny * p.half; if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+    for (let i = ribbon.length - 1; i >= 0; i--) { const p = ribbon[i]; g.lineTo(p.x - p.nx * p.half, p.y - p.ny * p.half); }
+    g.close(); g.fill();
+    ribbon.forEach((p, i) => {
+        if (grain(i, 1) > .48) {
+            const offset = (grain(i, 2) * 2 - 1) * p.half * .95, size = width * (.055 + grain(i, 3) * .10);
+            g.fillColor = new Color(paper.r, paper.g, paper.b, Math.round(paper.a * (.65 + grain(i, 4) * .35)));
+            g.rect(p.x + p.nx * offset - size / 2, p.y + p.ny * offset - size / 2, size, size * (1 + grain(i, 5))); g.fill();
+        }
+        if (grain(i, 6) > .66) {
+            const offset = (grain(i, 7) > .5 ? 1 : -1) * (p.half + width * (.06 + grain(i, 8) * .15));
+            g.fillColor = new Color(color.r, color.g, color.b, Math.round(color.a * (.25 + grain(i, 9) * .45)));
+            g.circle(p.x + p.nx * offset, p.y + p.ny * offset, width * (.035 + grain(i, 10) * .045)); g.fill();
+        }
+    });
 }
 
 /** Editable rounded panel. Geometry follows its UITransform in editor and runtime. */
@@ -41,6 +56,7 @@ export class Surface extends Component {
     @property grid = false;
     @property fileTab = false;
     @property openLeft = false;
+    @property leftExtension = 0;
     @property crayon = false;
     @property gridSpacing = 72;
     @property(Color) gridAlternate = new Color(237, 232, 218, 255);
@@ -68,7 +84,7 @@ export class Surface extends Component {
         g.clear();
         const w = t.width, h = t.height, inset = this.lineWidth / 2;
         g.fillColor = this.fill;
-        if (this.crayon && this.lineWidth) { this.paintCrayon(g, w, h); return; }
+        if (this.lineWidth > 0) { this.paintCrayon(g, w, h); if (this.grid) this.paintGrid(g, w, h); if (this.dots) this.paintDots(g, w, h); return; }
         if (this.fileTab) {
             // Brizo's 10px crown + 8px concave shoulders, rotated into a vertical tab.
             // Cubic quarter circles meet the straight edges with matching tangents.
@@ -116,7 +132,10 @@ export class Surface extends Component {
         g.fill();
         if (this.lineWidth) { g.lineWidth = this.lineWidth; g.strokeColor = this.stroke; g.stroke(); }
         if (this.grid) this.paintGrid(g, w, h);
-        if (this.dots) {
+        if (this.dots) this.paintDots(g, w, h);
+    }
+
+    private paintDots(g: Graphics, w: number, h: number) {
             g.fillColor = new Color(139, 137, 117, 40);
             const step = Math.max(4, this.dotSpacing * this.gridZoom);
             const wrap = (v: number) => ((v % step) + step) % step;
@@ -124,11 +143,10 @@ export class Surface extends Component {
             const startY = -h / 2 + wrap(this.gridY + h / 2);
             for (let x = startX; x <= w / 2; x += step)
                 for (let y = startY; y <= h / 2; y += step) { g.circle(x, y, this.dotRadius * this.gridZoom); g.fill(); }
-        }
     }
 
     private paintCrayon(g: Graphics, w: number, h: number) {
-        const inset = this.lineWidth, left = -w / 2 + inset, right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset;
+        const inset = this.lineWidth * (this.crayon ? 1 : .5), left = -w / 2 + inset - (this.fileTab ? this.leftExtension : 0), right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset;
         const points: StrokePoint[] = [], step = Math.max(1.5, this.lineWidth);
         const move = (x: number, y: number) => points.push({ x, y });
         const line = (x: number, y: number) => {
@@ -157,13 +175,24 @@ export class Surface extends Component {
         points.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.close(); g.fill();
         if (this.fileTab && this.openLeft) { g.rect(left - inset, bottom, inset * 2, top - bottom); g.fill(); }
         let stroke: StrokePoint[] = [points[0]];
+        const paintStroke = () => crayonStroke(g, stroke, this.stroke, this.lineWidth, this.fill);
         for (let i = 1; i < points.length; i++) {
-            const a = points[i - 1], b = points[i], y = (a.y + b.y) / 2;
-            const gap = this.openLeft && Math.abs(a.x - left) < .01 && Math.abs(b.x - left) < .01 ||
-                Math.abs(a.x - right) < .01 && Math.abs(b.x - right) < .01 && this.edgeGaps?.some(([from, to]) => y > from && y < to);
-            if (gap) { crayonStroke(g, stroke, this.stroke, this.lineWidth); stroke = [b]; } else stroke.push(b);
+            const a = points[i - 1], b = points[i];
+            if (this.openLeft && Math.abs(a.x - left) < .01 && Math.abs(b.x - left) < .01) {
+                paintStroke(); stroke = [b];
+            } else if (this.edgeGaps?.length && Math.abs(a.x - right) < .01 && Math.abs(b.x - right) < .01) {
+                // Split at the exact shoulder heights rather than rounding to a sampled segment.
+                const low = Math.min(a.y, b.y), high = Math.max(a.y, b.y), direction = Math.sign(b.y - a.y);
+                const boundaries = this.edgeGaps.reduce<number[]>((all, pair) => all.concat(pair), []);
+                const cuts = [a.y, ...boundaries.filter(y => y > low && y < high).sort((x, y) => (x - y) * direction), b.y];
+                for (let j = 1; j < cuts.length; j++) {
+                    const y = (cuts[j - 1] + cuts[j]) / 2, end = { x: right, y: cuts[j] };
+                    if (this.edgeGaps.some(([from, to]) => y > from && y < to)) { paintStroke(); stroke = [end]; }
+                    else stroke.push(end);
+                }
+            } else stroke.push(b);
         }
-        crayonStroke(g, stroke, this.stroke, this.lineWidth);
+        paintStroke();
     }
 
     private paintGrid(g: Graphics, w: number, h: number) {

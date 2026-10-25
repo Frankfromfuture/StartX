@@ -2,6 +2,8 @@
 
 线上地址：https://www.iambrizo.com/startx/ 。`/startx` 自动重定向到带斜线的地址，游戏资源沿子目录加载。
 
+2026-10-25 发布 `20261025-startx-view-shadows-01`：卡牌、棋盘卡包、创始人气泡、侧边标签和开始页按钮的现有阴影改为共用视角光源，在各自平面投影，随位置、缩放和卡牌抬起、转动更新。顶部一排卡包保持原样。类型检查、完整构建、横竖屏验证通过；944 个文件校验后原子替换，官网首页保持不变，上一版保存在该发布目录的 `previous-startx/`。存档格式和保存位置沿用原有设置。核验记录见 `review/view-shadows-verification.json` 与 `review/deployment-view-shadows-verification.json`。
+
 2026-10-25 发布 `20261025-startx-ui-saves-01`：同步当前卡牌、供应链、奖励礼包和横竖屏界面；奖励礼包使用黑色纹理与 3 颗随机闪星，暂停图案为 38.88 像素，从开始页进入游戏默认运行。复用已验证的最新构建，944 个文件逐一校验后原子替换游戏目录，官网首页哈希保持不变；上一版保存在 `/srv/brizo-landing/releases/20261025-startx-ui-saves-01/previous-startx/`。
 
 存档按浏览器独立保存，无需注册，不上传服务器。已用两个独立浏览器环境验证：分别保留第 7 月／账户 45 和第 3 月／账户 50，刷新后恢复各自进度，互不覆盖。使用相同设备和浏览器可继续；换浏览器、换设备或清除网站数据后使用新的存档。发布核验见 `review/deployment-current-20261025-verification.json`，独立存档核验见 `review/deployment-browser-saves-verification.json`。

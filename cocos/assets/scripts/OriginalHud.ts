@@ -5,6 +5,7 @@ import { businessGroups } from './Notebook';
 import { PACK_SCREEN_SIZE } from './Layout';
 import { Icon } from './Icon';
 import { CardFrameVolume } from './CardFrameVolume';
+import { viewShadowOffset } from './ViewShadow';
 
 /** The original pack covers and task notebook, fixed to the screen above the board. */
 export class OriginalHud {
@@ -224,7 +225,8 @@ export class OriginalHud {
         ['Book', 'Tasks'].forEach((name, i) => {
             const x = edge - border + this.tabWidth / 2, y = this.drawerY + this.tabOffsets[i];
             this.get('Toolbar/' + name).setPosition(x, y);
-            this.tabShadows.get(name)!.setPosition(x + 3 * this.scale, y - 3 * this.scale);
+            const offset = viewShadowOffset(this.get('Toolbar'), new Vec3(x, y), 4 * this.scale);
+            this.tabShadows.get(name)!.setPosition(x + offset.x, y + offset.y);
         });
     }
     private paintTabs() {

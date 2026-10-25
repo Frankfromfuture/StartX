@@ -1,6 +1,7 @@
 import { Color, Font, Graphics, Label, LabelOutline, Node, Sprite, SpriteFrame, UITransform, Vec2, Vec3 } from 'cc';
 import { LayoutMetrics } from './Layout';
 import { Surface } from './Surface';
+import { viewShadowOffset } from './ViewShadow';
 
 type Edge = 'left' | 'right' | 'top' | 'bottom';
 interface Piece { node: Node; edge: Edge; x: number; y: number; size: number; angle: number; phase: number; speed: number; depth: number; delay: number; }
@@ -177,6 +178,11 @@ export class TitleScreen {
     }
     tick(dt: number) {
         if (!this.node.active) return;
+        for (const button of [this.start, this.resume, this.catalog, this.settings]) {
+            if (!button.activeInHierarchy) continue;
+            const offset = viewShadowOffset(button, new Vec3(), 9);
+            button.getChildByName('Shadow')!.setPosition(offset.x, offset.y);
+        }
         this.elapsed += Math.min(dt, .05);
         const response = Math.min(1, dt * 4); this.parallaxX += (this.pointerX - this.parallaxX) * response; this.parallaxY += (this.pointerY - this.parallaxY) * response;
         this.background.setPosition(this.reducedMotion ? 0 : -this.parallaxX * 6, this.reducedMotion ? 0 : -this.parallaxY * 6);

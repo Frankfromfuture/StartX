@@ -1,4 +1,5 @@
 import { Color, Font, Graphics, Label, Node, UIOpacity, UITransform, Vec2, Vec3 } from 'cc';
+import { viewShadowOffset } from './ViewShadow';
 
 interface SpeechArea { left: number; right: number; top: number; bottom: number; scale: number; landscape?: boolean; fontSize?: number; }
 type TailDirection = 'down' | 'left' | 'right';
@@ -9,6 +10,10 @@ const MILESTONE = '恭喜我们又前进了一步！';
 export class FounderSpeech {
     readonly node: Node;
     private art: Graphics;
+    private shadow: Node;
+    private shadowArt: Graphics;
+    private shadowShift = new Vec2();
+    private shadowOrigin = new Vec3();
     private opacity: UIOpacity;
     private message: Label;
     private age = 0;
@@ -27,7 +32,10 @@ export class FounderSpeech {
     constructor(private parent: Node, font: Font, private projectWorld = (point: Vec3) => point) {
         this.node = new Node('FounderSpeech'); this.node.layer = parent.layer; parent.addChild(this.node);
         this.node.addComponent(UITransform);
-        this.art = this.node.addComponent(Graphics); this.opacity = this.node.addComponent(UIOpacity);
+        this.shadow = new Node('Shadow'); this.shadow.layer = parent.layer; this.node.addChild(this.shadow); this.shadow.addComponent(UITransform);
+        this.shadowArt = this.shadow.addComponent(Graphics);
+        const paper = new Node('Paper'); paper.layer = parent.layer; this.node.addChild(paper); paper.addComponent(UITransform);
+        this.art = paper.addComponent(Graphics); this.opacity = this.node.addComponent(UIOpacity);
         const n = new Node('Message'); n.layer = parent.layer; this.node.addChild(n); n.addComponent(UITransform);
         this.message = n.addComponent(Label); this.message.font = font; this.message.fontSize = 18; this.message.lineHeight = 24;
         this.message.color = new Color(48, 42, 39); this.message.horizontalAlign = Label.HorizontalAlign.CENTER;
@@ -107,12 +115,15 @@ export class FounderSpeech {
         const travel = 1 - Math.pow(1 - this.entrance, 3), pop = .06 + .94 * travel;
         this.node.setPosition(this.origin.x + (x - this.origin.x) * travel, this.origin.y + (y - this.origin.y) * travel);
         this.node.setScale(s * pop, s * pop, 1);
+        viewShadowOffset(this.node, this.shadowOrigin, 4.2, this.shadowShift);
+        this.shadow.setPosition(this.shadowShift.x, this.shadowShift.y, 0);
         this.opacity.opacity = Math.round(255 * Math.min(1, this.age / .09, (this.duration - this.age) / .35));
     }
 
     private paint(width: number, height: number, tail: number, direction: TailDirection) {
         const sideways = direction !== 'down', shapeW = sideways ? height : width, shapeH = sideways ? width : height;
-        const g = this.art, l = -shapeW / 2, r = shapeW / 2, b = -shapeH / 2, t = shapeH / 2, radius = 14;
+        let g = this.shadowArt;
+        const l = -shapeW / 2, r = shapeW / 2, b = -shapeH / 2, t = shapeH / 2, radius = 14;
         let seed = 2166136261;
         for (const c of this.text + width + ':' + height) seed = Math.imul(seed ^ c.charCodeAt(0), 16777619);
         const random = () => { seed += 0x6d2b79f5; let n = Math.imul(seed ^ seed >>> 15, 1 | seed); n ^= n + Math.imul(n ^ n >>> 7, 61 | n); return ((n ^ n >>> 14) >>> 0) / 4294967296; };
@@ -147,7 +158,7 @@ export class FounderSpeech {
         // Keep the shadow's outline calm; wax texture belongs inside the rubbed area.
         const shadow = points.map((p, i) => {
             const spread = 2.1 + Math.sin(i * .07 + phase) * .12, normal = marks[i];
-            return new Vec2(p.x + normal.nx * spread + 2.5, p.y + normal.ny * spread - 3.5);
+            return new Vec2(p.x + normal.nx * spread, p.y + normal.ny * spread);
         });
         const inShadow = (x: number, y: number) => {
             let inside = false;
@@ -169,6 +180,7 @@ export class FounderSpeech {
             }
             g.stroke();
         }
+        g = this.art; g.clear(); g.lineJoin = Graphics.LineJoin.ROUND;
         polygon(edge(1), new Color(20, 20, 20));
         polygon(edge(-1), new Color(255, 248, 229));
         // The same uneven width, paper flecks and fine side strokes as the card rims.
@@ -188,5 +200,6 @@ export class FounderSpeech {
     }
 
     snapshot() { return { visible: this.node.active, text: this.text, queued: this.queued, age: this.age, width: this.width, height: this.height,
-        entrance: this.entrance, tailDirection: this.tailDirection, origin: { x: this.origin.x, y: this.origin.y }, destination: { x: this.destination.x, y: this.destination.y } }; }
+        entrance: this.entrance, tailDirection: this.tailDirection, shadow: { x: this.shadowShift.x, y: this.shadowShift.y },
+        origin: { x: this.origin.x, y: this.origin.y }, destination: { x: this.destination.x, y: this.destination.y } }; }
 }

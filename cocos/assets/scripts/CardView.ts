@@ -3,6 +3,7 @@ import { CardFrameVolume, paintPackShadow } from './CardFrameVolume';
 import { Surface } from './Surface';
 import type { Appearance } from './GameModel';
 import { BADGE_SIZE, BadgePosition, BOARD_HALF, safeBadgePosition } from './GameModel';
+import { viewShadowOffset } from './ViewShadow';
 const { ccclass } = _decorator;
 
 export const BATTLE_CARD_Y = -36;
@@ -60,6 +61,8 @@ export class CardView extends Component {
     }
     private face!: Node;
     private shadow!: Node;
+    private shadowShift = new Vec2();
+    private shadowAnchor = new Vec3();
     private front!: Sprite;
     private patch!: Sprite;
     private progress!: Graphics;
@@ -350,8 +353,10 @@ export class CardView extends Component {
             this.face.setPosition(Math.max(-limitX, Math.min(limitX, p.x + face.x)) - p.x,
                 Math.max(-limitY, Math.min(limitY, p.y + face.y)) - p.y, 0);
         }
-        this.shadow.setPosition(x + 10 + this.lift * .25, y - 13 - this.lift * .4, 0);
-        this.shadow.angle = this.pack ? this.face.angle : 0;
+        this.shadowAnchor.set(this.face.position.x, this.face.position.y - this.lift, 0);
+        viewShadowOffset(this.node, this.shadowAnchor, 14 + this.lift * .8 + Math.max(0, this.combat?.lift || 0) * .4, this.shadowShift);
+        this.shadow.setPosition(this.shadowAnchor.x + this.shadowShift.x, this.shadowAnchor.y + this.shadowShift.y, 0);
+        this.shadow.angle = this.face.angle;
         this.shadow.setScale((1 + this.lift / 240) * sx * this.battleScale, (1 + this.lift / 240) * sy * this.battleScale, 1);
         // The board represents camera pitch with Y scale; detail cards remain square.
         const worldScale = this.node.worldScale;

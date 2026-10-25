@@ -1,0 +1,73 @@
+{
+  "release": "20261025-startx-view-shadows-01",
+  "files": 944,
+  "archiveBytes": 54778078,
+  "archiveSha256": "324a6ca215e6a1dd60ff02ce9b48a0f33c4b1cd25b6909fa580a4120182ea08e",
+  "indexSha256": "b37b898b93c1f18c3069bf1b8e054edfa6da5e306d662c71f94953d785083f22",
+  "state": "active",
+  "filesVerified": 944,
+  "previousReleaseRetained": true,
+  "homepageUnchanged": true,
+  "homepageSha256": "311682be8d9b2599f157191f475a1cdafe1a51ef2a8d50145bddf3601660aa97",
+  "url": "https://www.iambrizo.com/startx/",
+  "publicFiles": [
+    {
+      "path": "index.html",
+      "httpStatus": 200,
+      "sha256": "b37b898b93c1f18c3069bf1b8e054edfa6da5e306d662c71f94953d785083f22",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/main/index.fea4b.js",
+      "httpStatus": 200,
+      "sha256": "8a89e9836e00abdb0c414c64ff7c19840de89c3be0118adac8e06f5c99394ed2",
+      "matchesBuild": true
+    },
+    {
+      "path": "src/settings.40279.json",
+      "httpStatus": 200,
+      "sha256": "f0f434d31c0493d61e2c9580ac3f81dc32ef1d911a2aefaf519c7f75bed2d154",
+      "matchesBuild": true
+    }
+  ],
+  "online": {
+    "passed": true,
+    "url": "https://www.iambrizo.com/startx/",
+    "before": {
+      "cardShadow": {
+        "x": 7.426966202440461,
+        "y": -2.79977674326868
+      },
+      "speechShadow": {
+        "x": 2.468617117736868,
+        "y": -1.8338182055660623
+      },
+      "topPack": {
+        "x": -264.3076923076923,
+        "y": 0,
+        "scale": 1.054945054945055
+      },
+      "error": ""
+    },
+    "after": {
+      "cardShadow": {
+        "x": 8.110441389073483,
+        "y": -2.604498118516386
+      },
+      "speechShadow": {
+        "x": 2.6926722444300637,
+        "y": -1.7743961683236742
+      },
+      "topPack": {
+        "x": -264.3076923076923,
+        "y": 0,
+        "scale": 1.054945054945055
+      },
+      "error": ""
+    },
+    "cardAndSpeechFollowView": true,
+    "topPacksUnchanged": true
+  },
+  "localVerification": "review/view-shadows-verification.json",
+  "passed": true
+}

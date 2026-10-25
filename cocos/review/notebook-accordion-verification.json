@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "margins": {
+        "left": 1.999999999999993,
+        "top": 2.0000000000000235,
+        "bottom": 2.0000000000000235
+      },
+      "business": {
+        "base": [
+          255,
+          249,
+          229
+        ],
+        "folds": true
+      },
+      "milestones": {
+        "base": [
+          244,
+          248,
+          233
+        ],
+        "folds": true,
+        "scroll": 700
+      },
+      "crayon": true,
+      "backdropAlpha": 190
+    },
+    {
+      "viewport": {
+        "width": 640,
+        "height": 360
+      },
+      "margins": {
+        "left": 2,
+        "top": 2,
+        "bottom": 2
+      },
+      "business": {
+        "base": [
+          255,
+          249,
+          229
+        ],
+        "folds": true
+      },
+      "milestones": {
+        "base": [
+          244,
+          248,
+          233
+        ],
+        "folds": true,
+        "scroll": null
+      },
+      "crayon": true,
+      "backdropAlpha": 190
+    }
+  ],
+  "errors": []
+}

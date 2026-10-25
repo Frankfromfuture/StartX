@@ -139,7 +139,7 @@ async function renderer(source) {
         crayonFrame(ctx, id);
         return canvas;
     };
-    const pack = async (id, def, count = 0) => {
+    const pack = async (id, def, count = 0, backOnly = false) => {
         const canvas = createCanvas(1024, 1024), ctx = canvas.getContext('2d'); ctx.scale(1024 / 238, 1024 / 238);
         const points = [], ts = [.05, .15, .85, .95, 1], inset = t => t >= .15 && t <= .85 ? 8 : 16;
         for (let i = 0; i <= 11; i++) points.push([16 + 206 * i / 11, i % 2 ? 0 : 7]);
@@ -151,6 +151,7 @@ async function renderer(source) {
         polygon(ctx, [[16, 15], [104.72, 15], [52.36, 223], [6.4, 223]], '#ffffff12');
         polygon(ctx, [[123.76, 13], [152.32, 13], [99.96, 225], [71.4, 225]], '#ffffff0d');
         polygon(ctx, points); ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = 3; ctx.stroke();
+        if (backOnly) return canvas;
         ctx.drawImage(await art(id, null, true), (238 - 132.48) / 2, 99 - 132.48 / 2, 132.48, 132.48);
         ctx.strokeStyle = '#ffffff59'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(34, 174); ctx.lineTo(204, 174); ctx.stroke();
         // The font's alphabetic baseline is retained for the foil wrapper's caption.

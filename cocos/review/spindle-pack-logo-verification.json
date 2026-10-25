@@ -1,0 +1,85 @@
+{
+  "typecheck": true,
+  "build": "web-mobile",
+  "portrait": {
+    "logo": "logo",
+    "gearEnabled": false,
+    "width": 58,
+    "height": 17.846153846153843,
+    "clearance": 18.340141677856455,
+    "fonts": [
+      13,
+      13,
+      13,
+      13,
+      13
+    ],
+    "error": ""
+  },
+  "logoOpensSettings": true,
+  "profile": {
+    "bands": 5,
+    "depthRatios": [
+      0.027000000000000052,
+      0.043499999999999955,
+      0.05999999999999999,
+      0.04350000000000007,
+      0.027000000000000052
+    ],
+    "sourceEnabled": false,
+    "error": ""
+  },
+  "zoomed": {
+    "bands": 5,
+    "depthRatios": [
+      0.026999999999999923,
+      0.04350000000000014,
+      0.05999999999999993,
+      0.04349999999999982,
+      0.027000000000000062
+    ],
+    "sourceEnabled": false,
+    "error": ""
+  },
+  "packBack": {
+    "frame": "pack-back",
+    "mask": false,
+    "bands": 5,
+    "perspective": true,
+    "depth": 0.12
+  },
+  "normalBack": {
+    "frame": "card-back",
+    "mask": true,
+    "packSurface": false,
+    "rimWidth": 229.29561256253135
+  },
+  "landscape": {
+    "logo": "logo",
+    "gearEnabled": false,
+    "width": 58,
+    "height": 17.846153846153847,
+    "clearance": 68.3507134331597,
+    "fonts": [
+      13,
+      13,
+      13,
+      13,
+      13
+    ],
+    "error": ""
+  },
+  "passed": true,
+  "sideGeometry": {
+    "size": 236.30769230769232,
+    "rimPoints": 128,
+    "bounds": [
+      -14.8615611061212,
+      14.861561106121144
+    ],
+    "middle": 28.416959771081906,
+    "seals": 12.891363393694132,
+    "error": ""
+  },
+  "outlineBuildRepair": "Array.from(Set) preserves numeric cuts in Cocos ES5 build"
+}

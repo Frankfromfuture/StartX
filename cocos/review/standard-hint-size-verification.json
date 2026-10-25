@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "header": {
+        "fonts": [
+          11.999999999999998,
+          11.999999999999998
+        ],
+        "bold": true
+      },
+      "field": {
+        "font": 11.999999999999998,
+        "error": ""
+      }
+    },
+    {
+      "viewport": {
+        "width": 640,
+        "height": 360
+      },
+      "header": {
+        "fonts": [
+          12,
+          12
+        ],
+        "bold": true
+      },
+      "field": {
+        "font": 12,
+        "error": ""
+      }
+    }
+  ],
+  "errors": []
+}

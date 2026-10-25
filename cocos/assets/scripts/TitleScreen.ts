@@ -3,12 +3,10 @@ import { LayoutMetrics } from './Layout';
 import { Surface } from './Surface';
 import { viewShadowOffset } from './ViewShadow';
 
-type Edge = 'left' | 'right' | 'top' | 'bottom';
-interface Piece { node: Node; edge: Edge; x: number; y: number; size: number; angle: number; phase: number; speed: number; depth: number; delay: number; }
 const ink = '281A26', cream = 'FFF4D7', gold = 'FFD54A';
 const color = (hex: string) => Color.fromHEX(new Color(), '#' + hex);
 
-/** Native Cocos title scene: independent art layers, responsive composition and four-edge entrances. */
+/** Office-window title screen with responsive controls and hand-drawn button edges. */
 export class TitleScreen {
     readonly node: Node;
     private background: Node;
@@ -21,7 +19,6 @@ export class TitleScreen {
     private settings: Node;
     private canContinue = false;
     private metrics?: LayoutMetrics;
-    private pieces: Piece[] = [];
     private elapsed = 0;
     private width = 1440;
     private height = 900;
@@ -36,12 +33,6 @@ export class TitleScreen {
         this.node = this.make('TitleScreen', parent, 1440, 900);
         this.background = this.make('CityBackground', this.node, 1440, 900);
         this.sprite(this.background, frames.city);
-        this.addPiece('Founder', 'left', 0, .9, frames.founder);
-        this.addPiece('Rival', 'right', .1, .8, frames.rival);
-        this.addPiece('Coins', 'top', .18, .6, frames.coins);
-        this.addPiece('Star', 'top', .12, .4, frames.star);
-        this.addPiece('StarSmall', 'bottom', .38, .5, frames.star);
-        this.addPiece('CoinsSmall', 'bottom', .42, .6, frames.coins);
         this.content = this.make('TitleContent', this.node, 1440, 900);
         this.heading = this.make('OriginalLogo', this.content, 990, 300);
         this.sprite(this.heading, frames.logo);
@@ -76,25 +67,47 @@ export class TitleScreen {
     }
     private button(name: string, text: string, hex: string) {
         const node = this.make(name, this.content, 350, 76);
-        const shadow = this.make('Shadow', node, 350, 76); shadow.setPosition(4, -7);
-        const base = shadow.addComponent(Surface); base.fill = color(ink); base.radius = 24; base.paint();
+        const shadow = this.make('Shadow', node, 350, 76); shadow.addComponent(Graphics);
+        this.paintShadow(shadow, 350, 76);
         const plate = this.make('Plate', node, 350, 76), surface = plate.addComponent(Surface);
-        surface.fill = color(hex); surface.stroke = color(ink); surface.lineWidth = 4; surface.radius = 24; surface.paint();
+        surface.fill = color(hex); surface.stroke = color(ink); surface.lineWidth = 4; surface.radius = 24; surface.crayon = true; surface.paint();
         this.label('Text', node, text, 326, 62, 32, ink); return node;
     }
     private resizeButton(node: Node, w: number, h: number, font: number) {
         node.getComponent(UITransform)!.setContentSize(w, h);
-        for (const name of ['Shadow', 'Plate']) {
-            const n = node.getChildByName(name)!; n.getComponent(UITransform)!.setContentSize(w, h);
-            const s = n.getComponent(Surface)!; s.radius = h * .28; s.lineWidth = name === 'Plate' ? Math.max(3, h * .05) : 0; s.paint();
-        }
+        const plate = node.getChildByName('Plate')!; plate.getComponent(UITransform)!.setContentSize(w, h);
+        const surface = plate.getComponent(Surface)!; surface.radius = h * .28; surface.lineWidth = Math.max(3, h * .05); surface.paint();
+        const shadow = node.getChildByName('Shadow')!; shadow.getComponent(UITransform)!.setContentSize(w, h);
+        this.paintShadow(shadow, w, h);
         const label = node.getChildByName('Text')!.getComponent(Label)!; label.fontSize = font; label.lineHeight = font * 1.2;
         label.node.getComponent(UITransform)!.setContentSize(w - 24, h - 8);
     }
-    private addPiece(name: string, edge: Edge, delay: number, depth: number, frame: SpriteFrame) {
-        const node = this.make(name, this.node, 280, 280);
-        this.sprite(node, frame);
-        this.pieces.push({ node, edge, x: 0, y: 0, size: 280, angle: 0, phase: Math.random() * Math.PI * 2, speed: .65 + Math.random() * .5, depth, delay });
+    private paintShadow(node: Node, w: number, h: number) {
+        const g = node.getComponent(Graphics)!; g.clear();
+        const unit = Math.max(.6, h / 66), radius = h * .28;
+        // A quiet rounded perimeter with translucent gray wax rubbed inside it.
+        for (let pass = 2; pass >= 0; pass--) {
+            const spread = (pass + 1) * unit;
+            g.fillColor = new Color(168, 171, 176, pass ? 13 : 35);
+            g.roundRect(-w / 2 - spread, -h / 2 - spread, w + spread * 2, h + spread * 2, radius + spread); g.fill();
+        }
+        let seed = Math.round(w * 97 + h * 131);
+        const random = () => { seed = Math.imul(seed, 1664525) + 1013904223 | 0; return (seed >>> 0) / 4294967296; };
+        const inside = (x: number, y: number) => {
+            const dx = Math.max(0, Math.abs(x) - (w / 2 - radius)), dy = Math.max(0, Math.abs(y) - (h / 2 - radius));
+            return dx * dx + dy * dy <= radius * radius;
+        };
+        g.lineCap = Graphics.LineCap.ROUND;
+        for (let pass = 0; pass < 2; pass++) {
+            g.strokeColor = pass ? new Color(248, 248, 246, 48) : new Color(137, 141, 147, 36);
+            g.lineWidth = (pass ? .65 : 1.8) * unit;
+            for (let i = 0; i < w * h / (65 * unit * unit); i++) {
+                const x = (random() - .5) * w, y = (random() - .5) * h;
+                const length = (pass ? 2 + random() * 5 : 5 + random() * 10) * unit;
+                if (inside(x, y) && inside(x + length, y + unit)) { g.moveTo(x, y); g.lineTo(x + length, y + unit); }
+            }
+            g.stroke();
+        }
     }
     show(active: boolean, home: boolean, canContinue: boolean) {
         if (active && !this.node.active) { this.elapsed = 0; this.pointerX = this.pointerY = this.parallaxX = this.parallaxY = 0; }
@@ -154,22 +167,6 @@ export class TitleScreen {
         this.heading.setPosition(0, headingY);
         this.subtitle.setPosition(0, headingY - logo.height / 2 - gap - subtitle.lineHeight / 2);
         this.layoutButtons(metrics);
-        const positions = this.portrait ? [
-            [-.54, 0, 1.12, -6], [.44, 0, 1.10, 6],
-            [-.35, .40, .18, -18], [.34, .39, .12, 9],
-            [-.16, -.35, .12, -14], [.18, -.40, .18, 14],
-        ] : [
-            [-.43, 0, .67, -6], [.41, 0, .65, 6],
-            [-.33, .38, .10, -18], [.33, .36, .075, 9],
-            [-.17, -.30, .075, -14], [.18, -.33, .10, 14],
-        ];
-        this.pieces.forEach((p, i) => {
-            const [x, y, size, angle] = positions[i]; p.x = x * w; p.y = y * h; p.angle = angle;
-            p.size = i < 2 ? Math.min(w * size, h * 1.08) : Math.min(w * size, h * .27);
-            // Anchor enlarged characters to the bottom corners, including safe-area insets.
-            if (i < 2) p.y = -h / 2 + bottom + p.size * (this.portrait ? .32 : .24);
-            this.fit(p.node, p.size, p.size);
-        });
         this.tick(0);
     }
     pointer(point: Vec2) {
@@ -180,24 +177,13 @@ export class TitleScreen {
         if (!this.node.active) return;
         for (const button of [this.start, this.resume, this.catalog, this.settings]) {
             if (!button.activeInHierarchy) continue;
-            const offset = viewShadowOffset(button, new Vec3(), 9);
+            const offset = viewShadowOffset(button, new Vec3(), 5);
             button.getChildByName('Shadow')!.setPosition(offset.x, offset.y);
         }
         this.elapsed += Math.min(dt, .05);
         const response = Math.min(1, dt * 4); this.parallaxX += (this.pointerX - this.parallaxX) * response; this.parallaxY += (this.pointerY - this.parallaxY) * response;
         this.background.setPosition(this.reducedMotion ? 0 : -this.parallaxX * 6, this.reducedMotion ? 0 : -this.parallaxY * 6);
-        for (const p of this.pieces) {
-            const t = this.reducedMotion ? 1 : Math.max(0, Math.min(1, (this.elapsed - p.delay) / .95));
-            const ease = 1 + 2.4 * Math.pow(t - 1, 3) + 1.4 * Math.pow(t - 1, 2);
-            const fromX = p.edge === 'left' ? -this.width / 2 - p.size : p.edge === 'right' ? this.width / 2 + p.size : p.x;
-            const fromY = p.edge === 'top' ? this.height / 2 + p.size : p.edge === 'bottom' ? -this.height / 2 - p.size : p.y;
-            const time = this.elapsed * p.speed + p.phase, sway = this.reducedMotion ? 0 : Math.min(1, t * t) * p.depth;
-            const amplitude = Math.min(this.width, this.height) * .008;
-            p.node.setPosition(fromX + (p.x - fromX) * ease + sway * (Math.sin(time) * amplitude + this.parallaxX * 12),
-                fromY + (p.y - fromY) * ease + sway * (Math.sin(time * 1.31) * amplitude + this.parallaxY * 9));
-            p.node.angle = p.angle + (this.reducedMotion ? 0 : Math.sin(time * .79) * 2.5 * p.depth + (1 - ease) * (p.edge === 'left' ? 18 : -18));
-        }
     }
     snapshot() { return { active: this.node.active, home: this.content.active, portrait: this.portrait, elapsed: this.elapsed, reducedMotion: this.reducedMotion,
-        pieces: this.pieces.map(p => ({ name: p.node.name, edge: p.edge, x: p.node.position.x, y: p.node.position.y, targetX: p.x, targetY: p.y, size: p.size, angle: p.node.angle })) }; }
+        pieces: [] }; }
 }

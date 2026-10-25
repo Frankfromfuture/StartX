@@ -3,6 +3,29 @@ const { ccclass, property, executeInEditMode, requireComponent } = _decorator;
 export const FILE_TAB_RADIUS = .26;
 export const DIMMED_BACKGROUND_COLOR = new Color(16, 19, 25, 190);
 
+type StrokePoint = { x: number; y: number };
+/** Stable wax marks: irregular pressure and fine overlapping strokes, without animated noise. */
+export function crayonStroke(g: Graphics, path: StrokePoint[], color: Color, width: number) {
+    if (path.length < 2) return;
+    const points: StrokePoint[] = [path[0]];
+    for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1], b = path[i], count = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / Math.max(1.5, width)));
+        for (let j = 1; j <= count; j++) points.push({ x: a.x + (b.x - a.x) * j / count, y: a.y + (b.y - a.y) * j / count });
+    }
+    g.lineCap = Graphics.LineCap.ROUND; g.lineJoin = Graphics.LineJoin.ROUND;
+    for (let pass = 0; pass < 3; pass++) {
+        g.lineWidth = width * (pass ? .30 : .78);
+        g.strokeColor = new Color(color.r, color.g, color.b, Math.round(color.a * (pass ? .62 : .95)));
+        points.forEach((p, i) => {
+            const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)], length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const rub = width * (Math.sin(i * 1.73 + pass * 2.1) * .12 + Math.sin(i * .27 + pass) * .15 + (pass - 1) * .22);
+            const x = p.x - (b.y - a.y) / length * rub, y = p.y + (b.x - a.x) / length * rub;
+            if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        });
+        g.stroke();
+    }
+}
+
 /** Editable rounded panel. Geometry follows its UITransform in editor and runtime. */
 @ccclass('Surface')
 @executeInEditMode
@@ -18,6 +41,7 @@ export class Surface extends Component {
     @property grid = false;
     @property fileTab = false;
     @property openLeft = false;
+    @property crayon = false;
     @property gridSpacing = 72;
     @property(Color) gridAlternate = new Color(237, 232, 218, 255);
     @property(Color) gridLine = new Color(210, 203, 186, 130);
@@ -44,6 +68,7 @@ export class Surface extends Component {
         g.clear();
         const w = t.width, h = t.height, inset = this.lineWidth / 2;
         g.fillColor = this.fill;
+        if (this.crayon && this.lineWidth) { this.paintCrayon(g, w, h); return; }
         if (this.fileTab) {
             // Brizo's 10px crown + 8px concave shoulders, rotated into a vertical tab.
             // Cubic quarter circles meet the straight edges with matching tangents.
@@ -100,6 +125,45 @@ export class Surface extends Component {
             for (let x = startX; x <= w / 2; x += step)
                 for (let y = startY; y <= h / 2; y += step) { g.circle(x, y, this.dotRadius * this.gridZoom); g.fill(); }
         }
+    }
+
+    private paintCrayon(g: Graphics, w: number, h: number) {
+        const inset = this.lineWidth, left = -w / 2 + inset, right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset;
+        const points: StrokePoint[] = [], step = Math.max(1.5, this.lineWidth);
+        const move = (x: number, y: number) => points.push({ x, y });
+        const line = (x: number, y: number) => {
+            const a = points[points.length - 1], count = Math.max(1, Math.ceil(Math.hypot(x - a.x, y - a.y) / step));
+            for (let i = 1; i <= count; i++) move(a.x + (x - a.x) * i / count, a.y + (y - a.y) * i / count);
+        };
+        const curve = (x1: number, y1: number, x2: number, y2: number, x: number, y: number) => {
+            const a = points[points.length - 1];
+            for (let i = 1; i <= 12; i++) { const t = i / 12, u = 1 - t; move(u ** 3 * a.x + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t ** 3 * x, u ** 3 * a.y + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t ** 3 * y); }
+        };
+        const k = .55228475;
+        if (this.fileTab) {
+            const shoulder = w * .20, radius = w * FILE_TAB_RADIUS;
+            move(left, top); curve(left, top - shoulder * k, left + shoulder * (1 - k), top - shoulder, left + shoulder, top - shoulder);
+            line(right - radius, top - shoulder); curve(right - radius * (1 - k), top - shoulder, right, top - shoulder - radius * (1 - k), right, top - shoulder - radius);
+            line(right, bottom + shoulder + radius); curve(right, bottom + shoulder + radius * (1 - k), right - radius * (1 - k), bottom + shoulder, right - radius, bottom + shoulder);
+            line(left + shoulder, bottom + shoulder); curve(left + shoulder * (1 - k), bottom + shoulder, left, bottom + shoulder * k, left, bottom);
+        } else {
+            const r = Math.min(this.radius, (right - left) / 2, (top - bottom) / 2);
+            move(left, top - r); curve(left, top - r * (1 - k), left + r * (1 - k), top, left + r, top);
+            line(right - r, top); curve(right - r * (1 - k), top, right, top - r * (1 - k), right, top - r);
+            line(right, bottom + r); curve(right, bottom + r * (1 - k), right - r * (1 - k), bottom, right - r, bottom);
+            line(left + r, bottom); curve(left + r * (1 - k), bottom, left, bottom + r * (1 - k), left, bottom + r);
+        }
+        line(points[0].x, points[0].y);
+        points.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.close(); g.fill();
+        if (this.fileTab && this.openLeft) { g.rect(left - inset, bottom, inset * 2, top - bottom); g.fill(); }
+        let stroke: StrokePoint[] = [points[0]];
+        for (let i = 1; i < points.length; i++) {
+            const a = points[i - 1], b = points[i], y = (a.y + b.y) / 2;
+            const gap = this.openLeft && Math.abs(a.x - left) < .01 && Math.abs(b.x - left) < .01 ||
+                Math.abs(a.x - right) < .01 && Math.abs(b.x - right) < .01 && this.edgeGaps?.some(([from, to]) => y > from && y < to);
+            if (gap) { crayonStroke(g, stroke, this.stroke, this.lineWidth); stroke = [b]; } else stroke.push(b);
+        }
+        crayonStroke(g, stroke, this.stroke, this.lineWidth);
     }
 
     private paintGrid(g: Graphics, w: number, h: number) {

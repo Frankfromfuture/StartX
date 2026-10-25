@@ -67,6 +67,7 @@ async function syncContent({ root = PROJECT, source = path.join(root, 'data'), f
     }
     output.set('assets/content/packs/flash_pack.png', render.png(await render.pack('flash_pack', { name: '奖励礼包' })));
     const garage = data.packs.garage_pack || data.packs[data.packOrder[0]], countMax = Math.max(9, ...Object.values(data.packs).map(p => p.maxCards + 1));
+    output.set('assets/content/ui/pack-back.png', render.png(await render.pack('garage_pack', garage, 0, true)));
     for (let n = 1; n <= countMax; n++) output.set(`assets/content/patches/pack-${n}.png`, render.png(await render.pack('garage_pack', garage, n), 210, 210, [790, 32, 210, 210]));
     output.set('assets/content/catalog.json', encode(data));
     output.set('assets/sample/data/founder.json', encode({ id: 'founder', name: data.cards.founder.name,

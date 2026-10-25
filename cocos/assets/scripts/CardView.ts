@@ -1,5 +1,6 @@
 import { _decorator, Component, Material, Node, Sprite, SpriteFrame, UITransform, UIOpacity, Vec2, Vec3, Vec4, Color, Graphics, Quat, Label, Font } from 'cc';
-import { CardFrameVolume, paintPackShadow } from './CardFrameVolume';
+import { CardFrameVolume, packThickness, paintPackShadow } from './CardFrameVolume';
+import { PackSurface } from './PackSurface';
 import { Surface } from './Surface';
 import type { Appearance } from './GameModel';
 import { BADGE_SIZE, BadgePosition, BOARD_HALF, safeBadgePosition } from './GameModel';
@@ -34,6 +35,7 @@ export class CardView extends Component {
     private inspectionAngles = new Vec2();
     private inspecting = false;
     private frameVolume!: CardFrameVolume;
+    private packSurface: PackSurface | null = null;
     private patchLighting: Material | null = null;
     private light = new Vec4(0, 0, 0, 1);
     private lightRotation = new Quat();
@@ -47,6 +49,7 @@ export class CardView extends Component {
     get inspectionLighting() { return this.light; }
     get frameColor() { return this.holographic ? 'rainbow' : '#141414'; }
     setInspectionMode(active: boolean) { this.inspecting = active; this.frameVolume.node.active = !active && !this.pack && !this.badgeToken; this.shadow.active = !active && !this.badgeToken; }
+    setPackPatchVisible(visible: boolean) { if (this.pack) this.patch.node.active = visible && !!this.patch.spriteFrame; }
     createInspectionMaterial() {
         if (!this.originalMaterial) return null;
         const material = new Material(); material.copy(this.originalMaterial);
@@ -129,6 +132,9 @@ export class CardView extends Component {
         this.patchLighting?.setProperty('inspectionLight', this.inspecting ? this.light : new Vec4(0, 0, 0, 1));
         this.patch.customMaterial = this.inspecting || this.glass ? this.patchLighting : null;
         if (this.patch.spriteFrame) this.setPatch(this.patch.spriteFrame, this.patchKind);
+        if (this.pack && !this.packSurface) this.packSurface = new PackSurface(this.front, this.frameVolume);
+        this.packSurface?.configure(this.front.spriteFrame, this.size, this.pack);
+        this.packSurface?.setMaterial(this.foil || this.front.customMaterial);
     }
     setBadgeToken(active: boolean) {
         this.badgeToken = active;
@@ -187,6 +193,7 @@ export class CardView extends Component {
         this.patchLighting?.setProperty('cardUVRect', new Vec4(x / 1024, y / 1024, w / 1024, h / 1024));
         this.patch.node.getComponent(UITransform)!.setContentSize(w * ratio, h * ratio);
         this.patch.node.setPosition((x + w / 2 - 512) * ratio, (512 - y - h / 2) * ratio);
+        if (kind === 'pack') this.patch.node.setPosition(this.patch.node.position.x, this.patch.node.position.y, packThickness(this.size, this.patch.node.position.y) / 2);
     }
     setProgress(ratio: number, active: boolean) {
         ratio = Math.round(Math.max(0, Math.min(1, ratio)) * 100) / 100;
@@ -363,8 +370,12 @@ export class CardView extends Component {
         const pitch = worldScale.y / Math.max(.001, worldScale.x);
         const viewTilt = this.holographic ? (1 - pitch) * 2.2 : 0;
         if (!this.inspecting && !this.badgeToken) {
-            if (this.pack) this.frameVolume.paintPack(this.size);
-            else this.frameVolume.paint(this.size, this.size * .028, viewTilt * 20, this.angle, this.frameColor, true);
+            if (!this.pack) this.frameVolume.paint(this.size, this.size * .028, viewTilt * 20, this.angle, this.frameColor, true);
+        }
+        if (this.pack) this.packSurface?.update();
+        if (this.pack && this.patch.node.active) {
+            const p = this.patch.node.position, scale = this.face.worldScale;
+            this.patch.node.setPosition(p.x, p.y, packThickness(this.size, p.y) / 2 * Math.abs(scale.x / Math.max(.0001, scale.z)));
         }
         this.foilView.set(this.angle * Math.PI / 180 + this.inspectionAngles.x, this.lift / 360 + viewTilt + this.inspectionAngles.y, this.holographic ? .32 : .22, this.glass ? this.glossPhase : .12);
         this.foil?.setProperty('viewAndStrength', this.foilView);

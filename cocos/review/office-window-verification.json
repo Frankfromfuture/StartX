@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "scope": "Clean office window start screen with crayon button outlines and gray rubbed shadows",
+  "checks": [
+    {
+      "layout": "landscape",
+      "titleUsesNewArtwork": true,
+      "titleCoversViewport": true,
+      "originalBoardRestored": true,
+      "startButtonWorks": true,
+      "decorationsRemoved": true,
+      "crayonBorders": true,
+      "grayWaxShadows": true
+    },
+    {
+      "layout": "portrait",
+      "titleUsesNewArtwork": true,
+      "titleCoversViewport": true,
+      "originalBoardRestored": true,
+      "startButtonWorks": true,
+      "decorationsRemoved": true,
+      "crayonBorders": true,
+      "grayWaxShadows": true
+    }
+  ],
+  "errors": []
+}

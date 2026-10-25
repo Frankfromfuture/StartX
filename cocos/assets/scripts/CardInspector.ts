@@ -5,6 +5,7 @@ import { INSPECTOR_CONTENT_SCALE, INSPECTOR_SCREEN_SIZE, LayoutMetrics } from '.
 import { DIMMED_BACKGROUND_COLOR, Surface } from './Surface';
 import { Catalog, GameModel, quoteFlavor, Recipe } from './GameModel';
 import { roundCard } from './RoundedCard';
+import { PackSurface } from './PackSurface';
 
 type CardStyle = 'plain' | 'foil' | 'glass' | 'pack';
 interface PreviewContent { frame: SpriteFrame | null; bodyColor: string; style: CardStyle; functionText: string; description: string; pack: boolean; }
@@ -21,6 +22,8 @@ export class CardInspector {
     private shade: Node;
     private front: CardView;
     private back: Node;
+    private backSprite: Sprite;
+    private backSurface: PackSurface;
     private frameVolume: CardFrameVolume;
     private backMaterial: Material | null;
     private functionLabel: Label;
@@ -52,7 +55,7 @@ export class CardInspector {
     private frameEye = new Vec3();
     private frameProjection: FrameProjection = { key: '', eye: this.frameEye, project: point => this.projectFramePoint(point) };
 
-    constructor(parent: Node, private font: Font, prefab: Prefab, backFrame: SpriteFrame, lineEffect: EffectAsset, private loadFrame: (path: string) => Promise<SpriteFrame>) {
+    constructor(parent: Node, private font: Font, prefab: Prefab, private backFrame: SpriteFrame, private packBackFrame: SpriteFrame, lineEffect: EffectAsset, private loadFrame: (path: string) => Promise<SpriteFrame>) {
         this.camera = parent.getComponent(Canvas)?.cameraComponent || null;
         this.lineMaterial = new Material(); this.lineMaterial.initialize({ effectAsset: lineEffect });
         this.packLineMaterial = new Material(); this.packLineMaterial.initialize({ effectAsset: lineEffect });
@@ -67,6 +70,7 @@ export class CardInspector {
         this.front.setInspectionMode(true);
         this.back = this.make('CardBack', this.cardNode, 280, 280);
         const back = this.make('Artwork', this.back, 280, 280).addComponent(Sprite); back.spriteFrame = backFrame; back.sizeMode = Sprite.SizeMode.CUSTOM;
+        this.backSprite = back; this.backSurface = new PackSurface(back); this.backSurface.configure(null, 280, false);
         this.backMaterial = this.front.createInspectionMaterial(); back.customMaterial = this.backMaterial;
         this.back.setRotationFromEuler(0, 180, 0); this.back.active = false;
         this.detailsNode = this.make('DetailsViewport', this.node, 680, 600); this.detailsNode.addComponent(Mask).type = Mask.Type.GRAPHICS_RECT;
@@ -100,6 +104,9 @@ export class CardInspector {
         if (!keepHistory) this.history = [];
         this.navigationRequest++; this.current = { frame, bodyColor, style, functionText, description, pack };
         this.front.configure(frame, bodyColor, style); this.front.setPatch(null, 'uses');
+        this.backSprite.spriteFrame = pack ? this.packBackFrame : this.backFrame;
+        this.backSurface.configure(this.backSprite.spriteFrame, this.size, pack);
+        this.back.getComponent(Mask)!.enabled = !pack;
         if (frame?.name.startsWith('badge_')) this.front.setBadgeToken(true);
         this.front.setYarnBadges([], 0, 0, this.font);
         this.functionLabel.string = functionText; this.descriptionLabel.string = pack ? description : quoteFlavor(description);
@@ -236,6 +243,8 @@ export class CardInspector {
         this.back.getComponent(UITransform)!.setContentSize(this.size, this.size);
         this.back.getChildByName('Artwork')!.getComponent(UITransform)!.setContentSize(this.size, this.size);
         roundCard(this.back, this.size, this.size * .014, this.size * .044);
+        this.back.getComponent(Mask)!.enabled = !this.current?.pack;
+        this.backSurface.configure(this.backSprite.spriteFrame, this.size, !!this.current?.pack);
         const detailsTop = this.cardNode.position.y - this.size / 2 - 10 * scale, detailsBottom = -h / 2 + bottom + 20 * scale;
         this.detailsNode.getComponent(UITransform)!.setContentSize(landscape ? detailsW : Math.min(w - 40 * scale, 350 * scale),
             landscape ? Math.max(40 * scale, h - top - bottom - 64 * metrics.scale) : Math.max(40 * scale, detailsTop - detailsBottom));
@@ -289,7 +298,7 @@ export class CardInspector {
     private placeFaces() {
         const depth = this.size * (this.current?.pack ? PACK_DEPTH_RATIO : .035);
         this.front.node.setPosition(0, 0, this.current?.pack ? 0 : depth / 2);
-        this.back.setPosition(0, 0, this.current?.pack ? -depth : -depth / 2);
+        this.back.setPosition(0, 0, this.current?.pack ? 0 : -depth / 2);
     }
     private projectFramePoint(point: Vec3) {
         const world = this.cardNode.getComponent(UITransform)!.convertToWorldSpaceAR(point), eye = this.camera?.node.worldPosition;
@@ -308,9 +317,11 @@ export class CardInspector {
         if (eye) this.cardNode.getComponent(UITransform)!.convertToNodeSpaceAR(eye, this.frameEye);
         else this.frameEye.set(0, 0, 10000);
         this.backVisible = this.frameEye.z < 0;
-        this.front.node.active = !this.backVisible; this.back.active = this.backVisible;
+        this.front.node.active = !!this.current?.pack || !this.backVisible; this.back.active = !!this.current?.pack || this.backVisible;
+        this.front.setPackPatchVisible(!this.backVisible);
         this.front.setInspectionAngles(this.pitch, this.yaw);
         this.backMaterial?.setProperty('inspectionLight', this.front.inspectionLighting);
+        this.backSurface.update();
         this.frameProjection.key = [this.pitch.toFixed(4), this.yaw.toFixed(4), this.cardNode.position.x, this.cardNode.position.y, eye?.z].join('|');
         if (this.current?.pack) this.frameVolume.paintPack(this.size, this.pitch, this.yaw, false, false, this.frameProjection);
         else this.frameVolume.paint(this.size, this.size * .035, this.pitch, this.yaw, this.front.frameColor, false, this.frameProjection);

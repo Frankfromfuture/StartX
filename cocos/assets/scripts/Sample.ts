@@ -6,7 +6,7 @@ import { Icon } from './Icon';
 import { PauseWash } from './PauseWash';
 import { ConnectorRoute, ConnectorRect, shortestSupplyRoute, roundSupplyRoute, supplyPathLength, supplyPathAt,
     SUPPLY_LINE_WIDTH, SUPPLY_ARROW_LENGTH, SUPPLY_ARROW_HALF_WIDTH, SUPPLY_CORNER_RADIUS } from './SupplyConnector';
-import { canSetDisplayOrientation, fixedUiUnit, getDisplayOrientation, LayoutMetrics, measureLayout, setDisplayOrientation } from './Layout';
+import { canSetDisplayOrientation, fixedUiUnit, getDisplayOrientation, HINT_SCREEN_SIZE, LayoutMetrics, measureLayout, setDisplayOrientation } from './Layout';
 import { Surface } from './Surface';
 import { GameModel, Catalog, CardState, CashSpend, CARD_OFFSET, DEFAULT_HINT, quoteFlavor } from './GameModel';
 import { OriginalHud } from './OriginalHud';
@@ -165,16 +165,19 @@ export class Sample extends Component implements InputTarget {
             this.originalHud = new OriginalHud(this.hud, this.model, this.font, this.controls, path => this.loadFrame(path));
             this.founderSpeech = new FounderSpeech(this.hud, this.font, point => this.board.projectWorld(point));
             this.spokenMilestones = new Set(this.model.completed);
-            const titleNames = ['city', 'founder', 'rival', 'logo', 'star', 'coins'];
+            const titleNames = ['city', 'logo'];
             const titleFrames: Record<string, SpriteFrame> = {};
-            await Promise.all(titleNames.map(async name => { titleFrames[name] = await this.loadFrame('title/' + name); }));
+            await Promise.all(titleNames.map(async name => { titleFrames[name] = await this.loadFrame('title/' + (name === 'city' ? 'office-window' : name)); }));
+            const settingsIcon = this.find('Status/Settings/Icon');
+            const settingsLogo = settingsIcon.getComponent(Sprite)!; settingsLogo.sizeMode = Sprite.SizeMode.CUSTOM;
+            settingsLogo.spriteFrame = titleFrames.logo; settingsLogo.trim = true;
             this.titleScreen = new TitleScreen(this.node, this.font, titleFrames, this.controls);
             this.titleScreen.node.setSiblingIndex(this.hud.getSiblingIndex());
-            const [backFrame, lineEffect] = await Promise.all([this.loadFrame('ui/card-back'),
+            const [backFrame, packBackFrame, lineEffect] = await Promise.all([this.loadFrame('ui/card-back'), this.loadFrame('ui/pack-back'),
                 new Promise<EffectAsset>((resolve, reject) => content.load('ui/WhiteLine', EffectAsset, (e, f) => e ? reject(e) : resolve(f)))]);
             this.cardCatalog = new CardCatalog(this.node, this.font, backFrame, path => this.loadFrame(path), e => { this.lastError = String(e); console.error('[StartX] Catalog', e); });
             this.menuBackdrop = new MenuBackdrop(this.hud, ['Panel', 'Scrim', 'Toolbar', 'TaskDrawer'].map(name => this.find(name)));
-            this.cardInspector = new CardInspector(this.node, this.font, this.cardPrefab, backFrame, lineEffect, path => this.loadFrame(path));
+            this.cardInspector = new CardInspector(this.node, this.font, this.cardPrefab, backFrame, packBackFrame, lineEffect, path => this.loadFrame(path));
             this.router = this.node.addComponent(InputRouter); this.router.target = this;
             this.ready = true; this.loading.active = false; this.selected = this.model.cards[0].uid;
             this.layout();
@@ -364,7 +367,7 @@ export class Sample extends Component implements InputTarget {
                 top: this.metrics.width > this.metrics.height ? this.find('Status').position.y - this.find('Status').getComponent(UITransform)!.height / 2 - 4 * this.metrics.scale : this.boardTop - 56 * this.metrics.scale,
                 bottom: bottomBar.position.y + bottomBar.getComponent(UITransform)!.height / 2 + 12 * this.metrics.scale,
                 scale: this.metrics.scale, landscape: this.metrics.width > this.metrics.height,
-                fontSize: this.label('Status/Stage/Value').fontSize * 22 / 24,
+                fontSize: HINT_SCREEN_SIZE * this.metrics.scale,
             });
         this.saveAge += dt; if (this.saveAge >= .75) { this.saveAge = 0; this.saveProgress(); }
         this.label('Status/Cash/Value').string = this.model.payroll + '/' + this.model.cash;
@@ -439,7 +442,7 @@ export class Sample extends Component implements InputTarget {
         };
         const entry = info[name]; if (!entry) return;
         const { width: w, scale } = this.metrics;
-        const font = this.label('Status/' + name + '/Value').fontSize * 22 / 24;
+        const font = HINT_SCREEN_SIZE * scale;
         const boxScale = font / 15, width = Math.min(320 * boxScale, w - 24 * scale);
         const padding = 14 * boxScale, titleH = font * 1.5;
         if (!this.statusHelp) {
@@ -471,20 +474,19 @@ export class Sample extends Component implements InputTarget {
     private layoutStatus() {
         const { width: w, height: h, top, wide, nearSquare, scale } = this.metrics;
         const unit = fixedUiUnit(scale);
-        const margin = 22 * unit, rightMargin = Math.max(8 * scale, margin - 12 * unit);
+        const margin = 8 * scale, rightMargin = 6 * scale;
         const progressH = Math.max(3 * unit, 3 * scale), rowH = Math.max(34 * scale, 44 * unit);
         const y = h / 2 - (wide ? 0 : top) - progressH - rowH / 2 - 2 * unit - this.find('Status').position.y;
-        const settingsX = w / 2 - rightMargin - 24 * scale + 6 * scale;
+        const settingsSize = 58 * scale, settingsX = w / 2 - rightMargin - settingsSize / 2;
         const names = ['Stage', 'Month', 'Supply', 'Space', 'Cash'];
         const key = [w, h, scale, wide, nearSquare, top, ...names.map(name => this.label('Status/' + name + '/Value').string)].join(':');
         if (key === this.statusLayoutKey) return;
         this.statusLayoutKey = key;
-        const settingsSize = 32 * unit;
-        this.position('Status/Settings', settingsX, y, 48 * scale, 44 * scale);
-        this.position('Status/Settings/Icon', 0, 0, settingsSize, settingsSize);
+        this.position('Status/Settings', settingsX, y, 64 * scale, 44 * scale);
+        this.position('Status/Settings/Icon', 0, 0, settingsSize, settingsSize / 3.25);
         const icon = 28 * unit, font = 24 * unit;
-        const gap = 4 * scale, groupGapMin = 6 * scale;
-        const left = -w / 2 + margin, right = settingsX - settingsSize / 2;
+        const gap = 3 * scale, groupGapMin = 3 * scale;
+        const left = -w / 2 + margin, right = settingsX - settingsSize / 2 - 6 * scale;
         const groups = names.map(name => {
             const label = this.label('Status/' + name + '/Value');
             label.fontSize = font; label.lineHeight = font * 1.2;
@@ -558,7 +560,7 @@ export class Sample extends Component implements InputTarget {
         const stripH = 72 * scale, stripTop = topY - statusH - (landscape ? 10 * unit : 12 * unit);
         const stripW = w - margin * 2;
         this.boardTop = landscape ? stripTop - 12 * scale : stripTop - stripH - 20;
-        this.originalHud.layout(w, stripTop - stripH / 2, stripH, stripW, -h / 2 + bottom + footerH + 16 * unit, scale, landscape, unit, nearSquare);
+        this.originalHud.layout(w, h, stripTop - stripH / 2, stripH, stripW, scale, landscape, unit);
         const hint = this.label('Hint'), reminder = this.label('TaskReminder'), reminderH = hint.lineHeight * 2.2;
         this.position('TaskReminder', 0, stripTop - stripH - 10 * scale - reminderH / 2, w - margin * 2, reminderH);
         reminder.font = hint.font; reminder.fontSize = hint.fontSize; reminder.lineHeight = hint.lineHeight;

@@ -1,7 +1,8 @@
 import { Color, Graphics, Node, Quat, UITransform, Vec3 } from 'cc';
 
-export const PACK_DEPTH_RATIO = .10;
-const PACK_SEAL_RATIO = .22;
+export const PACK_DEPTH_RATIO = .12;
+const PACK_SEAL_RATIO = .45;
+export const PACK_PROFILE_STOPS = [-.5, -.42, -.34, .34, .42, .5];
 export interface FrameProjection { key: string; eye: Vec3; project(point: Vec3): Vec3; }
 
 function packOutline(size: number) {
@@ -14,14 +15,22 @@ function packOutline(size: number) {
     const points: Vec3[] = [];
     for (let i = 0; i < outline.length; i++) {
         const a = outline[i], b = outline[(i + 1) % outline.length];
+        const cuts = [0];
+        if (Math.abs(b.y - a.y) > .0001) for (const stop of PACK_PROFILE_STOPS) {
+            const fraction = (stop * size - a.y) / (b.y - a.y);
+            if (fraction > .0001 && fraction < .9999) cuts.push(fraction);
+        }
         const segments = Math.max(1, Math.ceil(Vec3.distance(a, b) / (size / 24)));
-        for (let step = 0; step < segments; step++) points.push(Vec3.lerp(new Vec3(), a, b, step / segments));
+        for (let step = 1; step < segments; step++) cuts.push(step / segments);
+        // Cocos' ES5 build treats iterable spread as array concat; materialize the Set first.
+        for (const fraction of Array.from(new Set(cuts)).sort((x, y) => x - y)) points.push(Vec3.lerp(new Vec3(), a, b, fraction));
     }
     return points;
 }
 
-function packThickness(size: number, y: number) {
-    return size * PACK_DEPTH_RATIO * (PACK_SEAL_RATIO + (1 - PACK_SEAL_RATIO) * Math.pow(Math.max(0, Math.cos(y / size * Math.PI)), 1.2));
+export function packThickness(size: number, y: number) {
+    const shoulder = Math.max(0, Math.min(1, (.42 - Math.abs(y) / size) / .08));
+    return size * PACK_DEPTH_RATIO * (PACK_SEAL_RATIO + (1 - PACK_SEAL_RATIO) * shoulder);
 }
 
 /** One filled silhouette follows the same wrapper and thickness as the visible pack. */
@@ -31,7 +40,7 @@ export function paintPackShadow(g: Graphics, size: number, color: Color) {
     for (let i = 0; i < points.length; i++) {
         const a = points[i], b = points[(i + 1) % points.length];
         const back = (b.y - a.y) * .64 + (b.x - a.x) * .38 > 0;
-        const da = back ? packThickness(size, a.y) : 0, db = back ? packThickness(size, b.y) : 0;
+        const da = packThickness(size, a.y) * (back ? .5 : -.5), db = packThickness(size, b.y) * (back ? .5 : -.5);
         const x = a.x + da * .64, y = a.y - da * .38;
         if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
         g.lineTo(b.x + db * .64, b.y - db * .38);
@@ -114,9 +123,9 @@ export class CardFrameVolume {
         Quat.fromEuler(this.rotation, pitch, yaw, 0);
         const points = packOutline(size);
         const project = (p: Vec3, fraction: number) => {
-            const d = packThickness(size, p.y) * fraction;
-            if (projection) return projection.project(new Vec3(p.x, p.y, -d));
-            return board ? new Vec3(p.x + d * .64, p.y - d * .38) : Vec3.transformQuat(new Vec3(), new Vec3(p.x, p.y, -d), this.rotation);
+            const z = packThickness(size, p.y) * (.5 - fraction);
+            if (projection) return projection.project(new Vec3(p.x, p.y, z));
+            return board ? new Vec3(p.x - z * .64, p.y + z * .38) : Vec3.transformQuat(new Vec3(), new Vec3(p.x, p.y, z), this.rotation);
         };
         const front = points.map(p => project(p, 0)), back = points.map(p => project(p, 1)), g = this.art;
         this.frontRim = front; this.backRim = back;

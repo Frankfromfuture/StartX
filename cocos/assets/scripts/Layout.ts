@@ -10,6 +10,8 @@ export function fixedUiUnit(scale: number) { return scale * 390 / 720; }
 export const PACK_SCREEN_SIZE = 64;
 export const INSPECTOR_SCREEN_SIZE = 160 * .8;
 export const INSPECTOR_CONTENT_SCALE = .8;
+// Shared screen-pixel size for click hints and founder speech, independent of list/header text.
+export const HINT_SCREEN_SIZE = 12;
 
 type DisplayOrientation = 'landscape' | 'portrait';
 let displayOrientation: DisplayOrientation | null = null;

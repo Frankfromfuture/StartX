@@ -1,11 +1,17 @@
 import { Color, Font, Graphics, Label, Mask, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec2, Vec3 } from 'cc';
 import { GameModel } from './GameModel';
-import { FILE_TAB_RADIUS, Surface } from './Surface';
+import { crayonStroke, Surface } from './Surface';
 import { businessGroups } from './Notebook';
-import { PACK_SCREEN_SIZE } from './Layout';
+import { HINT_SCREEN_SIZE, PACK_SCREEN_SIZE } from './Layout';
 import { Icon } from './Icon';
 import { CardFrameVolume } from './CardFrameVolume';
+import { PackSurface } from './PackSurface';
 import { viewShadowOffset } from './ViewShadow';
+
+const NOTEBOOK_COLORS = {
+    recipes: { base: '#FFF9E5', primary: '#DCC477', secondary: '#F4E7B4', ink: '#342E20', muted: '#938B72' },
+    tasks: { base: '#F4F8E9', primary: '#ADC493', secondary: '#D9E6C8', ink: '#293523', muted: '#A1AC94' },
+};
 
 /** The original pack covers and task notebook, fixed to the screen above the board. */
 export class OriginalHud {
@@ -38,6 +44,7 @@ export class OriginalHud {
     private reminderTime = 0;
     private labels = new Map<string, Label>();
     private packImages = new Map<string, Sprite>();
+    private packFaces: PackSurface[] = [];
     private flashImage: Sprite;
     private flashOpacity: UIOpacity;
     private flashStars: { node: Node; opacity: UIOpacity; age: number; duration: number }[] = [];
@@ -45,9 +52,12 @@ export class OriginalHud {
     private packContent: Node;
     private taskViewport: Node;
     private taskContent: Node;
+    private taskScrollbar: Node;
+    private drawerHeading: Surface;
     private scrollArea = '';
     private drawerWidth = 0;
     private drawerY = 0;
+    private drawerInset = 0;
     private screenWidth = 0;
     private tabWidth = 0;
     private tabHeight = 0;
@@ -77,11 +87,12 @@ export class OriginalHud {
         this.packContent = this.node('Covers', this.packViewport, 1, 1);
         const flash = this.node('FlashPack', strip, 112, 112);
         this.flashOpacity = flash.addComponent(UIOpacity);
-        new CardFrameVolume(flash).paintPack(112);
+        const flashVolume = new CardFrameVolume(flash); flashVolume.paintPack(112);
         this.flashImage = this.node('Cover', flash, 112, 112).addComponent(Sprite); this.flashImage.sizeMode = Sprite.SizeMode.CUSTOM;
+        const flashFace = new PackSurface(this.flashImage, flashVolume); this.packFaces.push(flashFace);
         this.controls.set('FlashPack', flash); this.pending++;
         this.frame('packs/flash_pack').then(f => {
-            if (flash.isValid) { this.flashImage.spriteFrame = f; flash.getComponent(UITransform)!.setContentSize(112, 112); }
+            if (flash.isValid) { this.flashImage.spriteFrame = f; flashFace.configure(f, 112); flash.getComponent(UITransform)!.setContentSize(112, 112); }
         }).catch(e => console.error('[StartX] Flash pack', e)).then(() => this.pending--);
         for (let i = 0; i < 3; i++) {
             const node = this.node('Star-' + i, flash, 8, 8), art = node.addComponent(Graphics);
@@ -105,6 +116,9 @@ export class OriginalHud {
         }
         this.taskViewport = this.get('TaskDrawer/Viewport'); this.taskViewport.addComponent(Mask).type = Mask.Type.GRAPHICS_RECT;
         this.taskContent = this.node('Tasks', this.taskViewport, 1, 1);
+        this.taskScrollbar = this.node('ScrollBar', this.get('TaskDrawer'), 5, 1); this.taskScrollbar.addComponent(Graphics);
+        const heading = this.node('HeadingFill', this.get('TaskDrawer'), 1, 1); heading.setSiblingIndex(0);
+        this.drawerHeading = heading.addComponent(Surface); this.drawerHeading.radius = 0;
         this.measureLabel = this.text(this.root, 'TextMeasure', '', 1, 1, 0, 0, 22);
         this.measureLabel.overflow = Label.Overflow.NONE;
         this.measureLabel.enableWrapText = false;
@@ -113,11 +127,12 @@ export class OriginalHud {
         for (const id of model.data.packOrder) {
             const item = this.node('Pack-' + id, this.packContent, 112, 112);
             this.packOpacity.set(id, item.addComponent(UIOpacity));
-            new CardFrameVolume(item).paintPack(112);
+            const volume = new CardFrameVolume(item); volume.paintPack(112);
             const cover = this.node('Cover', item, 112, 112);
             const sprite = cover.addComponent(Sprite); sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            const face = new PackSurface(sprite, volume); this.packFaces.push(face);
             this.packImages.set(id, sprite); this.pending++;
-            this.frame('packs/' + id).then(f => { if (cover.isValid) { sprite.spriteFrame = f; cover.getComponent(UITransform)!.setContentSize(112, 112); } })
+            this.frame('packs/' + id).then(f => { if (cover.isValid) { sprite.spriteFrame = f; face.configure(f, 112); cover.getComponent(UITransform)!.setContentSize(112, 112); } })
                 .catch(e => console.error('[StartX] Pack shelf', e)).then(() => this.pending--);
             const badge = this.node('Price', cover, 40, 22); badge.setPosition(-26, 36);
             this.labels.set(id, this.text(badge, 'Text', '$' + model.data.packs[id].price, 36, 20, 0, 0, 18));
@@ -138,7 +153,7 @@ export class OriginalHud {
         l.horizontalAlign = Label.HorizontalAlign.LEFT; l.verticalAlign = Label.VerticalAlign.CENTER;
         n.getComponent(UITransform)!.setContentSize(w, h); return l;
     }
-    layout(w: number, stripY: number, stripH: number, stripWidth: number, drawerBottom: number, scale: number, landscape: boolean, unit: number, nearSquare = false) {
+    layout(w: number, h: number, stripY: number, stripH: number, stripWidth: number, scale: number, landscape: boolean, unit: number) {
         this.scale = scale;
         if (this.landscape !== landscape) { this.packsOpen = false; this.packReveal = landscape ? 0 : 1; }
         this.landscape = landscape; this.packStripY = stripY; this.packStripHeight = stripH;
@@ -165,43 +180,52 @@ export class OriginalHud {
         this.packOffset = -Math.round(index) * step; this.packVelocity = 0; this.packSnap = null;
         this.scrollPacks(0);
         const drawer = this.get('TaskDrawer'), dw = Math.min(440 * unit, w / 3);
-        const previousHeight = Math.max(220, Math.min(900 * unit, 2 * Math.min(stripY - stripH / 2 - 20, -drawerBottom)));
-        const drawerTop = stripY + stripH / 2 - 12 * scale;
-        const dh = landscape ? Math.max(160 * scale, drawerTop - drawerBottom) : Math.max(220, Math.min(previousHeight + 48 * scale, 2 * Math.min(drawerTop, -drawerBottom + 8 * scale)));
-        this.screenWidth = w; this.drawerWidth = dw; this.drawerY = landscape ? (drawerTop + drawerBottom) / 2 : 0;
+        const dh = h - 4 * scale;
+        this.screenWidth = w; this.drawerWidth = dw; this.drawerY = 0; this.drawerInset = 2 * scale;
         this.tabWidth = landscape ? 40 * scale : Math.max(44 * unit, 32 * scale); this.tabHeight = landscape ? 84 * scale : Math.max(184 * unit, 126 * scale);
         this.tabGap = landscape ? -24 * scale : -(this.tabWidth * .4 + 12 * scale);
         const taskTabHeight = this.tabHeight + (landscape ? 0 : Math.max(24 * unit, 16 * scale));
         this.tabOffsets = [(taskTabHeight + this.tabGap) / 2, -(this.tabHeight + this.tabGap) / 2];
-        this.contentFont = Math.max(22 * unit, 13 * scale);
+        const tabFont = Math.max(22 * unit, 13 * scale);
+        this.contentFont = tabFont - scale;
         drawer.getComponent(UITransform)!.setContentSize(dw, dh);
         const drawerSurface = drawer.getComponent(Surface)!;
-        drawerSurface.openLeft = false; drawerSurface.lineWidth = Math.max(2 * scale, 2 * unit);
-        drawerSurface.radius = this.tabWidth * FILE_TAB_RADIUS;
+        drawerSurface.openLeft = false; drawerSurface.lineWidth = 1.8 * scale; drawerSurface.crayon = true;
+        drawerSurface.radius = 4 * scale; drawerSurface.stroke = new Color(40, 39, 31);
+        const helpSurface = this.get('TaskDrawer/Help').getComponent(Surface)!;
+        helpSurface.crayon = true; helpSurface.lineWidth = 1.5 * scale;
         for (const name of ['Book', 'Tasks']) {
             const tab = this.get('Toolbar/' + name), text = this.get('Toolbar/' + name + '/Text');
             const tabHeight = name === 'Tasks' ? taskTabHeight : this.tabHeight;
             tab.getComponent(UITransform)!.setContentSize(this.tabWidth, tabHeight);
-            tab.getComponent(Surface)!.lineWidth = Math.max(2 * scale, 2 * unit); tab.getComponent(Surface)!.paint();
+            tab.getComponent(Surface)!.lineWidth = 1.8 * scale; tab.getComponent(Surface)!.crayon = true; tab.getComponent(Surface)!.paint();
             const shadow = this.tabShadows.get(name)!;
             shadow.getComponent(UITransform)!.setContentSize(this.tabWidth + 2 * scale, tabHeight + 2 * scale);
             shadow.getComponent(Surface)!.paint();
             text.setPosition(landscape ? 0 : this.tabWidth * .05, 0);
             text.getComponent(UITransform)!.setContentSize(landscape ? this.tabWidth - 4 * scale : this.tabWidth - 10 * unit, landscape ? 36 * scale : tabHeight - this.tabWidth * .7);
-            const label = text.getComponent(Label)!; label.fontSize = landscape ? 12 * scale : this.contentFont; label.lineHeight = label.fontSize * 1.35;
+            const label = text.getComponent(Label)!; label.fontSize = landscape ? 12 * scale : tabFont; label.lineHeight = label.fontSize * 1.35;
             label.string = name === 'Book' ? (landscape ? '商业\n模式' : '商\n业\n模\n式') : (landscape ? '发展\n里程碑' : '发\n展\n里\n程\n碑');
             label.enableWrapText = !landscape; label.horizontalAlign = landscape ? Label.HorizontalAlign.LEFT : Label.HorizontalAlign.CENTER;
             if (landscape) label.lineHeight = label.fontSize * 1.2;
         }
-        const padding = Math.max(12 * unit, 6 * scale), titleHeight = this.contentFont * 1.8;
-        const header = titleHeight + padding * 2 + this.contentFont * 1.4, titleWidth = dw - padding * 2;
+        const padding = 6 * scale, titleHeight = this.contentFont * 1.8;
+        const header = titleHeight + this.contentFont * 1.4 + padding, titleWidth = dw - padding * 2;
+        this.drawerHeading.node.getComponent(UITransform)!.setContentSize(titleWidth, header);
+        this.drawerHeading.node.setPosition(0, dh / 2 - padding - header / 2);
         this.get('TaskDrawer/Title').setPosition(0, dh / 2 - titleHeight / 2 - padding);
         this.get('TaskDrawer/Title').getComponent(UITransform)!.setContentSize(titleWidth, titleHeight);
-        this.get('TaskDrawer/Title').getComponent(Label)!.fontSize = this.contentFont + 2 * unit;
+        const title = this.get('TaskDrawer/Title').getComponent(Label)!;
+        title.fontSize = this.contentFont + 2 * unit; title.lineHeight = title.fontSize * 1.35;
+        title.horizontalAlign = Label.HorizontalAlign.CENTER;
         this.get('TaskDrawer/Count').setPosition(0, dh / 2 - titleHeight - padding - this.contentFont * .7);
         this.get('TaskDrawer/Count').getComponent(UITransform)!.setContentSize(dw - padding * 2, this.contentFont * 1.4);
-        this.get('TaskDrawer/Count').getComponent(Label)!.fontSize = this.contentFont * .85;
-        this.taskViewport.setPosition(0, -header / 2); this.taskViewport.getComponent(UITransform)!.setContentSize(dw - padding * 2, dh - header - padding * 2);
+        const count = this.get('TaskDrawer/Count').getComponent(Label)!;
+        count.fontSize = tabFont * .85 - scale; count.lineHeight = count.fontSize * 1.35;
+        count.horizontalAlign = Label.HorizontalAlign.CENTER;
+        this.taskViewport.setPosition(-3.5 * scale, -header / 2 - padding / 2);
+        this.taskViewport.getComponent(UITransform)!.setContentSize(dw - padding * 2 - 7 * scale, dh - header - padding * 3);
+        this.taskScrollbar.setPosition(dw / 2 - 6 * scale, this.taskViewport.position.y);
         this.placeDrawer(); this.paintTabs(); this.renderTasks(); this.placePacks(0);
     }
     setVisible(visible: boolean) { this.visible = visible; this.placePacks(0); }
@@ -218,7 +242,7 @@ export class OriginalHud {
         this.packTab.active = this.visible && this.landscape && !this.packsOpen && this.packReveal === 0;
     }
     private placeDrawer() {
-        const edge = -this.screenWidth / 2 + this.drawerWidth * this.reveal;
+        const edge = -this.screenWidth / 2 + this.drawerInset + this.drawerWidth * this.reveal;
         this.get('TaskDrawer').setPosition(edge - this.drawerWidth / 2, this.drawerY);
         this.get('TaskDrawer').active = this.open || this.reveal > .001;
         const border = this.get('TaskDrawer').getComponent(Surface)!.lineWidth;
@@ -230,10 +254,15 @@ export class OriginalHud {
         });
     }
     private paintTabs() {
+        const colors = NOTEBOOK_COLORS[this.mode], drawer = this.get('TaskDrawer').getComponent(Surface)!;
+        drawer.fill = Color.fromHEX(new Color(), colors.base);
+        this.drawerHeading.fill = Color.fromHEX(new Color(), colors.primary); this.drawerHeading.paint();
+        this.get('TaskDrawer/Help').getComponent(Surface)!.fill = Color.fromHEX(new Color(), colors.base);
         ['Book', 'Tasks'].forEach((name, i) => {
             const active = this.open && this.mode === (i ? 'tasks' : 'recipes'), surface = this.get('Toolbar/' + name).getComponent(Surface)!;
             surface.openLeft = active;
-            surface.fill = Color.fromHEX(new Color(), active ? '#FAF1DF' : i ? '#DFE5D6' : '#E8E1D1'); surface.paint();
+            const palette = NOTEBOOK_COLORS[i ? 'tasks' : 'recipes'];
+            surface.fill = Color.fromHEX(new Color(), active ? palette.base : palette.secondary); surface.paint();
         });
         const active = this.mode === 'recipes' ? 'Book' : 'Tasks', inactive = active === 'Book' ? 'Tasks' : 'Book';
         const tab = this.get('Toolbar/' + active), half = tab.getComponent(UITransform)!.height / 2;
@@ -289,6 +318,7 @@ export class OriginalHud {
             if (this.open) this.renderTasks();
         }
         const node = this.get('TaskReminder');
+        for (const face of this.packFaces) face.update();
         if (!showReminders) { node.active = false; return; }
         this.reminderTime = Math.max(0, this.reminderTime - dt);
         const reminder = node.getComponent(Label)!;
@@ -324,59 +354,68 @@ export class OriginalHud {
         this.taskContent.children.slice().forEach(n => n.destroy());
         for (const key of Array.from(this.controls.keys())) if (key.startsWith('TaskFold:') || key.startsWith('TaskItem:')) this.controls.delete(key);
         const size = this.taskViewport.getComponent(UITransform)!, width = size.width, font = this.contentFont;
-        const leftInset = font / 4, textWidth = width - leftInset;
+        const palette = NOTEBOOK_COLORS[this.mode], ink = Color.fromHEX(new Color(), palette.ink);
         let y = size.height / 2;
-        const row = (name: string, value: string, color: string, action = '', explanation = '', done = false) => {
-            const lines = this.wrap(value, textWidth, font), height = Math.max(font * 1.65, lines.length * font * 1.35 + 10);
-            const label = this.text(this.taskContent, name, lines.join('\n'), textWidth, height, leftInset / 2, y - height / 2, font);
-            label.enableWrapText = false; label.color = Color.fromHEX(new Color(), '#' + color);
-            if (done) {
-                lines.forEach((line, index) => {
-                    const skip = index === 0 ? this.textWidth('☑ ', font) : 0;
-                    const length = Math.min(textWidth, this.textWidth(line, font)) - skip;
-                    const ly = (lines.length - 1) * font * 1.35 / 2 - index * font * 1.35 + font * .12;
-                    const strike = this.node('CompletionStrike', label.node, Math.max(0, length), 1.3);
-                    strike.setPosition(-textWidth / 2 + skip + length / 2, ly);
-                    // Surface repaints on enable, including when rows are built in a closed drawer.
-                    const surface = strike.addComponent(Surface); surface.fill = label.color; surface.radius = 0; surface.paint();
-                });
+        type RowOptions = { action?: string; explanation?: string; done?: boolean; checkbox?: boolean; level?: 1 | 2; folded?: boolean; muted?: boolean };
+        const row = (name: string, value: string, options: RowOptions = {}) => {
+            const left = font * (options.checkbox ? 1.65 : .5), right = font * (options.level ? 1.65 : .4), textWidth = width - left - right;
+            const lines = this.wrap(value, textWidth, font), height = Math.max(font * (options.level ? 2.05 : 1.9), lines.length * font * 1.35 + font * .7);
+            const n = this.node(name, this.taskContent, width, height); n.setPosition(0, y - height / 2);
+            if (options.level) {
+                const surface = n.addComponent(Surface); surface.fill = Color.fromHEX(new Color(), options.level === 1 ? palette.primary : palette.secondary);
+                surface.stroke = Color.fromHEX(new Color(), palette.primary); surface.radius = 1.5 * this.scale;
+                surface.lineWidth = .65 * this.scale; surface.crayon = true; surface.paint();
             }
-            if (action) { this.controls.set(action, label.node); if (explanation) this.rowHelp.set(action, { node: label.node, text: explanation }); }
-            y -= height; return label;
-        };
-        const separator = (color: string) => {
-            const n = this.node('Separator', this.taskContent, width, 2); n.setPosition(0, y - 4);
-            const g = n.addComponent(Graphics); g.strokeColor = Color.fromHEX(new Color(), '#' + color); g.lineWidth = 1.5;
-            g.moveTo(-width / 2, 0); g.lineTo(width / 2, 0); g.stroke(); y -= 14;
+            const label = this.text(n, 'Text', lines.join('\n'), textWidth, height, -width / 2 + left + textWidth / 2, 0, font);
+            label.enableWrapText = false; label.isBold = !!options.level;
+            label.color = options.done || options.muted ? Color.fromHEX(new Color(), palette.muted) : ink.clone();
+            if (options.checkbox) {
+                const mark = this.node('Checkbox', n, font, font); mark.setPosition(-width / 2 + font * .8, 0);
+                const g = mark.addComponent(Graphics), r = font * .32, color = label.color;
+                crayonStroke(g, [{ x: -r, y: -r }, { x: -r, y: r }, { x: r, y: r }, { x: r, y: -r }, { x: -r, y: -r }], color, 1.1 * this.scale);
+                if (options.done) crayonStroke(g, [{ x: -r * .8, y: 0 }, { x: -r * .1, y: -r * .7 }, { x: r * 1.3, y: r * 1.1 }], color, 1.8 * this.scale);
+            }
+            if (options.action) {
+                this.controls.set(options.action, n);
+                if (options.explanation) this.rowHelp.set(options.action, { node: n, text: options.explanation });
+                if (options.level) {
+                    const mark = this.node('FoldMark', n, font, font); mark.setPosition(width / 2 - font * .85, 0);
+                    const g = mark.addComponent(Graphics), r = font * .32;
+                    crayonStroke(g, [{ x: -r, y: 0 }, { x: r, y: 0 }], ink, 1.8 * this.scale);
+                    if (options.folded) crayonStroke(g, [{ x: 0, y: -r }, { x: 0, y: r }], ink, 1.8 * this.scale);
+                }
+            }
+            y -= height + (options.level ? font * .22 : 0); return label;
         };
         this.get('TaskDrawer/Title').getComponent(Label)!.string = this.mode === 'tasks' ? '发展里程碑' : '商业模式';
         if (this.mode === 'recipes') {
             const groups = businessGroups(this.model), knownCount = groups.reduce((sum, group) => sum + group.known.length, 0);
             this.get('TaskDrawer/Count').getComponent(Label)!.string = `已解锁 ${knownCount} / ${this.model.data.recipes.length}`;
-            groups.forEach((group, index) => {
-                row('Stage', group.title, '3A352F').isBold = true;
-                row('StageCount', `已解锁 商业模式：${group.known.length}/${group.total}`, '5B5145');
-                for (const recipe of group.known) row('Recipe', '• ' + recipe.name, '2F2A25', 'TaskItem:recipe-' + recipe.id, recipe.formula);
-                for (let i = 0; i < group.unknown; i++) row('Unknown', '• ？？', '777067');
-                if (index < groups.length - 1) separator('B9AD9C');
+            groups.forEach(group => {
+                const key = 'recipes/' + group.stage, folded = this.collapsed.has(key);
+                row('Stage', `${group.title} (${group.known.length}/${group.total})`, { level: 2, action: 'TaskFold:' + key, folded });
+                if (!folded) {
+                    for (const recipe of group.known) row('Recipe', '• ' + recipe.name, { action: 'TaskItem:recipe-' + recipe.id, explanation: recipe.formula });
+                    for (let i = 0; i < group.unknown; i++) row('Unknown', '• ？？', { muted: true });
+                }
+                y -= font * .35;
             });
         } else {
             this.get('TaskDrawer/Count').getComponent(Label)!.string = `${this.model.completed.size} / ${this.model.data.tasks.length} 已完成`;
             for (const section of ['主任务', '支线任务']) {
                 const tasks = this.model.data.tasks.filter(t => t.section === section);
-                row('Section', `${section} ${tasks.filter(t => this.model.completed.has(t.id)).length}/${tasks.length}`, '3A352F').isBold = true;
-                separator('9D9386');
+                row('Section', `${section} ${tasks.filter(t => this.model.completed.has(t.id)).length}/${tasks.length}`, { level: 1 });
                 for (const group of Array.from(new Set(tasks.map(t => t.group)))) {
-                    y -= font * .35;
+                    const members = tasks.filter(t => t.group === group), completed = members.filter(t => this.model.completed.has(t.id)).length;
                     const key = section + '/' + group, folded = this.collapsed.has(key);
-                    row('Group', `${folded ? '▸' : '▾'} ${group}`, '3A352F', 'TaskFold:' + key).isBold = true;
+                    row('Group', `${group} ${completed === members.length ? '✓' : `(${completed}/${members.length})`}`, { level: 2, action: 'TaskFold:' + key, folded });
                     if (folded) continue;
-                    for (const task of tasks.filter(t => t.group === group)) {
+                    for (const task of members) {
                         const done = this.model.completed.has(task.id);
-                        row('Task', `${done ? '☑' : '☐'} ${task.title}`, '3A352F', 'TaskItem:' + task.id, task.content, done);
+                        row('Task', task.title, { action: 'TaskItem:' + task.id, explanation: task.content, done, checkbox: true });
                     }
                 }
-                y -= font * .35;
+                y -= font * .65;
             }
         }
         this.taskHeight = size.height / 2 - y; this.scrollTasks(0);
@@ -388,7 +427,7 @@ export class OriginalHud {
         if (!entry || !this.open || !pinned && this.helpPinned) return;
         if (pinned && this.helpPinned && this.helpKey === fullKey) { this.hideInfo(); return; }
         const box = this.get('TaskDrawer/Help'), drawer = this.get('TaskDrawer'), size = drawer.getComponent(UITransform)!;
-        const padding = Math.max(10, 5 * this.scale), font = this.contentFont, width = size.width - padding * 2;
+        const padding = Math.max(10, 5 * this.scale), font = HINT_SCREEN_SIZE * this.scale, width = size.width - padding * 2;
         const lines = this.wrap(entry.text, width - padding * 2, font), height = Math.min(size.height - padding * 2, lines.length * font * 1.35 + padding * 2);
         box.getComponent(UITransform)!.setContentSize(width, height);
         const label = this.get('TaskDrawer/Help/Text').getComponent(Label)!;
@@ -472,8 +511,16 @@ export class OriginalHud {
         return true;
     }
     private scrollTasks(delta: number) {
-        this.taskOffset = Math.max(0, Math.min(Math.max(0, this.taskHeight - this.taskViewport.getComponent(UITransform)!.height), this.taskOffset + delta));
+        const height = this.taskViewport.getComponent(UITransform)!.height, maximum = Math.max(0, this.taskHeight - height);
+        this.taskOffset = Math.max(0, Math.min(maximum, this.taskOffset + delta));
         this.taskContent.setPosition(0, this.taskOffset);
+        this.taskScrollbar.active = maximum > 0;
+        if (!maximum) return;
+        const g = this.taskScrollbar.getComponent(Graphics)!, thumb = Math.max(24 * this.scale, height * height / this.taskHeight);
+        const top = height / 2 - (height - thumb) * this.taskOffset / maximum;
+        g.clear();
+        crayonStroke(g, [{ x: 0, y: -height / 2 }, { x: 0, y: height / 2 }], new Color(76, 79, 58, 36), 1.2 * this.scale);
+        crayonStroke(g, [{ x: 0, y: top - thumb }, { x: 0, y: top }], new Color(48, 49, 37), 2.6 * this.scale);
     }
     private scrollPacks(delta: number) {
         this.packOffset = Math.max(this.packMinimum, Math.min(0, this.packOffset + delta));

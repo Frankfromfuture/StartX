@@ -10,7 +10,6 @@ export function businessGroups(model: GameModel): BusinessGroup[] {
     const data = model.data;
     const stageOf = (recipe: Recipe) => {
         if (data.packs[recipe.packId]) return data.packs[recipe.packId].stage;
-        if (recipe.requiredIdeaId && data.research[recipe.requiredIdeaId]) return data.research[recipe.requiredIdeaId].stage;
         const ids = recipe.inputs.map(i => i.id).concat(recipe.outputs.map(o => o.id));
         const stages = data.packOrder.filter(id => data.packs[id].slots.some(slot => slot.some(o => ids.includes(o.id)))).map(id => data.packs[id].stage);
         return stages.length ? Math.min(...stages) : 0;
@@ -26,6 +25,6 @@ export function businessGroups(model: GameModel): BusinessGroup[] {
     return Array.from(groups.entries()).sort(([a], [b]) => a - b).map(([stage, recipes]) => {
         const known = Array.from(model.models).map(id => recipes.find(r => r.id === id)).filter((r): r is Recipe => !!r);
         for (const recipe of recipes) if (physicallyKnown.has(recipe.id) && !known.includes(recipe)) known.push(recipe);
-        return { stage, title: `阶段「${STAGES[Math.max(0, Math.min(6, stage))]}」`, total: recipes.length, known, unknown: recipes.length - known.length };
+        return { stage, title: `阶段「${data.stages?.[stage]?.name || STAGES[Math.max(0, Math.min(6, stage))]}」`, total: recipes.length, known, unknown: recipes.length - known.length };
     });
 }

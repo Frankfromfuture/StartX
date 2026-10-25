@@ -1,0 +1,49 @@
+{
+  "typecheck": true,
+  "build": "web-mobile",
+  "resumedSavedPause": {
+    "paused": false,
+    "modelPaused": false,
+    "icon": "Pause",
+    "musicSpeed": 1,
+    "iconSize": 38.88,
+    "target": 64,
+    "gap": 2.000000000000008,
+    "error": ""
+  },
+  "clockAdvances": true,
+  "paused": {
+    "paused": true,
+    "modelPaused": true,
+    "icon": "Resume",
+    "musicSpeed": 0.7,
+    "iconSize": 38.88,
+    "target": 64,
+    "gap": 2.000000000000008,
+    "error": ""
+  },
+  "pausedClockFrozen": true,
+  "menuRetainsManualPause": true,
+  "restartedFromPausedHome": {
+    "paused": false,
+    "modelPaused": false,
+    "icon": "Pause",
+    "musicSpeed": 1,
+    "iconSize": 38.88,
+    "target": 64,
+    "gap": 2.000000000000008,
+    "error": ""
+  },
+  "landscape": {
+    "paused": false,
+    "modelPaused": false,
+    "icon": "Pause",
+    "musicSpeed": 1,
+    "iconSize": 38.88,
+    "target": 64,
+    "gap": 2,
+    "error": ""
+  },
+  "manualPauseResume": true,
+  "passed": true
+}

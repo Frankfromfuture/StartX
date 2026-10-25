@@ -8,6 +8,8 @@
     "typecheck": "tsc --noEmit",
     "sync:data": "node tools/sync-content.cjs",
     "test:data": "node tests/content-sync.cjs",
+    "test:product": "node tests/product-expansion.cjs",
+    "test:curve": "node tests/player-curve.cjs",
     "build:web": "node tools/build.cjs web-mobile",
     "build:wechat": "node tools/build.cjs wechatgame",
     "preview": "node tools/serve.cjs",

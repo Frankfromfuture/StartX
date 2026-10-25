@@ -15,10 +15,10 @@ const late=m.spawn('p2_grad',r.x+1200,r.y);m.move(late.uid,r.x+560,r.y,founder.u
 advance(m,()=>b.attacker===intern.uid&&b.phase==='outward');assert(!b.attackers.includes(late.uid),'Mid-turn arrivals wait until the next player turn');
 advance(m,()=>b.phase==='interval');assert.equal(b.enemyHp,6,'Each original team member attacks once');
 const rect=m.battleRect,o=m.position(obstacle);assert(Math.abs(o.x-rect.x)>rect.width/2+139||o.y+140<=rect.y-rect.height/2||o.y-140>=rect.y+rect.height/2,'Noncombatants leave the arena');
-advance(m,()=>b.rivalTurn&&b.phase==='return');assert.equal(b.playerHp,46);assert.equal(m.cash,50,'Cash is settled once at battle end');
+advance(m,()=>b.rivalTurn&&b.phase==='return');assert.equal(b.playerHp,46);assert.equal(m.cash,46,'Account cash pays damage immediately and equals HP');
 advance(m,()=>!m.battle);assert(!m.card(rival.uid));assert(m.defeated.has(rival.uid));assert.equal(m.cash,46);assert.equal(m.counters['rival_defeated|'],1);assert.equal(m.counters['team_rival_defeated|'],1);assert(m.soundCues.includes('hit')&&m.soundCues.includes('battle_end'));
 // Closest regression: rival contact starts first and a bankrupt employee loses.
 const loss=new api.GameModel(data,()=>.5),loser=loss.spawn('p1_intern',1400,400),enemy=loss.spawn('rival1',1400,400);loss.spawn('cash',2200,0);
 loss.update(.02);assert(loss.battle.rivalTurn);advance(loss,()=>!loss.battle);assert(!loss.card(loser.uid));assert(loss.card(enemy.uid));assert.equal(loss.cash,0);assert(loss.defeated.has(loser.uid));assert(!loss.counters['rival_defeated|']);
-const report={passed:true,checks:['50 cash cards form one bounded stack without changing card dimensions','Enemies move continuously on the original three-second cadence','Original entry, per-person arc/impact/return timing and initiative','Mid-turn reinforcements wait; other stacks leave the arena','Original cumulative cash deduction, victory tasks and defeat removal; battle sounds queued']};
+const report={passed:true,checks:['50 cash cards form one bounded stack without changing card dimensions','Enemies move continuously on the original three-second cadence','Original entry, per-person arc/impact/return timing and initiative','Mid-turn reinforcements wait; other stacks leave the arena','Immediate total-money HP deduction, victory tasks and defeat removal; battle sounds queued']};
 fs.writeFileSync(path.join(root,'review/battle-rules.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

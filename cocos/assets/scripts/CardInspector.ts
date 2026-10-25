@@ -1,15 +1,15 @@
 import { Color, EffectAsset, Font, instantiate, Label, Mask, Material, Node, Prefab, Sprite, SpriteFrame, UITransform, Vec2, Vec3, Vec4 } from 'cc';
-import { CardView } from './CardView';
-import { CardFrameVolume } from './CardFrameVolume';
-import { LayoutMetrics } from './Layout';
-import { Surface } from './Surface';
-import { Catalog, GameModel, Recipe } from './GameModel';
+import { CardView, cardStyle } from './CardView';
+import { CardFrameVolume, PACK_DEPTH_RATIO } from './CardFrameVolume';
+import { INSPECTOR_CONTENT_SCALE, INSPECTOR_SCREEN_SIZE, LayoutMetrics } from './Layout';
+import { DIMMED_BACKGROUND_COLOR, Surface } from './Surface';
+import { Catalog, GameModel, quoteFlavor, Recipe } from './GameModel';
 import { roundCard } from './RoundedCard';
 
 type CardStyle = 'plain' | 'foil' | 'glass' | 'pack';
 interface PreviewContent { frame: SpriteFrame | null; bodyColor: string; style: CardStyle; functionText: string; description: string; pack: boolean; }
 interface CardReference { id: string; data: Catalog; packs: string[]; recipes: Recipe[]; }
-interface PreviewHistory { content: PreviewContent; reference: CardReference | null; patch: CardView['numberPatch']; offset: number; yaw: number; pitch: number; }
+interface PreviewHistory { content: PreviewContent; reference: CardReference | null; patch: CardView['numberPatch']; yarn: CardView['yarnDecorations']; offset: number; yaw: number; pitch: number; }
 
 /** A modal card turntable, separate from the board and its card animations. */
 export class CardInspector {
@@ -55,7 +55,7 @@ export class CardInspector {
         this.packLineMaterial.setProperty('lineMode', new Vec4(1, 0, 0, 0));
         this.node = this.make('CardInspector', parent, 720, 1280);
         this.shade = this.make('DimmedBackground', this.node, 720, 1280);
-        const shade = this.shade.addComponent(Surface); shade.fill = new Color(16, 19, 25, 190); shade.radius = 0; shade.paint();
+        const shade = this.shade.addComponent(Surface); shade.fill = DIMMED_BACKGROUND_COLOR.clone(); shade.radius = 0; shade.paint();
         this.cardNode = this.make('Turntable', this.node, 280, 280);
         this.frameVolume = new CardFrameVolume(this.node);
         this.frameVolume.node.setSiblingIndex(this.cardNode.getSiblingIndex() - 1);
@@ -88,12 +88,17 @@ export class CardInspector {
     present(source: CardView, bodyColor: string, style: 'plain' | 'foil' | 'glass' | 'pack', functionText: string, description: string) {
         this.presentFrame(source.artwork, bodyColor, style, functionText, description, source.pack);
         const patch = source.numberPatch; this.front.setPatch(patch.frame, patch.kind);
+        if (source.isBadgeToken) this.front.setBadgeToken(true);
+        const yarn = source.yarnDecorations;
+        if (yarn) this.front.setYarnBadges(yarn.frames, yarn.bonus, yarn.capacity, this.font, yarn.positions);
     }
     presentFrame(frame: SpriteFrame | null, bodyColor: string, style: CardStyle, functionText: string, description: string, pack = false, keepHistory = false) {
         if (!keepHistory) this.history = [];
         this.navigationRequest++; this.current = { frame, bodyColor, style, functionText, description, pack };
         this.front.configure(frame, bodyColor, style); this.front.setPatch(null, 'uses');
-        this.functionLabel.string = functionText; this.descriptionLabel.string = description;
+        if (frame?.name.startsWith('badge_')) this.front.setBadgeToken(true);
+        this.front.setYarnBadges([], 0, 0, this.font);
+        this.functionLabel.string = functionText; this.descriptionLabel.string = pack ? description : quoteFlavor(description);
         this.yaw = this.targetYaw = -10; this.pitch = this.targetPitch = -8;
         this.front.node.setScale(this.size / (pack ? 336 : 280), this.size / (pack ? 336 : 280), 1);
         this.reference = null; this.detailsOffset = 0; this.layoutDetails();
@@ -106,14 +111,14 @@ export class CardInspector {
     }
     async openCard(model: GameModel, id: string) {
         if (this.navigating || !this.current || !model.data.cards[id] || this.reference?.id === id) return;
-        const saved: PreviewHistory = { content: this.current, reference: this.reference, patch: this.front.numberPatch,
+        const saved: PreviewHistory = { content: this.current, reference: this.reference, patch: this.front.numberPatch, yarn: this.front.yarnDecorations,
             offset: this.detailsOffset, yaw: this.yaw, pitch: this.pitch };
         const request = ++this.navigationRequest; this.navigating = true; this.pending++;
         try {
             const frame = await this.loadFrame('faces/' + id);
             if (!this.node.activeInHierarchy || request !== this.navigationRequest) return;
             const d = model.def(id); this.history.push(saved);
-            this.presentFrame(frame, d.bodyColor, id === 'founder' ? 'foil' : id === 'cash' || d.type === 'business_model' ? 'glass' : 'plain',
+            this.presentFrame(frame, d.bodyColor, cardStyle(id, d.type),
                 d.functionText || '与其他卡牌叠放，发现商业模式', d.flavor || '', false, true);
             this.setReference(model, id);
         } catch (e) { console.error('[StartX] Recipe preview', e); }
@@ -124,6 +129,7 @@ export class CardInspector {
         const c = saved.content;
         this.presentFrame(c.frame, c.bodyColor, c.style, c.functionText, c.description, c.pack, true);
         this.front.setPatch(saved.patch.frame, saved.patch.kind);
+        if (saved.yarn) this.front.setYarnBadges(saved.yarn.frames, saved.yarn.bonus, saved.yarn.capacity, this.font, saved.yarn.positions);
         this.reference = saved.reference; this.detailsOffset = saved.offset; this.layoutDetails();
         this.yaw = this.targetYaw = saved.yaw; this.pitch = this.targetPitch = saved.pitch; this.tick(0); return true;
     }
@@ -210,13 +216,15 @@ export class CardInspector {
         this.detailsMaximum = Math.max(0, view.height / 2 - y + 8 * s - view.height); this.scrollDetails(0);
     }
     layout(metrics: LayoutMetrics) {
-        const { width: w, height: h, scale, top, bottom } = metrics; this.scale = scale; this.metrics = metrics;
+        const { width: w, height: h, top, bottom } = metrics, scale = metrics.scale * INSPECTOR_CONTENT_SCALE;
+        this.scale = scale; this.metrics = metrics;
         this.node.getComponent(UITransform)!.setContentSize(w, h);
         this.shade.getComponent(UITransform)!.setContentSize(w, h);
-        const usable = h - top - bottom;
-        this.size = Math.min(w * .82, usable * .54, 600 * scale) * .5;
+        this.size = INSPECTOR_SCREEN_SIZE * metrics.scale;
         this.cardNode.getComponent(UITransform)!.setContentSize(this.size, this.size);
-        this.cardNode.setPosition(0, h * .2);
+        const landscape = w > h, columnGap = 40 * metrics.scale;
+        const detailsW = Math.min(350 * scale, w - this.size - columnGap - 64 * metrics.scale);
+        this.cardNode.setPosition(landscape ? -(detailsW + columnGap) / 2 : 0, landscape ? (bottom - top) / 2 : h * .2);
         this.frameVolume.node.setPosition(this.cardNode.position);
         this.front.node.setPosition(0, 0, this.size * .035 / 2);
         this.back.setPosition(0, 0, -this.size * .035 / 2);
@@ -224,22 +232,37 @@ export class CardInspector {
         this.back.getComponent(UITransform)!.setContentSize(this.size, this.size);
         this.back.getChildByName('Artwork')!.getComponent(UITransform)!.setContentSize(this.size, this.size); roundCard(this.back, this.size);
         const detailsTop = this.cardNode.position.y - this.size / 2 - 10 * scale, detailsBottom = -h / 2 + bottom + 20 * scale;
-        this.detailsNode.getComponent(UITransform)!.setContentSize(Math.min(w - 40 * scale, 1000 * scale), Math.max(40 * scale, detailsTop - detailsBottom));
-        this.detailsNode.setPosition(0, (detailsTop + detailsBottom) / 2);
+        this.detailsNode.getComponent(UITransform)!.setContentSize(landscape ? detailsW : Math.min(w - 40 * scale, 350 * scale),
+            landscape ? Math.max(40 * scale, h - top - bottom - 64 * metrics.scale) : Math.max(40 * scale, detailsTop - detailsBottom));
+        this.detailsNode.setPosition(landscape ? (this.size + columnGap) / 2 : 0, landscape ? (bottom - top) / 2 : (detailsTop + detailsBottom) / 2);
         this.functionLabel.fontSize = 26 * scale; this.functionLabel.lineHeight = 36 * scale;
         this.descriptionLabel.fontSize = 21 * scale; this.descriptionLabel.lineHeight = 29 * scale;
         this.closeNode.setPosition(w / 2 - 36 * scale, h / 2 - top - 36 * scale);
-        this.closeNode.getComponent(UITransform)!.setContentSize(52 * scale, 52 * scale);
+        const closeTarget = Math.max(44 * metrics.scale, 52 * scale);
+        this.closeNode.getComponent(UITransform)!.setContentSize(closeTarget, closeTarget);
         const close = this.closeNode.getComponent(Label)!; close.fontSize = 36 * scale; close.lineHeight = 48 * scale;
         this.layoutDetails();
     }
     contains(point: Vec2) {
         const p = this.node.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(point.x, point.y));
-        return Math.abs(p.x) <= this.size * .64 && Math.abs(p.y - this.cardNode.position.y) <= this.size * .64;
+        return Math.abs(p.x - this.cardNode.position.x) <= this.size * .64 && Math.abs(p.y - this.cardNode.position.y) <= this.size * .64;
     }
     containsDetails(point: Vec2) {
         const p = this.detailsNode.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(point.x, point.y)), t = this.detailsNode.getComponent(UITransform)!;
         return Math.abs(p.x) <= t.width / 2 && Math.abs(p.y) <= t.height / 2;
+    }
+    badgeAt(point: Vec2) { return !this.backVisible && !this.history.length ? this.front.badgeAt(point) : -1; }
+    containsFace(point: Vec2) { return this.front.containsFace(point); }
+    badgePositionAt(point: Vec2) { return this.front.badgePositionAt(point); }
+    addBadge(frame: SpriteFrame, position: { x: number; y: number }, capacity: number, functionText: string) {
+        const yarn = this.front.yarnDecorations;
+        this.front.setYarnBadges((yarn?.frames || []).concat(frame), (yarn?.bonus || 0) + 1, capacity, this.font, (yarn?.positions || []).concat(position));
+        this.functionLabel.string = functionText; if (this.current) this.current.functionText = functionText;
+    }
+    removeBadge(index: number, capacity: number, functionText: string) {
+        const yarn = this.front.yarnDecorations; if (!yarn) return;
+        this.front.setYarnBadges(yarn.frames.filter((_, i) => i !== index), yarn.bonus - 1, capacity, this.font, yarn.positions.filter((_, i) => i !== index));
+        this.functionLabel.string = functionText; if (this.current) this.current.functionText = functionText;
     }
     iconAt(point: Vec2) {
         if (!this.containsDetails(point)) return '';
@@ -254,8 +277,8 @@ export class CardInspector {
     wheel(point: Vec2, delta: number) { if (!this.containsDetails(point)) return false; this.scrollDetails(-delta * .2 * this.scale); return true; }
     private scrollDetails(delta: number) { this.detailsOffset = Math.max(0, Math.min(this.detailsMaximum, this.detailsOffset + delta)); this.detailsContent.setPosition(0, this.detailsOffset); }
     drag(delta: Vec2) {
-        this.targetYaw -= delta.x / this.scale * .75;
-        this.targetPitch = Math.max(-40, Math.min(40, this.targetPitch + delta.y / this.scale * .42));
+        this.targetYaw -= delta.x / this.metrics.scale * .75;
+        this.targetPitch = Math.max(-40, Math.min(40, this.targetPitch + delta.y / this.metrics.scale * .42));
     }
     flip() { this.targetYaw += 180; }
     tick(dt: number) {
@@ -267,16 +290,17 @@ export class CardInspector {
         this.front.node.active = !this.backVisible; this.back.active = this.backVisible;
         this.front.setInspectionAngles(this.pitch, this.yaw);
         this.backMaterial?.setProperty('inspectionLight', this.front.inspectionLighting);
-        this.frameVolume.paint(this.size, this.size * .035, this.pitch, this.yaw, this.front.rainbowFrame);
+        if (this.current?.pack) this.frameVolume.paintPack(this.size, this.pitch, this.yaw, false);
+        else this.frameVolume.paint(this.size, this.size * .035, this.pitch, this.yaw, this.front.frameColor);
     }
     snapshot() { return { active: this.node.active, yaw: this.yaw, pitch: this.pitch, back: this.backVisible,
-        size: this.size, depth: this.size * .035, frame: this.frameVolume.snapshot(), lighting: !!this.backMaterial,
-        functionText: this.functionLabel.string, description: this.descriptionLabel.string, shadeAlpha: 190, pending: this.pending,
+        size: this.size, depth: this.size * (this.current?.pack ? PACK_DEPTH_RATIO : .035), frame: this.frameVolume.snapshot(), lighting: !!this.backMaterial,
+        functionText: this.functionLabel.string, description: this.descriptionLabel.string, shadeAlpha: DIMMED_BACKGROUND_COLOR.a, pending: this.pending,
         reference: this.reference ? { id: this.reference.id, packs: this.reference.packs, recipes: this.reference.recipes.map(r => r.id), icons: this.referenceNode.children.filter(n => n.name.startsWith('RecipeIcon-')).length } : null,
         detailsOffset: this.detailsOffset, detailsMaximum: this.detailsMaximum, roundedBack: !!this.back.getComponent(Mask), historyDepth: this.history.length,
         iconButtons: this.iconButtons.map(({ id, node }) => {
             const t = node.getComponent(UITransform)!, p = t.convertToWorldSpaceAR(new Vec3(-t.width / 2, t.height / 2));
-            return { id, x: p.x / this.scale, y: (this.metrics.height - p.y) / this.scale, width: t.width / this.scale, height: t.height / this.scale };
+            return { id, x: p.x / this.metrics.scale, y: (this.metrics.height - p.y) / this.metrics.scale, width: t.width / this.metrics.scale, height: t.height / this.metrics.scale };
         }) }; }
     destroy() { this.navigationRequest++; this.history = []; this.lineMaterial.destroy(); this.packLineMaterial.destroy(); }
 }

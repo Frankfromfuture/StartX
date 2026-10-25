@@ -12,7 +12,8 @@ CCEffect %{
           blendDstAlpha: one_minus_src_alpha
       rasterizerState: { cullMode: none }
       properties:
-        blurStep: { value: [0.005, 0.005, 0.94, 0.42] }
+        blurStep: { value: [0.005, 0.005, 0.94, 1280.0] }
+        blindBands: { value: [900.0, 18.0, 0.14, 0.12] }
 }%
 CCProgram catalog-vs %{
   precision highp float;
@@ -40,17 +41,32 @@ CCProgram catalog-fs %{
   in vec4 color;
   #pragma builtin(local)
   layout(set = 2, binding = 12) uniform sampler2D cc_spriteTexture;
-  uniform Blur { vec4 blurStep; };
+  uniform Blur { vec4 blurStep; vec4 blindBands; };
   vec4 frag () {
+    // Soft slat edges span several screen pixels instead of forming hard bands.
+    float bandHeight = max(1.0, blindBands.y);
+    float screenY = (1.0 - uv0.y) * blindBands.x;
+    float wave = -sin(screenY * 3.14159265 / bandHeight);
+    float grayBand = smoothstep(-0.5, 0.5, wave);
+    float softEdge = 1.0 - abs(grayBand * 2.0 - 1.0);
+    // Both slats blur the view; lighter slats transmit slightly more detail.
+    vec2 blurRadius = blurStep.xy * (mix(1.0, 0.84, grayBand) + softEdge * 0.16);
     vec3 blurred = vec3(0.0);
     // Separable binomial weights form a 5x5 Gaussian kernel in one UI pass.
     for (int x = -2; x <= 2; x++) {
       for (int y = -2; y <= 2; y++) {
         float wx = x == 0 ? 6.0 : ((x == 1 || x == -1) ? 4.0 : 1.0);
         float wy = y == 0 ? 6.0 : ((y == 1 || y == -1) ? 4.0 : 1.0);
-        blurred += texture(cc_spriteTexture, clamp(uv0 + vec2(float(x), float(y)) * blurStep.xy, vec2(0.0), vec2(1.0))).rgb * wx * wy;
+        blurred += texture(cc_spriteTexture, clamp(uv0 + vec2(float(x), float(y)) * blurRadius, vec2(0.0), vec2(1.0))).rgb * wx * wy;
       }
     }
-    return vec4(mix(blurred / 256.0, vec3(0.10, 0.12, 0.15), blurStep.w), blurStep.z) * color;
+    vec3 tint = mix(vec3(0.15, 0.16, 0.17), vec3(0.64, 0.65, 0.67), grayBand);
+    float tintAlpha = mix(blindBands.z, blindBands.w, grayBand);
+    // Fine screen-anchored grain gives the soft dark edges a steady frosted finish.
+    vec2 grainPixel = floor(vec2(uv0.x * blurStep.w, screenY) * 1.5);
+    float grain = fract(sin(dot(grainPixel, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    float grainStrength = 0.006 + (1.0 - grayBand) * 0.008 + softEdge * 0.006;
+    vec3 transmitted = mix(blurred / 256.0, tint, tintAlpha) + vec3(grain * grainStrength);
+    return vec4(clamp(transmitted, vec3(0.0), vec3(1.0)), blurStep.z) * color;
   }
 }%

@@ -1,4 +1,4 @@
-import { _decorator, Color, Component, Graphics, Node, Sprite, SpriteFrame, Vec2, UITransform } from 'cc';
+import { _decorator, Camera, Canvas, Color, Component, Graphics, Node, Sprite, SpriteFrame, Vec2, Vec3, UITransform } from 'cc';
 import { Surface } from './Surface';
 import { BOARD_CELLS } from './GameModel';
 import { NightShiftOverlay } from './NightShiftOverlay';
@@ -11,6 +11,11 @@ export class BoardView extends Component {
     frameHeight = 1000;
     zoom = 1;
     pitch = 1;
+    private playerPlane: Node | null = null;
+    private camera: Camera | null = null;
+    private eyeDistance = 1000;
+    private readonly playerTilt = 15;
+    private planeBounds = { left: -360, right: 360, bottom: -500, top: 500 };
     private city: Node | null = null;
     private shade: Node | null = null;
     private edgeFade: Graphics | null = null;
@@ -21,6 +26,41 @@ export class BoardView extends Component {
     private overviewArea = { left: -360, right: 360, bottom: -500, top: 500 };
     private movement: { fromX: number; fromY: number; fromZoom: number; x: number; y: number; zoom: number; time: number; duration: number } | null = null;
     get moving() { return !!this.movement; }
+    enablePlayerPerspective(canvas: Canvas) {
+        canvas.alignCanvasWithScreen = false;
+        this.camera = canvas.cameraComponent!;
+        this.camera.projection = Camera.ProjectionType.PERSPECTIVE;
+        this.camera.fovAxis = Camera.FOVAxis.VERTICAL;
+        this.camera.fov = 36; this.camera.near = .1; this.camera.far = 50000;
+        const plane = new Node('PlayerPerspective'); plane.layer = this.node.layer;
+        this.node.parent!.addChild(plane); plane.addComponent(UITransform);
+        plane.setRotationFromEuler(-this.playerTilt, 0, 0);
+        plane.addChild(this.node); this.playerPlane = plane;
+    }
+    /** Project world geometry onto the same z=0 UI plane used by pointer events. */
+    projectWorld(point: Vec3) {
+        if (!this.playerPlane) return point;
+        const center = this.playerPlane.worldPosition, scale = this.eyeDistance / (this.eyeDistance - point.z);
+        return new Vec3(center.x + (point.x - center.x) * scale, center.y + (point.y - center.y) * scale, 0);
+    }
+    /** Intersect the pointer's camera ray with the tilted table. */
+    pointerWorld(point: Vec2) {
+        if (!this.playerPlane) return new Vec3(point.x, point.y);
+        const center = this.playerPlane.worldPosition, dy = point.y - center.y;
+        const ratio = this.eyeDistance / (this.eyeDistance - dy * Math.tan(this.playerTilt * Math.PI / 180));
+        return new Vec3(center.x + (point.x - center.x) * ratio, center.y + dy * ratio, this.eyeDistance * (1 - ratio));
+    }
+    pointerOnPlane(point: Vec2) {
+        const parent = this.playerPlane || this.node.parent!;
+        return parent.getComponent(UITransform)!.convertToNodeSpaceAR(this.pointerWorld(point));
+    }
+    planeArea(area: { left: number; right: number; bottom: number; top: number }) {
+        const center = this.playerPlane?.worldPosition || this.node.parent!.worldPosition;
+        const corners: Vec3[] = [];
+        for (const y of [area.bottom, area.top]) for (const x of [area.left, area.right]) corners.push(this.pointerOnPlane(new Vec2(center.x + x, center.y + y)));
+        return { left: Math.min(...corners.map(p => p.x)), right: Math.max(...corners.map(p => p.x)),
+            bottom: Math.min(...corners.map(p => p.y)), top: Math.max(...corners.map(p => p.y)) };
+    }
     setNightShift(enabled: boolean, founder: Node | null) {
         this.lightTarget = founder;
         if (enabled && !this.night) this.night = new NightShiftOverlay(this.node.getChildByName('Table')!);
@@ -37,7 +77,8 @@ export class BoardView extends Component {
     }
     get minimumZoom() {
         const size = this.boardSize * 2 || 10080;
-        return Math.max((this.frameWidth + 4) / size, (this.frameHeight + 4) / (size * this.pitch));
+        return Math.max((this.planeBounds.right - this.planeBounds.left + 4) / size,
+            (this.planeBounds.top - this.planeBounds.bottom + 4) / (size * this.pitch));
     }
     setSurroundings(frame: SpriteFrame) {
         this.city = new Node('CitySurroundings');
@@ -70,7 +111,13 @@ export class BoardView extends Component {
     setPitch(value: number) { this.pitch = Math.max(.76, Math.min(1.12, value)); this.node.setScale(this.zoom, this.zoom * this.pitch, 1); this.refreshGrid(); }
     configure(w: number, h: number, area = { left: -w / 2, right: w / 2, bottom: -h / 2, top: h / 2 }) {
         this.frameWidth = w; this.frameHeight = h;
-        this.overviewArea = area;
+        if (this.camera && this.playerPlane) {
+            this.eyeDistance = h / (2 * Math.tan(this.camera.fov * Math.PI / 360));
+            const center = this.playerPlane.worldPosition;
+            this.camera.node.setWorldPosition(center.x, center.y, this.eyeDistance);
+        }
+        this.planeBounds = this.planeArea({ left: -w / 2, right: w / 2, bottom: -h / 2, top: h / 2 });
+        this.overviewArea = this.planeArea(area);
         this.refreshGrid();
     }
     pan(delta: Vec2) {
@@ -113,8 +160,9 @@ export class BoardView extends Component {
         const cityY = (this.city?.position.y || 0) * this.zoom * this.pitch;
         // The widest view stops at cover, and every pan keeps the image behind
         // the entire viewport with a small overlap at its edges.
-        this.node.setPosition(this.clampCameraAxis(p.x, size * this.zoom, this.frameWidth / 2),
-            this.clampCameraAxis(p.y + cityY, size * this.zoom * this.pitch, this.frameHeight / 2) - cityY, p.z);
+        const bounds = this.planeBounds;
+        this.node.setPosition(this.clampCameraAxis(p.x, size * this.zoom, bounds.left, bounds.right),
+            this.clampCameraAxis(p.y + cityY, size * this.zoom * this.pitch, bounds.bottom, bounds.top) - cityY, p.z);
         if (this.shade) {
             this.shade.setPosition(0, 0, 0);
             this.shade.getComponent(UITransform)!.setContentSize(size * 2, size * 2);
@@ -140,10 +188,9 @@ export class BoardView extends Component {
             g.fill();
         }
     }
-    private clampCameraAxis(value: number, imageHalf: number, viewportHalf: number) {
+    private clampCameraAxis(value: number, imageHalf: number, low: number, high: number) {
         // Keep a small overlap at the image boundary to avoid a raster seam.
-        const limit = Math.max(0, imageHalf - viewportHalf - 2);
-        return Math.max(-limit, Math.min(limit, value));
+        return Math.max(high - imageHalf + 2, Math.min(low + imageHalf - 2, value));
     }
     snapshot() {
         const table = this.node.getChildByName('Table')!, size = table.getComponent(UITransform)!;
@@ -151,7 +198,9 @@ export class BoardView extends Component {
             cityLoaded: !!this.city, cityWidth: this.boardSize * 2, cityHeight: this.boardSize * 2,
             imagePixels: this.city?.getComponent(Sprite)!.spriteFrame?.originalSize,
             table: { x: table.position.x, y: table.position.y, borderWidth: table.getComponent(Surface)!.lineWidth },
-            minimumZoom: this.minimumZoom, overviewArea: this.overviewArea, tint: this.shade?.getComponent(Surface)!.fill, tintParent: this.shade?.parent?.name,
+            minimumZoom: this.minimumZoom, overviewArea: this.overviewArea,
+            perspective: { tilt: this.playerTilt, fov: this.camera?.fov, eyeDistance: this.eyeDistance },
+            tint: this.shade?.getComponent(Surface)!.fill, tintParent: this.shade?.parent?.name,
             edgeFade: { width: table.getComponent(Surface)!.gridSpacing, bands: 128, active: !!this.edgeFade, parent: this.edgeFade?.node.parent?.name },
             nightShift: this.night?.snapshot() || { enabled: false },
             cameraLimitedToCity: true };

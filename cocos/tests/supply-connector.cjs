@@ -1,0 +1,14 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),ts=require('typescript');
+const root=path.resolve(__dirname,'..'),api={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/assets/scripts/SupplyConnector.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2017}}).outputText,{exports:api,Math});
+const a={left:-150,right:150,bottom:-294,top:150},b={left:480,right:780,bottom:270,top:570};
+const diagonal=api.shortestSupplyRoute(a,b),rounded=api.roundSupplyRoute(diagonal);
+assert.equal(diagonal.length,750);assert.equal(diagonal.points.length,3);
+assert.equal(JSON.stringify(diagonal.points),JSON.stringify([{x:0,y:150},{x:0,y:420},{x:480,y:420}]));
+assert.equal(JSON.stringify(rounded[0]),JSON.stringify(diagonal.points[0]));assert.equal(JSON.stringify(rounded.at(-1)),JSON.stringify(diagonal.points.at(-1)));
+assert(rounded.some(p=>p.x>0&&p.x<28&&p.y>392&&p.y<420),'The elbow is a curve');
+assert(api.supplyPathLength(rounded)<diagonal.length);const tip=api.supplyPathAt(rounded,Infinity);assert.equal(tip.nx,1);assert.equal(tip.ny,0);
+const moved=api.shortestSupplyRoute(a,{...b,bottom:-230,top:70});assert.equal(moved.length,338);assert.equal(moved.points.length,4);
+assert.equal(JSON.stringify([moved.points[0],moved.points.at(-1)]),JSON.stringify([{x:150,y:-72},{x:480,y:-80}]));
+const movedRounded=api.roundSupplyRoute(moved);assert.equal(JSON.stringify(movedRounded.at(-1)),JSON.stringify(moved.points.at(-1)));assert(api.supplyPathLength(movedRounded)<moved.length);
+const report={passed:true,lineWidth:api.SUPPLY_LINE_WIDTH,arrowLength:api.SUPPLY_ARROW_LENGTH,cornerRadius:api.SUPPLY_CORNER_RADIUS,checks:['Diagonal stacks use the shortest 750-unit path between edge midpoints, with a rounded elbow and a perpendicular arrow','Offset facing sides retain both exact edge midpoints using two rounded elbows on the shortest 338-unit path']};
+fs.writeFileSync(root+'/review/supply-connector-geometry.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

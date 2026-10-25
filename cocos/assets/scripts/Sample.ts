@@ -1,10 +1,14 @@
-import { _decorator, assetManager, AssetManager, Canvas, Component, EffectAsset, instantiate, JsonAsset, Label, Mask, Node, Prefab, screen, UITransform, UIOpacity, Vec2, Vec3, Color, SpriteFrame, Font, Graphics, sys, game, Game } from 'cc';
-import { CardView } from './CardView';
+import { _decorator, assetManager, AssetManager, Canvas, Component, EffectAsset, instantiate, JsonAsset, Label, Mask, Node, Prefab, screen, UITransform, UIOpacity, Vec2, Vec3, Color, Sprite, SpriteFrame, Font, Graphics, sys, game, Game } from 'cc';
+import { CardView, cardStyle } from './CardView';
 import { BoardView } from './BoardView';
 import { InputRouter, InputTarget } from './InputRouter';
-import { LayoutMetrics, measureLayout } from './Layout';
+import { Icon } from './Icon';
+import { PauseWash } from './PauseWash';
+import { ConnectorRoute, ConnectorRect, shortestSupplyRoute, roundSupplyRoute, supplyPathLength, supplyPathAt,
+    SUPPLY_LINE_WIDTH, SUPPLY_ARROW_LENGTH, SUPPLY_ARROW_HALF_WIDTH, SUPPLY_CORNER_RADIUS } from './SupplyConnector';
+import { canSetDisplayOrientation, fixedUiUnit, getDisplayOrientation, LayoutMetrics, measureLayout, setDisplayOrientation } from './Layout';
 import { Surface } from './Surface';
-import { GameModel, Catalog, CardState, CashSpend, CARD_OFFSET, DEFAULT_HINT } from './GameModel';
+import { GameModel, Catalog, CardState, CashSpend, CARD_OFFSET, DEFAULT_HINT, quoteFlavor } from './GameModel';
 import { OriginalHud } from './OriginalHud';
 import { OriginalAudio } from './OriginalAudio';
 import { BattleView } from './BattleView';
@@ -12,11 +16,13 @@ import { TitleScreen } from './TitleScreen';
 import { CardInspector } from './CardInspector';
 import { CardCatalog } from './CardCatalog';
 import { MenuBackdrop } from './MenuBackdrop';
+import { FounderSpeech } from './FounderSpeech';
 import { PROGRESS_KEY, readProgress, SavedGame, SavedView } from './ProgressSave';
 const { ccclass } = _decorator;
-type Modal = 'none' | 'detail' | 'inspect' | 'packs' | 'book' | 'catalog' | 'recipes' | 'tasks' | 'research' | 'settings' | 'home';
+const MENU_SCALE = .8;
+type Modal = 'none' | 'detail' | 'inspect' | 'packs' | 'book' | 'catalog' | 'recipes' | 'tasks' | 'settings' | 'home';
 interface Entry { title: string; text?: string; action?: string; muted?: boolean; }
-interface ViewState { view: CardView; patch: string; packCount?: number; }
+interface ViewState { view: CardView; patch: string; packCount?: number; badges?: string; }
 
 @ccclass('Sample')
 export class Sample extends Component implements InputTarget {
@@ -57,18 +63,38 @@ export class Sample extends Component implements InputTarget {
     private page = 0;
     private pageCount = 1;
     private selected = 0;
+    private hintCardUid = 0;
+    private hintNoticeVersion = -1;
+    private hintCenterY = 0;
+    private hintHeight = 0;
+    private pauseIconKind = '';
+    private pauseWash!: PauseWash;
+    private layoutReady = false;
     private selectedPack = 0;
     private catalogId = '';
-    private linkSource = 0;
+    private supplyStep: 'none' | 'subject' | 'target' = 'none';
+    private supplyAnchor = 0;
+    private supplyCandidate = 0;
+    private supplyDirection: 'upstream' | 'downstream' | null = null;
+    private supplyMessage = '';
+    private supplyClock = 0;
+    private supplyFrames = new Map<number, Graphics>();
+    private supplyTransit: { source: number; target: number; id: string; progress: number; x: number; y: number }[] = [];
+    private linkBirths = new Map<string, number>();
+    private supplyRoutes: ConnectorRoute[] = [];
+    private supplyToast!: Node;
+    private supplyToastTime = 0;
     private pressedAction = '';
     private pressedCard = 0;
     private pressedPack = 0;
+    private heldBadge = 0;
+    private heldBadgeSprite: Sprite | null = null;
+    private heldBadgePoint = new Vec2();
     private dragging = false;
     private dragOffset = new Vec2();
     private dragPoint = new Vec2();
     private dragPointer = new Vec2();
     private sellReady = false;
-    private researchPulse = 1;
     private cornerIconScale = 1;
     private controls = new Map<string, Node>();
     private loading!: Node;
@@ -82,6 +108,8 @@ export class Sample extends Component implements InputTarget {
     private matchTarget = 0;
     private matchClock = 0;
     private originalHud!: OriginalHud;
+    private founderSpeech!: FounderSpeech;
+    private spokenMilestones = new Set<string>();
     private audio!: OriginalAudio;
     private battleView!: BattleView;
     private boardTop = 0;
@@ -97,7 +125,7 @@ export class Sample extends Component implements InputTarget {
         const label = this.loading.addComponent(Label); label.string = ''; label.fontSize = 28; label.color = new Color(55, 66, 57);
         this.loading.on(Node.EventType.TOUCH_END, () => { if (this.lastError) void this.loadSample(); });
         if (typeof document !== 'undefined') { document.addEventListener('contextmenu', this.preventContext); document.addEventListener('visibilitychange', this.visibilityChanged); }
-        if (typeof window !== 'undefined') { window.addEventListener('pagehide', this.flushProgress); window.addEventListener('beforeunload', this.flushProgress); }
+        if (typeof window !== 'undefined') { window.addEventListener('pagehide', this.flushProgress); window.addEventListener('beforeunload', this.flushProgress); window.addEventListener('resize', this.layoutWindow); }
         game.on(Game.EVENT_HIDE, this.flushProgress, this);
         screen.on('window-resize', this.layout, this); void this.loadSample();
     }
@@ -121,28 +149,36 @@ export class Sample extends Component implements InputTarget {
             const fill = this.backdrop.addComponent(Surface); fill.fill = new Color(64, 68, 76); fill.radius = 0; fill.paint();
             this.viewport = this.makeNode('BoardViewport', this.node, 720, 1000); this.viewport.addComponent(Mask).type = Mask.Type.GRAPHICS_RECT;
             const boardNode = instantiate(background); this.viewport.addChild(boardNode); this.board = boardNode.getComponent(BoardView)!;
+            this.board.enablePlayerPerspective(this.node.getComponent(Canvas)!);
             this.board.setSurroundings(await this.loadFrame('board/city-surroundings-v2'));
             const lines = this.makeNode('SupplyLines', boardNode, 1, 1); this.lineArt = lines.addComponent(Graphics);
             const match = this.makeNode('InteractionHint', boardNode, 312, 312); this.matchArt = match.addComponent(Graphics); match.active = false;
+            this.pauseWash = new PauseWash(this.viewport);
             this.hud = instantiate(hud); this.node.addChild(this.hud); this.font = this.label('Status/Stage/Value').font!;
             this.battleView = new BattleView(this.board, this.font, damageFont, this.loadFrame('ui/battle-bubble-comic'));
             this.controls.set('Book', this.find('Toolbar/Book'));
             for (const a of ['Close', 'Back', 'Prev', 'Next']) this.controls.set(a, this.find('Panel/' + a));
-            this.controls.set('Settings', this.find('Status/Settings')); this.controls.set('ResearchPanel', this.find('Research')); this.controls.set('SellZone', this.find('SellZone'));
+            this.controls.set('Settings', this.find('Status/Settings')); this.controls.set('SupplyChain', this.find('SupplyChain')); this.controls.set('SellZone', this.find('SellZone'));
+            const pause = this.makeNode('PauseControl', this.hud, 64, 64); this.controls.set('Pause', pause);
+            const pauseIcon = this.makeNode('Icon', pause, 64, 64); pauseIcon.addComponent(Icon).kind = 'Pause';
+            const attributes = this.text(this.hud, 'HintAttributes', '', 640, 40, 0, 0, 26, 'F7F7F3').getComponent(Label)!;
+            attributes.horizontalAlign = Label.HorizontalAlign.CENTER; attributes.enableWrapText = false;
+            this.supplyToast = this.makeNode('SupplyToast', this.hud, 420, 54);
+            const toastSurface = this.supplyToast.addComponent(Surface); toastSurface.fill = new Color(255, 249, 233); toastSurface.stroke = new Color(35, 34, 30); toastSurface.lineWidth = 2.5; toastSurface.radius = 9; toastSurface.paint();
+            this.text(this.supplyToast, 'Text', '', 400, 44, 0, 0, 22, '24221F'); this.supplyToast.active = false;
             for (const name of ['Stage', 'Month', 'Supply', 'Space', 'Cash']) this.controls.set('StatusInfo:' + name, this.find('Status/' + name));
             this.originalHud = new OriginalHud(this.hud, this.model, this.font, this.controls, path => this.loadFrame(path));
+            this.founderSpeech = new FounderSpeech(this.hud, this.font, point => this.board.projectWorld(point));
+            this.spokenMilestones = new Set(this.model.completed);
             const titleNames = ['city', 'founder', 'rival', 'logo', 'star', 'coins'];
             const titleFrames: Record<string, SpriteFrame> = {};
             await Promise.all(titleNames.map(async name => { titleFrames[name] = await this.loadFrame('title/' + name); }));
             this.titleScreen = new TitleScreen(this.node, this.font, titleFrames, this.controls);
             this.titleScreen.node.setSiblingIndex(this.hud.getSiblingIndex());
-            const [backFrame, catalogEffect, lineEffect] = await Promise.all([this.loadFrame('ui/card-back'),
-                new Promise<EffectAsset>((resolve, reject) => content.load('ui/CatalogBlur', EffectAsset, (e, f) => e ? reject(e) : resolve(f))),
+            const [backFrame, lineEffect] = await Promise.all([this.loadFrame('ui/card-back'),
                 new Promise<EffectAsset>((resolve, reject) => content.load('ui/WhiteLine', EffectAsset, (e, f) => e ? reject(e) : resolve(f)))]);
-            this.cardCatalog = new CardCatalog(this.node, this.font, backFrame, catalogEffect, path => this.loadFrame(path), e => { this.lastError = String(e); console.error('[StartX] Catalog', e); });
-            this.menuBackdrop = new MenuBackdrop(this.hud, catalogEffect, ['Panel', 'Scrim', 'Toolbar', 'TaskDrawer'].map(name => this.find(name)));
-            this.menuBackdrop.node.setSiblingIndex(this.find('TaskDrawer').getSiblingIndex());
-            this.find('Toolbar').setSiblingIndex(this.find('TaskDrawer').getSiblingIndex());
+            this.cardCatalog = new CardCatalog(this.node, this.font, backFrame, path => this.loadFrame(path), e => { this.lastError = String(e); console.error('[StartX] Catalog', e); });
+            this.menuBackdrop = new MenuBackdrop(this.hud, ['Panel', 'Scrim', 'Toolbar', 'TaskDrawer'].map(name => this.find(name)));
             this.cardInspector = new CardInspector(this.node, this.font, this.cardPrefab, backFrame, lineEffect, path => this.loadFrame(path));
             this.router = this.node.addComponent(InputRouter); this.router.target = this;
             this.ready = true; this.loading.active = false; this.selected = this.model.cards[0].uid;
@@ -188,7 +224,8 @@ export class Sample extends Component implements InputTarget {
             const frame = id === 'founder' && !pack ? null : await this.loadFrame((pack ? 'packs/' : 'faces/') + id);
             if (!node.isValid) return;
             const d = this.model.data.cards[id];
-            view.configure(frame, d?.bodyColor || '141414', pack ? 'pack' : id === 'founder' ? 'foil' : id === 'cash' || d.type === 'business_model' ? 'glass' : 'plain');
+            view.configure(frame, d?.bodyColor || '141414', pack ? 'pack' : cardStyle(id, d?.type));
+            if (d?.type === 'badge') view.setBadgeToken(true);
             node.setScale(1, 1, 1);
             const appearance = this.model.appearances.get(uid); this.model.appearances.delete(uid);
             if (appearance) {
@@ -261,6 +298,7 @@ export class Sample extends Component implements InputTarget {
         let z = 4;
         for (const s of this.model.stacks) for (const uid of s.cards) {
             const c = this.model.card(uid)!, v = this.views.get(uid); if (!v) continue;
+            v.view.node.active = uid !== this.heldBadge;
             const position = this.model.position(c);
             v.view.setCombat(this.model.battlePose(uid));
             v.view.setBattle(this.model.isCombatant(c.sid));
@@ -268,6 +306,14 @@ export class Sample extends Component implements InputTarget {
             if (c.uses >= 0) this.patch(v, c.id + '-' + c.uses, 'uses');
             else if (c.id === 'p3_account') this.patch(v, 'account-' + c.stored, 'account');
             const work = workbars.get(uid); v.view.setProgress(work?.ratio || 0, work?.active || false);
+            v.view.setStatus(this.model.cardStatus(c), c.deadline !== undefined && c.deadline <= 30, this.font);
+            const positions = this.model.badgePositionsFor(c), badges = JSON.stringify([c.badges || [], positions]);
+            if (v.badges !== badges) {
+                v.badges = badges;
+                Promise.all((c.badges || []).map(id => this.loadFrame('faces/' + id))).then(frames => {
+                    if (v.view.isValid && v.badges === badges) v.view.setYarnBadges(frames, c.badges?.length || 0, this.model.employeeCapacity(c), this.font, positions);
+                }).catch(e => { this.lastError = String(e); console.error('[StartX] Yarn badges', e); });
+            }
         }
         for (const p of this.model.packs) {
             const v = this.views.get(p.uid); if (!v) continue;
@@ -295,23 +341,38 @@ export class Sample extends Component implements InputTarget {
     }
     update(dt: number) {
         if (!this.ready) return;
+        this.supplyClock += dt;
+        if (this.supplyStep !== 'none' && this.supplyAnchor && !this.model.card(this.supplyAnchor)) this.cancelSupply();
+        if (this.supplyToastTime > 0) { this.supplyToastTime -= dt; this.supplyToast.active = this.supplyToastTime > 0 && this.modal === 'none' && !this.atTitle; }
         this.titleScreen.tick(dt);
         this.cardInspector.tick(dt);
         this.model.update(Math.min(dt, .1)); this.syncViews();
+        this.updatePausePresentation();
         const bottomBar = this.find('BottomBar');
-        this.battleView.update(this.model, this.model.paused ? 0 : Math.min(dt, .1), {
+        this.battleView.update(this.model, this.model.paused ? 0 : Math.min(dt, .1), this.board.planeArea({
             left: -this.metrics.width / 2 + 40, right: this.metrics.width / 2 - 24, top: this.boardTop - 24,
             bottom: bottomBar.position.y + bottomBar.getComponent(UITransform)!.height / 2 + 80,
-        });
+        }));
         this.updateCornerFeedback(dt);
         this.updateDropHint(dt);
         this.originalHud.tick(dt, this.modal === 'none' && !this.atTitle);
+        let milestone = false;
+        for (const id of this.model.completed) if (!this.spokenMilestones.has(id)) { this.spokenMilestones.add(id); milestone = true; }
+        if (milestone && !this.atTitle) this.founderSpeech.celebrate();
+        const founder = this.model.cards.find(c => c.id === 'founder');
+        this.founderSpeech.tick(dt, founder ? this.views.get(founder.uid)?.view.frontNode : undefined,
+            this.modal === 'none' && !this.atTitle && !this.originalHud.open, {
+                left: -this.metrics.width / 2 + 12 * this.metrics.scale, right: this.metrics.width / 2 - 12 * this.metrics.scale,
+                top: this.metrics.width > this.metrics.height ? this.find('Status').position.y - this.find('Status').getComponent(UITransform)!.height / 2 - 4 * this.metrics.scale : this.boardTop - 56 * this.metrics.scale,
+                bottom: bottomBar.position.y + bottomBar.getComponent(UITransform)!.height / 2 + 12 * this.metrics.scale,
+                scale: this.metrics.scale, landscape: this.metrics.width > this.metrics.height,
+                fontSize: this.label('Status/Stage/Value').fontSize * 22 / 24,
+            });
         this.saveAge += dt; if (this.saveAge >= .75) { this.saveAge = 0; this.saveProgress(); }
         this.label('Status/Cash/Value').string = this.model.payroll + '/' + this.model.cash;
         this.label('Status/Month/Value').string = '第' + this.model.month + '月';
-        const stagePack = this.model.data.packOrder.find(id => this.model.data.packs[id].stage === this.model.stage);
-        this.label('Status/Stage/Value').string = `阶段「${this.model.paused ? '已暂停' : stagePack ? this.model.data.packs[stagePack].name.replace(/包$/, '') : this.model.stageName}」`;
-        this.label('Status/Supply/Value').string = this.model.links.length + '/' + this.model.supplyLimit;
+        this.label('Status/Stage/Value').string = `阶段「${this.model.paused ? '已暂停' : this.model.stageName}」`;
+        this.label('Status/Supply/Value').string = String(this.model.links.length);
         this.label('Status/Space/Value').string = this.model.count + '/' + this.model.capacity;
         this.label('Status/Space/Value').color = this.model.count > this.model.capacity ? new Color(255, 176, 170) : new Color(247, 247, 247);
         this.layoutStatus();
@@ -321,9 +382,32 @@ export class Sample extends Component implements InputTarget {
         progress.setPosition(slot.position.x - width * (1 - ratio) / 2, slot.position.y);
         this.find('Hint').active = !this.atTitle;
         if (this.atTitle) this.find('TaskReminder').active = false;
-        const battle = this.model.battle;
-        this.label('Hint').string = battle ? `商战  对手资金 ${Math.max(0, battle.enemyHp).toFixed(1)} · 我方资金 ${Math.max(0, battle.playerHp).toFixed(1)}` :
-            this.linkSource ? '点击目标牌堆连接供应链 · 点击空白处取消' : this.model.notice.startsWith('「') ? this.model.notice : `「${this.model.notice}」`;
+        this.updateHint();
+    }
+    private get gameplayPaused() { return this.plainMenu || ['inspect', 'catalog'].includes(this.modal) ? this.menuPauseBefore : this.model.paused; }
+    private updatePausePresentation() {
+        const paused = this.gameplayPaused, kind = paused ? 'Resume' : 'Pause';
+        if (kind !== this.pauseIconKind) {
+            this.pauseIconKind = kind; const icon = this.find('PauseControl/Icon').getComponent(Icon)!; icon.kind = kind; icon.paint();
+        }
+        this.audio.setPaused(paused && !this.atTitle);
+        const packs = this.model.packs.map(p => this.views.get(p.uid)?.view).filter((v): v is CardView => !!v?.isValid && v.node.activeInHierarchy);
+        this.pauseWash.update(paused && !this.atTitle, packs);
+    }
+    private updateHint() {
+        const battle = this.model.battle, hint = this.label('Hint'), attributes = this.label('HintAttributes');
+        const card = !battle && this.supplyStep === 'none' && this.hintNoticeVersion === this.model.noticeVersion ? this.model.card(this.hintCardUid) : undefined;
+        const properties = card ? this.model.cardHint(card).replace(/^「|」$/g, '') : '';
+        attributes.string = card && properties !== this.model.def(card).name ? properties : '';
+        const landscape = this.metrics.width > this.metrics.height;
+        attributes.node.active = !this.atTitle && !landscape && !!attributes.string;
+        hint.string = card ? quoteFlavor(this.model.def(card).flavor) : battle ? `商战  对手资金 ${Math.max(0, battle.enemyHp).toFixed(1)} · 我方资金 ${Math.max(0, battle.playerHp).toFixed(1)}` :
+            this.supplyStep !== 'none' ? this.supplyMessage : this.model.notice.startsWith('「') ? this.model.notice : `「${this.model.notice}」`;
+        if (landscape && attributes.string) hint.string = attributes.string + (hint.string ? '　' + hint.string : '');
+        const split = !landscape && !!attributes.string, rowHeight = hint.lineHeight, rowOffset = rowHeight * .625;
+        this.position('HintAttributes', 0, this.hintCenterY + rowOffset);
+        this.position('Hint', 0, this.hintCenterY - (split ? rowOffset : 0));
+        hint.node.getComponent(UITransform)!.setContentSize(attributes.node.getComponent(UITransform)!.width, split ? rowHeight : this.hintHeight);
     }
     private makeNode(name: string, parent: Node, w: number, h: number) {
         const n = new Node(name); n.layer = this.node.layer; parent.addChild(n); n.addComponent(UITransform).setContentSize(w, h); return n;
@@ -348,15 +432,17 @@ export class Sample extends Component implements InputTarget {
     private showStatusInfo(name: string) {
         if (this.statusHelpKey === name) { this.hideStatusInfo(); return; }
         const info: Record<string, [string, string]> = {
-            Stage: ['创业阶段', '显示当前创业阶段，随公司估值提升而变化。完成公司任务可解锁更多卡包。'],
+            Stage: ['创业阶段', '完成经营里程碑并达到对应月份后进入下一阶段。卡包使用同一套阶段与发展里程碑条件解锁。'],
             Month: ['月份', '显示当前月份。获得办公室后开始计时，顶部进度条走完时结算工资。'],
-            Supply: ['供应链', '前一项是已连接的供应链数量，后一项是连接上限。连接后，产出会自动送入目标牌堆。'],
+            Supply: ['供应链', '显示已连接的供应链数量。点左下角供应链按钮选择主体，再点另一组牌堆，自动识别上下游并完成连接。'],
             Space: ['空间', '前一项是占用空间的卡牌数量，后一项是空间上限。散装现金不占空间；月末超出上限时需要清理卡牌。'],
-            Cash: ['现金', '前一项是本月工资，后一项是可用现金总额（含账户）。月末先扣散装现金，再扣账户现金。'],
+            Cash: ['现金', '前一项是本月工资，后一项是可用现金总额（含账户），也是商战 HP。工资、消费和商战受击均先扣散装现金，再扣账户。'],
         };
         const entry = info[name]; if (!entry) return;
-        const { width: w, scale } = this.metrics, width = Math.min(320 * scale, w - 24 * scale);
-        const padding = 14 * scale, titleH = 25 * scale;
+        const { width: w, scale } = this.metrics;
+        const font = this.label('Status/' + name + '/Value').fontSize * 22 / 24;
+        const boxScale = font / 15, width = Math.min(320 * boxScale, w - 24 * scale);
+        const padding = 14 * boxScale, titleH = font * 1.5;
         if (!this.statusHelp) {
             this.statusHelp = this.makeNode('StatusHelp', this.hud, width, 1);
             const surface = this.statusHelp.addComponent(Surface);
@@ -366,38 +452,38 @@ export class Sample extends Component implements InputTarget {
         }
         const box = this.statusHelp; box.active = true; box.setSiblingIndex(this.hud.children.length - 1);
         const body = box.getChildByName('Text')!.getComponent(Label)!;
-        body.fontSize = 15 * scale; body.lineHeight = 22 * scale;
+        body.fontSize = font; body.lineHeight = 22 * boxScale;
         body.overflow = Label.Overflow.RESIZE_HEIGHT; body.string = entry[1];
         body.node.getComponent(UITransform)!.setContentSize(width - padding * 2, 1);
         body.updateRenderData(true);
         const bodyH = body.node.getComponent(UITransform)!.height, height = padding * 2 + titleH + bodyH;
         box.getComponent(UITransform)!.setContentSize(width, height);
         const title = box.getChildByName('Title')!.getComponent(Label)!;
-        title.string = entry[0]; title.fontSize = 18 * scale; title.lineHeight = titleH;
+        title.string = entry[0]; title.fontSize = font; title.lineHeight = titleH;
         title.node.getComponent(UITransform)!.setContentSize(width - padding * 2, titleH);
         title.node.setPosition(0, height / 2 - padding - titleH / 2);
         body.node.setPosition(0, height / 2 - padding - titleH - bodyH / 2);
         const anchor = this.find('Status/' + name), status = this.find('Status');
         const x = status.position.x + anchor.position.x, edge = w / 2 - width / 2 - 12 * scale;
         box.setPosition(Math.max(-edge, Math.min(edge, x)), status.position.y + anchor.position.y - anchor.getComponent(UITransform)!.height / 2 - 8 * scale - height / 2);
-        const surface = box.getComponent(Surface)!; surface.radius = 10 * scale; surface.lineWidth = scale; surface.paint();
+        const surface = box.getComponent(Surface)!; surface.radius = 10 * boxScale; surface.lineWidth = boxScale; surface.paint();
         this.statusHelpKey = name;
     }
     private layoutStatus() {
         const { width: w, height: h, top, wide, nearSquare, scale } = this.metrics;
-        const unit = nearSquare ? .75 * scale : wide ? w / 1920 : 1;
-        const margin = wide ? 30 * unit : 22, rightMargin = Math.max(8 * scale, margin - 12 * unit);
+        const unit = fixedUiUnit(scale);
+        const margin = 22 * unit, rightMargin = Math.max(8 * scale, margin - 12 * unit);
         const progressH = Math.max(3 * unit, 3 * scale), rowH = Math.max(34 * scale, 44 * unit);
         const y = h / 2 - (wide ? 0 : top) - progressH - rowH / 2 - 2 * unit - this.find('Status').position.y;
-        const settingsX = w / 2 - rightMargin - 24 * scale + (wide ? 16 * unit : 6 * scale);
+        const settingsX = w / 2 - rightMargin - 24 * scale + 6 * scale;
         const names = ['Stage', 'Month', 'Supply', 'Space', 'Cash'];
         const key = [w, h, scale, wide, nearSquare, top, ...names.map(name => this.label('Status/' + name + '/Value').string)].join(':');
         if (key === this.statusLayoutKey) return;
         this.statusLayoutKey = key;
-        const settingsSize = wide ? 34 * unit : 32;
+        const settingsSize = 32 * unit;
         this.position('Status/Settings', settingsX, y, 48 * scale, 44 * scale);
         this.position('Status/Settings/Icon', 0, 0, settingsSize, settingsSize);
-        const icon = wide ? 32 * unit : 28, font = wide ? 26 * unit : 24;
+        const icon = 28 * unit, font = 24 * unit;
         const gap = 4 * scale, groupGapMin = 6 * scale;
         const left = -w / 2 + margin, right = settingsX - settingsSize / 2;
         const groups = names.map(name => {
@@ -425,14 +511,16 @@ export class Sample extends Component implements InputTarget {
     }
     private layout() {
         if (!this.ready) return;
-        this.menuBackdrop.cancelCapture(); this.cardCatalog.cancelCapture();
+        const previousScale = this.inputScale, previousPosition = this.board.node.position;
+        const previousView: SavedView | null = this.layoutReady ? { zoom: this.board.zoom / previousScale, pitch: this.board.pitch,
+            centerX: -previousPosition.x / this.board.zoom, centerY: -previousPosition.y / (this.board.zoom * this.board.pitch) } : null;
         this.hideStatusInfo();
         this.router?.cancel(); this.metrics = measureLayout();
         const { width: w, height: h, top: measuredTop, bottom: measuredBottom, wide, nearSquare, scale } = this.metrics; this.inputScale = scale;
         this.model.setViewport(w, h);
         const top = wide ? 0 : measuredTop, bottom = wide ? 0 : measuredBottom;
         this.node.getComponent(UITransform)!.setContentSize(w, h); this.backdrop.getComponent(UITransform)!.setContentSize(w, h);
-        const unit = nearSquare ? .75 * scale : wide ? w / 1920 : 1, margin = wide ? 30 * unit : 22;
+        const unit = fixedUiUnit(scale), margin = 22 * unit;
         const topY = h / 2 - top, progressH = Math.max(3 * unit, 3 * scale);
         const rowH = Math.max(34 * scale, 44 * unit), statusH = rowH + progressH + 4 * unit;
         this.position('Status', 0, h / 2 - (statusH + top) / 2, w, statusH + top);
@@ -440,51 +528,70 @@ export class Sample extends Component implements InputTarget {
         this.position('Status/ProgressSlot', 0, h / 2 - progressH / 2 - this.find('Status').position.y, w, progressH);
         const progressSize = this.find('Status/ProgressSlot').getComponent(UITransform)!.contentSize;
         this.find('Status/Progress').getComponent(UITransform)!.setContentSize(progressSize);
-        const footerH = wide ? Math.max(44 * unit, 30 * scale) : Math.max(68, 36 * scale);
+        const landscape = w > h;
+        const footerH = landscape ? statusH + top - bottom : 1.6 * Math.max(68 * unit, 36 * scale);
         const footerY = -h / 2 + bottom + footerH / 2;
+        this.hintCenterY = footerY; this.hintHeight = footerH;
         this.position('BottomBar', 0, -h / 2 + (bottom + footerH) / 2, w, bottom + footerH);
         for (const name of ['Hint', 'TaskReminder']) {
             this.position(name, 0, footerY, w - margin * 2, footerH);
-            const label = this.label(name); label.fontSize = wide ? 29 * unit : 26;
+            const label = this.label(name); label.fontSize = 26 * unit;
             label.lineHeight = label.fontSize * 1.2; label.verticalAlign = Label.VerticalAlign.CENTER;
         }
+        const hintAttributes = this.label('HintAttributes');
+        this.position('HintAttributes', 0, footerY, w - margin * 2, this.label('Hint').lineHeight);
+        hintAttributes.fontSize = this.label('Hint').fontSize; hintAttributes.lineHeight = this.label('Hint').lineHeight;
+        this.label('Hint').cacheMode = Label.CacheMode.NONE;
+        this.label('Hint').overflow = Label.Overflow.SHRINK;
+        this.label('Hint').enableWrapText = false;
         this.position('Toolbar', 0, 0, w, h);
         const cornerTarget = Math.max(80 * unit, 64 * scale), cornerArt = Math.max(80 * unit, 60 * scale) * .9;
-        this.cornerIconScale = cornerArt / 64;
-        for (const [name, direction] of [['Research', -1], ['SellZone', 1]] as const) {
-            this.position(name, direction * (w / 2 - margin - cornerTarget / 2), -h / 2 + bottom + footerH + 12 * scale + cornerTarget / 2, cornerTarget, cornerTarget);
+        this.cornerIconScale = cornerArt / 64 * .8;
+        const iconY = (size: number) => -h / 2 + bottom + footerH + size / 2 + 2 * scale;
+        for (const [name, direction] of [['SupplyChain', -1], ['SellZone', 1]] as const) {
+            this.position(name, direction * (w / 2 - margin - cornerTarget / 2), iconY(cornerArt * .8 * .8), cornerTarget, cornerTarget);
             this.position(name + '/Icon', 0, 0, 64, 64);
-            this.find(name + '/Icon').setScale(this.cornerIconScale, this.cornerIconScale, 1);
+            this.find(name + '/Icon').setScale(this.cornerIconScale * .8, this.cornerIconScale * .8, 1);
             this.find(name + '/Feedback').setScale(cornerTarget / 64, cornerTarget / 64, 1);
         }
-        const stripH = wide ? 112 * unit : Math.max(128, 72 * scale), stripTop = topY - statusH - 12 * unit;
+        this.position('PauseControl', 0, iconY(cornerArt * .8 * .9), cornerTarget, cornerTarget);
+        this.find('PauseControl/Icon').setScale(this.cornerIconScale * .9, this.cornerIconScale * .9, 1);
+        this.supplyToast.getComponent(UITransform)!.setContentSize(Math.min(400 * scale, w - 28 * scale), 48 * scale);
+        this.supplyToast.getChildByName('Text')!.getComponent(UITransform)!.setContentSize(Math.min(380 * scale, w - 48 * scale), 44 * scale);
+        this.supplyToast.getChildByName('Text')!.getComponent(Label)!.fontSize = 18 * scale;
+        this.supplyToast.getComponent(Surface)!.paint();
+        const stripH = 72 * scale, stripTop = topY - statusH - (landscape ? 10 * unit : 12 * unit);
         const stripW = w - margin * 2;
-        this.boardTop = stripTop - stripH - 20;
-        this.originalHud.layout(w, stripTop - stripH / 2, stripH, stripW, -h / 2 + bottom + footerH + 16 * unit, scale, wide, unit, nearSquare);
+        this.boardTop = landscape ? stripTop - 12 * scale : stripTop - stripH - 20;
+        this.supplyToast.setPosition(0, this.boardTop - 30 * scale);
+        this.originalHud.layout(w, stripTop - stripH / 2, stripH, stripW, -h / 2 + bottom + footerH + 16 * unit, scale, landscape, unit, nearSquare);
         const hint = this.label('Hint'), reminder = this.label('TaskReminder'), reminderH = hint.lineHeight * 2.2;
         this.position('TaskReminder', 0, stripTop - stripH - 10 * scale - reminderH / 2, w - margin * 2, reminderH);
         reminder.font = hint.font; reminder.fontSize = hint.fontSize; reminder.lineHeight = hint.lineHeight;
         reminder.horizontalAlign = hint.horizontalAlign; reminder.color = new Color(58, 53, 47);
         this.viewport.getComponent(UITransform)!.setContentSize(w, h);
+        this.pauseWash.layout(w, h);
         this.board.configure(w, h, { left: -w / 2 + this.find('Toolbar/Book').getComponent(UITransform)!.width + 24 * scale,
             right: w / 2 - 24 * scale, top: this.boardTop - 36 * scale, bottom: -h / 2 + bottom + footerH + 24 * scale });
+        if (previousView && previousScale !== scale) this.restoreBoard(previousView);
+        this.layoutReady = true;
         this.position('Scrim', 0, 0, w, h);
         this.titleScreen.layout(this.metrics);
         this.cardCatalog.layout(this.metrics);
         this.cardInspector.layout(this.metrics);
         this.menuBackdrop.layout(this.metrics);
         this.layoutPanel();
-        if (this.modal === 'catalog') this.cardCatalog.capture(this.node.getComponent(Canvas)!.cameraComponent!);
-        this.syncMenuBackdrop(true);
+        this.syncMenuBackdrop();
     }
+    private layoutWindow = () => this.layout();
     private layoutPanel() {
         const { width: w, height: h, wide, scale } = this.metrics;
         const top = wide ? 0 : this.metrics.top, bottom = wide ? 0 : this.metrics.bottom;
-        const unit = wide ? w / 1920 : 1, target = Math.max(52.8 * unit, 44 * scale), research = this.modal === 'research';
-        this.panelW = research ? wide ? Math.min(680 * unit, w - 48 * scale) : w - 48 : wide ? 500 : w - 32;
-        this.panelH = research ? Math.min(wide ? 700 * unit : 900, h - top - bottom - 72 * scale) : Math.min(wide ? 820 : 1080, h - top - bottom - 36);
+        const unit = fixedUiUnit(scale), target = Math.max(52.8 * unit, 44 * scale);
+        this.panelW = wide ? 500 : w - 32;
+        this.panelH = Math.min(wide ? 820 : 1080, h - top - bottom - 36);
         const pw = this.panelW, ph = this.panelH;
-        this.position('Panel', research ? 0 : wide ? w / 2 - pw / 2 - 20 : 0, research ? 0 : wide ? (bottom - top) / 2 : -h / 2 + bottom + ph / 2 + 8, pw, ph);
+        this.position('Panel', wide ? w / 2 - pw / 2 - 20 : 0, wide ? (bottom - top) / 2 : -h / 2 + bottom + ph / 2 + 8, pw, ph);
         this.position('Panel/Eyebrow', -pw / 2 + 170, ph / 2 - 36, 280, 30);
         this.position('Panel/Title', -30, ph / 2 - 91, pw - 100, 64);
         this.position('Panel/Close', pw / 2 - 54, ph / 2 - 48, target, target);
@@ -495,48 +602,34 @@ export class Sample extends Component implements InputTarget {
         this.position('Panel/Next', pw / 2 - 58, -ph / 2 + 60, target, target);
         this.position('Panel/Page', 0, -ph / 2 + 120, 200, 32);
         const plain = this.plainMenu, panelSurface = this.find('Panel').getComponent(Surface)!;
-        panelSurface.fill.a = plain ? 0 : research ? 212 : 255; panelSurface.lineWidth = plain ? 0 : 2;
-        panelSurface.radius = research ? Math.max(14 * unit, 10 * scale) : 26; panelSurface.paint();
+        panelSurface.fill.a = plain ? 0 : 255; panelSurface.lineWidth = plain ? 0 : 2;
+        panelSurface.radius = 26; panelSurface.paint();
         const scrim = this.find('Scrim').getComponent(Surface)!; scrim.fill.a = 0; scrim.paint();
         for (const name of ['Eyebrow', 'Title', 'Close', 'Rule', 'Back', 'Page']) this.find('Panel/' + name).active = !plain;
-        this.label('Panel/Title').fontSize = research ? Math.max(30 * unit, 20 * scale) : 38;
-        this.label('Panel/Eyebrow').fontSize = research ? Math.max(16 * unit, 11 * scale) : 18;
-        this.label('Panel/Page').fontSize = research ? Math.max(16 * unit, 11 * scale) : 20;
-        this.label('Panel/Back/Text').fontSize = research ? Math.max(22 * unit, 13 * scale) : 24;
+        this.label('Panel/Title').fontSize = 38 * unit;
+        this.label('Panel/Eyebrow').fontSize = 18 * unit;
+        this.label('Panel/Page').fontSize = 20 * unit;
+        this.label('Panel/Back/Text').fontSize = 24 * unit;
         for (const name of ['Title', 'Eyebrow', 'Page', 'Back/Text']) {
-            const label = this.label('Panel/' + name); label.lineHeight = label.fontSize * (research ? 1.2 : 1.5);
-        }
-        if (research) {
-            const padding = Math.max(18 * unit, 12 * scale), header = Math.max(110 * unit, 74 * scale), footer = Math.max(98 * unit, 70 * scale);
-            this.position('Panel/Eyebrow', -target / 2, ph / 2 - padding - 10 * scale, pw - padding * 2 - target, 20 * scale);
-            this.position('Panel/Title', -target / 2, ph / 2 - padding - 37 * scale, pw - padding * 2 - target, 36 * scale);
-            this.position('Panel/Close', pw / 2 - padding - target / 2, ph / 2 - padding - target / 2, target, target);
-            this.position('Panel/Rule', 0, ph / 2 - header + 6 * scale, pw - padding * 2, 1);
-            this.position('Panel/Content', 0, (footer - header) / 2, pw - padding * 2, ph - header - footer);
-            this.position('Panel/Back', 0, -ph / 2 + padding + target / 2, pw - target * 2 - padding * 4, target);
-            this.position('Panel/Prev', -pw / 2 + padding + target / 2, -ph / 2 + padding + target / 2, target, target);
-            this.position('Panel/Next', pw / 2 - padding - target / 2, -ph / 2 + padding + target / 2, target, target);
-            this.position('Panel/Page', 0, -ph / 2 + footer - 9 * scale, 200, 16 * scale);
+            const label = this.label('Panel/' + name); label.lineHeight = label.fontSize * 1.5;
         }
         if (plain) {
             const rows = this.menuRows, availableHeight = h - top - bottom - 56 * scale;
-            const rowHeight = Math.min(52 * scale, (availableHeight - 50 * scale) / 6);
-            const height = rows * rowHeight + (rows - 1) * 10 * scale;
-            this.panelW = Math.min(320 * scale, w - 48 * scale) * .7; this.panelH = height;
+            const rowHeight = Math.min(52 * scale, (availableHeight - (rows - 1) * 10 * scale) / rows) * MENU_SCALE;
+            const height = rows * rowHeight + (rows - 1) * 10 * scale * MENU_SCALE;
+            this.panelW = Math.min(320 * scale, w - 48 * scale) * .7 * MENU_SCALE; this.panelH = height;
             this.position('Panel', 0, (bottom - top) / 2, this.panelW, height);
             this.position('Panel/Content', 0, 0, this.panelW, height);
         }
         if (this.modal !== 'none') this.renderPanel();
     }
     private get plainMenu() { return ['book', 'settings', 'home'].includes(this.modal); }
-    private get fullscreenAvailable() { return typeof document !== 'undefined' && !!document.fullscreenEnabled; }
-    private get menuRows() { return this.modal === 'settings' ? 5 + (this.fullscreenAvailable ? 1 : 0) : this.entries().length; }
+    private get menuRows() { return this.modal === 'settings' ? 5 + (canSetDisplayOrientation() ? 1 : 0) : this.entries().length; }
     private show(modal: Modal, resetPage = true) {
-        // A new overlay must not capture through another overlay's temporary camera target.
-        this.menuBackdrop.cancelCapture(); this.cardCatalog.cancelCapture();
+        if (modal !== 'none') { this.cancelSupply(); this.supplyToast.active = false; }
         this.releaseMenuPress();
         this.hideStatusInfo();
-        if (modal !== 'none') this.originalHud.close();
+        if (modal !== 'none') { this.originalHud.close(); this.originalHud.closePacks(); }
         const previous = this.modal;
         const wasPlain = this.plainMenu || ['inspect', 'catalog'].includes(this.modal), nextPlain = ['book', 'settings', 'home', 'inspect', 'catalog'].includes(modal);
         if (!wasPlain && nextPlain) { this.menuPauseBefore = this.model.paused; this.model.paused = true; }
@@ -544,20 +637,22 @@ export class Sample extends Component implements InputTarget {
         this.modal = modal; if (resetPage) this.page = 0;
         this.find('Panel').active = !['none', 'home', 'inspect', 'catalog'].includes(modal); this.find('Scrim').active = !['none', 'home', 'inspect', 'catalog'].includes(modal);
         this.cardInspector.node.active = modal === 'inspect';
+        this.find('PauseControl').active = modal === 'none' && !this.atTitle;
         this.find('Toolbar').active = modal === 'none' && !this.atTitle;
         this.titleScreen.show(this.atTitle, modal === 'home', this.hasStarted);
         this.viewport.active = !this.atTitle;
-        for (const name of ['Status', 'PackStrip', 'BottomBar', 'Hint', 'TaskReminder', 'Research', 'SellZone']) this.find(name).active = !this.atTitle;
+        for (const name of ['Status', 'PackStrip', 'BottomBar', 'Hint', 'TaskReminder', 'SupplyChain', 'SellZone']) this.find(name).active = !this.atTitle;
+        this.originalHud.setVisible(!this.atTitle);
         this.layoutPanel();
         if (modal === 'catalog') {
-            if (previous !== 'inspect') { this.cardCatalog.open(this.model, this.metrics); this.cardCatalog.capture(this.node.getComponent(Canvas)!.cameraComponent!); }
+            if (previous !== 'inspect') this.cardCatalog.open(this.model, this.metrics);
             else this.cardCatalog.node.active = true;
         } else if (!(modal === 'inspect' && this.inspectorReturn === 'catalog')) this.cardCatalog.hide();
         this.syncMenuBackdrop();
     }
-    private syncMenuBackdrop(refresh = false) {
+    private syncMenuBackdrop() {
         const menu = !['none', 'home', 'inspect', 'catalog'].includes(this.modal);
-        if (menu || this.modal === 'none' && this.originalHud.open) this.menuBackdrop.show(this.node.getComponent(Canvas)!.cameraComponent!, refresh);
+        if (menu || this.modal === 'none' && this.originalHud.open) this.menuBackdrop.show();
         else this.menuBackdrop.hide();
     }
     private entries(): Entry[] {
@@ -565,7 +660,7 @@ export class Sample extends Component implements InputTarget {
         switch (this.modal) {
             case 'book': return [
                 { title: '继续', action: 'Continue' }, { title: '重新开始', action: 'Restart' },
-                { title: '图鉴', action: 'Open:catalog' }, { title: '商业模式', action: 'MenuRecipes' },
+                { title: '图鉴', action: 'Open:catalog' },
                 { title: '设置', action: 'OpenSettings' }, { title: '回到主菜单', action: 'Home' },
             ];
             case 'home': return [{ title: '开始游戏', action: 'Restart' }, { title: '继续游戏', action: 'Continue' }, { title: '设置', action: 'OpenSettings' }];
@@ -573,10 +668,6 @@ export class Sample extends Component implements InputTarget {
             case 'recipes': return d.recipes.map(r => ({ title: m.models.has(r.id) ? r.name : '尚未发现的商业模式', text: m.models.has(r.id) ? r.formula + (r.worker_tags.length ? '\n需要员工参与' : '') : `在${d.packs[r.packId]?.name || ''}中寻找，或亲自叠牌发现`, muted: !m.models.has(r.id) }));
             case 'tasks': return d.tasks.map(t => ({ title: (m.completed.has(t.id) ? '✓ ' : '') + t.title,
                 text: t.content + (m.completed.has(t.id) ? ' · 已完成' : ` (${m.counters[t.triggerType + '|' + t.targetId] || 0}/${t.targetCount})`) }));
-            case 'research': return Object.keys(d.research).sort((a, b) => d.research[a].stage - d.research[b].stage).map(id => {
-                const r = d.research[id], done = m.ideas.has(id), prereq = r.prereq.map(k => d.research[k]?.name).join('、');
-                return { title: (done ? '✓ ' : '') + r.name + ` · ${r.cost} RP`, text: r.desc + (!done ? `\n${['车库', '验证', '产品', '获客', '规模', '融资', '上市'][r.stage]}阶段` + (prereq ? ' · 前置：' + prereq : '') : ''), action: 'Research:' + id, muted: !m.canResearch(id) && !done };
-            });
             default: return [];
         }
     }
@@ -585,19 +676,18 @@ export class Sample extends Component implements InputTarget {
         for (const action of Array.from(this.controls.keys())) if (action.startsWith('Row:')) this.controls.delete(action);
         if (this.modal === 'home' || this.modal === 'inspect' || this.modal === 'catalog') return;
         if (this.plainMenu) { this.renderMenu(content); return; }
-        const titles: Record<string, string> = { book: '设置', packs: '抽取卡包', catalog: '卡牌图鉴', recipes: '商业模式', tasks: '公司任务', research: '研发', detail: '卡牌详情' };
+        const titles: Record<string, string> = { book: '设置', packs: '抽取卡包', catalog: '卡牌图鉴', recipes: '商业模式', tasks: '发展里程碑', detail: '卡牌详情' };
         this.label('Panel/Title').string = titles[this.modal] || '';
-        this.label('Panel/Eyebrow').string = this.modal === 'research' ? `STARTX  /  ${this.model.rp.toFixed(0)} RP` : 'STARTX';
+        this.label('Panel/Eyebrow').string = 'STARTX';
         const { width, height } = content.getComponent(UITransform)!.contentSize;
         if (this.modal === 'detail') { this.renderDetail(content, width, height); this.pageCount = 1; }
         else {
-            const research = this.modal === 'research', unit = this.metrics.wide ? this.metrics.width / 1920 : 1;
-            const rowSize = research ? Math.max(116 * unit, 80 * this.inputScale) : 132;
-            const rows = this.entries(), perPage = Math.max(research ? 1 : 3, Math.floor(height / rowSize)); this.pageCount = Math.max(1, Math.ceil(rows.length / perPage));
+            const rowSize = 132;
+            const rows = this.entries(), perPage = Math.max(3, Math.floor(height / rowSize)); this.pageCount = Math.max(1, Math.ceil(rows.length / perPage));
             this.page = Math.max(0, Math.min(this.pageCount - 1, this.page));
             rows.slice(this.page * perPage, (this.page + 1) * perPage).forEach((r, i) => {
-                const rowHeight = Math.min(research ? rowSize : 128, height / perPage), y = height / 2 - rowHeight * (i + .5);
-                this.row(content, r, width, rowHeight - (research ? 5 * this.inputScale : 10), y, research);
+                const rowHeight = Math.min(128, height / perPage), y = height / 2 - rowHeight * (i + .5);
+                this.row(content, r, width, rowHeight - 10, y);
             });
         }
         this.find('Panel/Prev').active = this.pageCount > 1; this.find('Panel/Next').active = this.pageCount > 1;
@@ -605,7 +695,7 @@ export class Sample extends Component implements InputTarget {
         this.label('Panel/Back/Text').string = this.modal === 'book' || this.modal === 'detail' || this.modal === 'packs' ? '回到棋盘' : '返回手册';
     }
     private menuButton(parent: Node, text: string, action: string, width: number, height: number, x: number, y: number, font = 23) {
-        const scale = this.inputScale, node = this.makeNode('Option', parent, width, height); node.setPosition(x, y);
+        const scale = this.inputScale * MENU_SCALE, node = this.makeNode('Option', parent, width, height); node.setPosition(x, y);
         const border = node.addComponent(Surface); border.fill = new Color(252, 248, 238); border.stroke = Color.BLACK.clone();
         border.lineWidth = 4 * scale; border.radius = 3 * scale; border.paint();
         const inner = this.makeNode('InnerRule', node, width - 14 * scale, height - 14 * scale), rule = inner.addComponent(Surface);
@@ -616,7 +706,7 @@ export class Sample extends Component implements InputTarget {
     private renderMenu(content: Node) {
         this.pageCount = 1;
         for (const name of ['Prev', 'Next']) this.find('Panel/' + name).active = false;
-        const scale = this.inputScale, width = this.panelW, height = this.panelH, gap = 10 * scale;
+        const scale = this.inputScale * MENU_SCALE, width = this.panelW, height = this.panelH, gap = 10 * scale;
         const rows = this.menuRows;
         const rowH = (height - gap * (rows - 1)) / rows;
         const y = (i: number) => height / 2 - rowH / 2 - i * (rowH + gap);
@@ -630,7 +720,7 @@ export class Sample extends Component implements InputTarget {
             }
             this.menuButton(content, '测试模式：' + (this.testMode ? '开启' : '关闭'), 'TestMode', width, rowH, 0, y(2));
             this.menuButton(content, '深夜加班模式：' + (this.nightShift ? '开启' : '关闭'), 'NightShift', width, rowH, 0, y(3));
-            if (this.fullscreenAvailable) this.menuButton(content, document.fullscreenElement ? '退出全屏' : '全屏', 'Fullscreen', width, rowH, 0, y(4));
+            if (canSetDisplayOrientation()) this.menuButton(content, getDisplayOrientation() === 'landscape' ? '横屏模式' : '竖屏模式', 'ToggleOrientation', width, rowH, 0, y(4));
             this.menuButton(content, '返回', 'SettingsBack', width, rowH, 0, y(rows - 1));
         }
     }
@@ -651,7 +741,7 @@ export class Sample extends Component implements InputTarget {
         const node = this.makeNode('Row', parent, width, height); node.setPosition(0, y);
         const bg = node.addComponent(Surface); bg.radius = 14; bg.fill = Color.fromHEX(new Color(), entry.muted ? '#EEEDE4' : '#EBEEDF'); bg.paint();
         if (compact) {
-            const unit = this.metrics.wide ? this.metrics.width / 1920 : 1, padding = Math.max(10 * unit, 7 * this.inputScale);
+            const unit = fixedUiUnit(this.inputScale), padding = Math.max(10 * unit, 7 * this.inputScale);
             const titleFont = Math.max(22 * unit, 15 * this.inputScale), bodyFont = Math.max(18 * unit, 12 * this.inputScale), titleH = titleFont * 1.4;
             bg.radius = 8; bg.fill.a = entry.muted ? 90 : 145; bg.paint();
             this.text(node, 'Title', entry.title, width - padding * 2, titleH, 0, height / 2 - padding - titleH / 2, titleFont, entry.muted ? '777E70' : '344637');
@@ -661,8 +751,9 @@ export class Sample extends Component implements InputTarget {
                 text.getComponent(Label)!.verticalAlign = Label.VerticalAlign.TOP;
             }
         } else {
-            this.text(node, 'Title', entry.title, width - 32, entry.text ? 38 : height - 12, 0, entry.text ? height / 2 - 28 : 0, 25, entry.muted ? '929889' : '344637');
-            if (entry.text) this.text(node, 'Text', entry.text, width - 32, height - 45, 0, -20, 20, entry.muted ? '929889' : '69765D');
+            const unit = fixedUiUnit(this.inputScale);
+            this.text(node, 'Title', entry.title, width - 32, entry.text ? 38 : height - 12, 0, entry.text ? height / 2 - 28 : 0, 25 * unit, entry.muted ? '929889' : '344637');
+            if (entry.text) this.text(node, 'Text', entry.text, width - 32, height - 45, 0, -20, 20 * unit, entry.muted ? '929889' : '69765D');
         }
         if (entry.action) this.controls.set('Row:' + entry.action, node);
     }
@@ -671,17 +762,17 @@ export class Sample extends Component implements InputTarget {
         const id = this.catalogId || c?.id, d = id ? m.data.cards[id] : undefined;
         if (!d || !id) { this.text(parent, 'Missing', '这张卡牌已被消耗。', width, 100, 0, 0); return; }
         this.label('Panel/Title').string = d.name;
-        const types: Record<string, string> = { employee: '员工', tool: '工具', customer: '客户', product: '产品', resource: '资源', facility: '设施', cash: '现金', rival: '对手', business_model: '商业模式' };
+        const types: Record<string, string> = { employee: '员工', tool: '工具', customer: '客户', product: '产品', resource: '资源', facility: '设施', cash: '现金', rival: '对手', business_model: '商业模式', order: '订单', event: '客户事件', receivable: '应收尾款' };
         this.label('Panel/Eyebrow').string = 'STARTX  /  ' + types[d.type];
         const faceSize = Math.min(200, height * .28), imageY = height / 2 - faceSize / 2;
         const actionHeight = Math.max(82, 44 * this.inputScale), stateHeight = 64, gap = 16;
         const card = instantiate(this.cardPrefab); parent.addChild(card); card.setPosition(0, imageY); card.setScale(faceSize / 280, faceSize / 280, 1);
         const view = card.getComponent(CardView)!;
-        this.loadFrame('faces/' + id).then(frame => { if (!card.isValid) return; view.configure(frame, d.bodyColor, id === 'founder' ? 'foil' : id === 'cash' || d.type === 'business_model' ? 'glass' : 'plain');
+        this.loadFrame('faces/' + id).then(frame => { if (!card.isValid) return; view.configure(frame, d.bodyColor, cardStyle(id, d.type));
             if (c?.uses != null && c.uses >= 0) this.loadFrame('patches/' + id + '-' + c.uses).then(f => { if (view.isValid) view.setPatch(f, 'uses'); });
             else if (c?.id === 'p3_account') this.loadFrame('patches/account-' + c.stored).then(f => { if (view.isValid) view.setPatch(f, 'account'); });
         }).catch(e => { this.lastError = String(e); });
-        const description = c ? m.description(c) : [d.functionText, d.flavor].filter(Boolean).join('\n\n');
+        const description = c ? m.description(c) : [d.functionText, quoteFlavor(d.flavor)].filter(Boolean).join('\n\n');
         const descH = Math.min(240, height - faceSize - actionHeight - stateHeight - gap * 3);
         const descY = height / 2 - faceSize - gap - descH / 2;
         this.text(parent, 'Description', description, width - 16, descH, 0, descY, 23);
@@ -698,7 +789,10 @@ export class Sample extends Component implements InputTarget {
     }
     private actionAt(p: Vec2) {
         if (this.modal === 'inspect') {
+            if (this.heldBadge) return this.cardInspector.containsFace(p) ? 'InspectPlaceBadge' : 'ExitWithBadge';
             if (this.hit(this.cardInspector.closeNode, p)) return 'InspectClose';
+            const badge = !this.catalogId && this.inspectorReturn === 'none' ? this.cardInspector.badgeAt(p) : -1;
+            if (badge >= 0) return 'InspectBadge:' + badge;
             const icon = this.cardInspector.iconAt(p); if (icon) return 'InspectCard:' + icon;
             return this.cardInspector.containsDetails(p) ? 'InspectDetails' : this.cardInspector.contains(p) ? 'InspectFlip' : 'InspectClose';
         }
@@ -708,9 +802,10 @@ export class Sample extends Component implements InputTarget {
             const action = this.originalHud.actionAt(p); if (action) return action;
         }
         for (const [action, n] of Array.from(this.controls.entries()).reverse()) {
-            if (action.startsWith('TopPack:') || action.startsWith('TaskFold:') || action.startsWith('TaskItem:') || action === 'TaskClose') continue;
+            if (action === 'PackTab' && this.hit(this.find('Status'), p)) continue;
+            if (action === 'FlashPack' || action.startsWith('TopPack:') || action.startsWith('TaskFold:') || action.startsWith('TaskItem:') || action === 'TaskClose') continue;
             if (this.modal === 'none' && (action.startsWith('Row:') || ['Close', 'Back', 'Prev', 'Next'].includes(action))) continue;
-            if (this.modal !== 'none' && ['Book', 'Tasks', 'Settings', 'ResearchPanel', 'SellZone'].includes(action)) continue;
+            if (this.modal !== 'none' && ['Book', 'Tasks', 'Settings', 'SupplyChain', 'SellZone', 'Pause', 'PackTab'].includes(action)) continue;
             if (this.modal !== 'none' && action.startsWith('StatusInfo:')) continue;
             if (this.hit(n, p)) return action;
         }
@@ -720,25 +815,66 @@ export class Sample extends Component implements InputTarget {
         return '';
     }
     private topAt(p: Vec2, excluded: number[] = []) {
-        const uid = Array.from(this.views.entries()).filter(([id, v]) => !excluded.includes(id) && v.view.node.scale.x > 0 && v.view.contains(p))
+        const world = this.board.pointerWorld(p);
+        const uid = Array.from(this.views.entries()).filter(([id, v]) => !excluded.includes(id) && v.view.node.scale.x > 0 && v.view.contains(world))
             .sort((a, b) => b[1].view.node.getSiblingIndex() - a[1].view.node.getSiblingIndex())[0]?.[0] || 0;
         return uid;
     }
-    private worldPoint(p: Vec2) { return this.board.node.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(p.x, p.y)); }
+    private worldPoint(p: Vec2) { return this.board.node.getComponent(UITransform)!.convertToNodeSpaceAR(this.board.pointerWorld(p)); }
+    private moveHeldBadge(p: Vec2) {
+        this.heldBadgePoint.set(p);
+        if (!this.heldBadgeSprite) return;
+        const node = this.heldBadgeSprite.node, local = this.node.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(p.x, p.y));
+        node.setPosition(local.x, local.y); node.getComponent(UITransform)!.setContentSize(60 * this.inputScale, 60 * this.inputScale);
+        node.setSiblingIndex(this.node.children.length - 1);
+    }
+    private carryBadge(uid: number, p: Vec2) {
+        const badge = this.model.card(uid); if (!badge) return;
+        this.heldBadge = uid;
+        if (!this.heldBadgeSprite) {
+            const node = this.makeNode('HeldBadge', this.node, 60, 60);
+            this.heldBadgeSprite = node.addComponent(Sprite); this.heldBadgeSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        }
+        const sprite = this.heldBadgeSprite; sprite.spriteFrame = null; sprite.node.active = true;
+        this.loadFrame('faces/' + badge.id).then(frame => { if (this.heldBadge === uid && sprite.isValid) sprite.spriteFrame = frame; });
+        this.moveHeldBadge(p);
+    }
+    private releaseHeldBadge() {
+        this.heldBadge = 0; if (this.heldBadgeSprite) this.heldBadgeSprite.node.active = false;
+    }
+    private placeHeldBadge(p: Vec2) {
+        const badge = this.model.card(this.heldBadge); if (!badge) { this.releaseHeldBadge(); return; }
+        if (this.actionAt(p) || !this.hit(this.viewport, p)) return;
+        const target = this.model.card(this.topAt(p, [badge.uid]));
+        if (target) {
+            const world = this.board.pointerWorld(p);
+            const position = this.views.get(target.uid)!.view.badgePositionAt(new Vec2(world.x, world.y));
+            if (!this.model.attachBadge(badge, target, position)) { this.model.say('毛线徽章只能贴在员工卡上'); return; }
+        } else {
+            const point = this.worldPoint(p); this.model.move(badge.uid, point.x, point.y);
+        }
+        this.releaseHeldBadge(); this.syncViews(); this.saveProgress();
+    }
     press(p: Vec2): 'card' | 'board' | 'ui' {
         this.releaseMenuPress();
+        if (this.modal === 'none') this.originalHud.dismissPacksAt(p);
         if (this.atTitle) this.titleScreen.pointer(p);
         this.audio.prime();
+        if (this.heldBadge) {
+            this.moveHeldBadge(p); this.pressedCard = this.pressedPack = 0;
+            this.pressedAction = this.modal === 'inspect' ? this.actionAt(p) : 'PlaceHeldBadge'; return 'ui';
+        }
+        if (this.founderSpeech.contains(p)) { this.pressedAction = 'FounderSpeech'; this.pressedCard = this.pressedPack = 0; return 'ui'; }
+        this.founderSpeech.dismiss();
         if (this.modal === 'inspect') { this.cardInspector.begin(p); this.pressedAction = this.actionAt(p); this.pressedCard = this.pressedPack = 0; return 'ui'; }
         if (this.modal === 'catalog') this.cardCatalog.begin(p); else this.originalHud.begin(p);
         this.dragPointer.set(p);
         this.pressedAction = this.actionAt(p); this.pressedCard = 0; this.pressedPack = 0;
         if (!this.pressedAction.startsWith('StatusInfo:') && this.statusHelp?.active && !this.hit(this.statusHelp, p)) this.hideStatusInfo();
         if (this.plainMenu && this.pressedAction.startsWith('Row:') || this.pressedAction.startsWith('Title:') || this.pressedAction === 'Settings') this.pressMenuButton(this.controls.get(this.pressedAction));
-        if (this.pressedAction === 'ResearchPanel') this.researchPulse = 0;
         if (this.pressedAction) return 'ui';
         const uid = this.topAt(p), c = this.model.card(uid), pack = this.model.packs.find(v => v.uid === uid);
-        if (c && this.model.isCombatant(c.sid)) return 'ui';
+        if (c && (this.model.isCombatant(c.sid) || this.model.isPassive(c))) return 'ui';
         if (c || pack) {
             this.pressedCard = c?.uid || 0; this.pressedPack = pack?.uid || 0;
             const start = c ? this.model.position(c) : pack!, local = this.worldPoint(p);
@@ -748,33 +884,45 @@ export class Sample extends Component implements InputTarget {
     }
     tap(p: Vec2, kind: string) {
         this.releaseMenuPress();
+        if (this.heldBadge && this.modal === 'none') { this.moveHeldBadge(p); this.placeHeldBadge(p); return; }
+        if (this.modal === 'inspect' && (this.heldBadge || this.pressedAction.startsWith('InspectBadge:'))) this.heldBadgePoint.set(p);
         if (kind === 'card') {
             if (this.pressedPack) { const initial = this.model.packs.find(p => p.uid === this.pressedPack)?.id === 'garage_pack' && this.model.month === 1; this.model.openPack(this.pressedPack); this.syncViews(); if (initial && !this.model.packs.length) this.fitBoard(); return; }
-            if (this.linkSource) { this.model.connect(this.linkSource, this.pressedCard); this.linkSource = 0; return; }
+            if (this.supplyStep !== 'none') { this.chooseSupply(this.pressedCard); return; }
             this.selected = this.pressedCard; this.selectedPack = 0; this.catalogId = '';
             const card = this.model.card(this.selected);
-            if (card) { this.model.say(this.model.cardHint(card)); if (card.id === 'p3_account') this.model.withdraw(card); } this.saveProgress(); return;
+            if (card) { this.model.say(this.model.cardHint(card)); if (card.id === 'p3_account') this.model.withdraw(card); else if (this.model.def(card).type === 'order') this.model.acceptOrder(card); this.hintCardUid = card.uid; this.hintNoticeVersion = this.model.noticeVersion; } this.saveProgress(); return;
         }
-        if (kind === 'board') { this.linkSource = 0; this.selected = 0; this.originalHud.close(); this.syncMenuBackdrop(); this.model.say(DEFAULT_HINT); return; }
+        if (kind === 'board') { this.cancelSupply(); this.selected = 0; this.hintCardUid = 0; this.originalHud.close(); this.syncMenuBackdrop(); this.model.say(DEFAULT_HINT); return; }
         const action = this.actionAt(p); if (action && action === this.pressedAction) this.perform(action.replace(/^(Row|Title):/, ''));
     }
     private perform(action: string) {
         const [verb, arg] = action.split(':'); const c = this.model.card(this.selected);
+        const entering = verb === 'Restart' || verb === 'Continue' && this.atTitle;
+        if (entering) { this.menuPauseBefore = false; this.model.paused = false; }
         switch (verb) {
             case 'StatusInfo': this.showStatusInfo(arg); break;
             case 'StatusHelpClose': this.hideStatusInfo(); break;
+            case 'PackTab': this.originalHud.togglePacks(); break;
             case 'CatalogClose': this.show(this.catalogReturn); break;
             case 'CatalogSort': this.cardCatalog.setSort(arg); break;
             case 'CatalogCard': {
                 const frame = this.cardCatalog.frame(arg); if (!frame || !this.model.drawn.has(arg)) break;
                 const d = this.model.def(arg); this.catalogId = arg; this.inspectorReturn = 'catalog'; this.show('inspect');
-                this.cardInspector.presentFrame(frame, d.bodyColor, arg === 'founder' ? 'foil' : arg === 'cash' || d.type === 'business_model' ? 'glass' : 'plain',
+                this.cardInspector.presentFrame(frame, d.bodyColor, cardStyle(arg, d.type),
                     d.functionText || '与其他卡牌叠放，发现商业模式', d.flavor || ''); this.cardInspector.setReference(this.model, arg); break;
             }
             case 'Tasks': this.originalHud.toggle(); break;
             case 'TaskFold': this.originalHud.fold(arg); break;
             case 'TaskItem': { const text = this.originalHud.infoFor(arg); this.originalHud.showInfo(arg); if (text) this.model.say(text); break; }
             case 'TaskHelpClose': this.originalHud.hideInfo(); break;
+            case 'FlashPack': {
+                const source = this.controls.get('FlashPack')!.worldPosition;
+                const from = this.worldPoint(new Vec2(source.x, source.y));
+                const screen = this.viewport.getComponent(UITransform)!.convertToWorldSpaceAR(new Vec3(0, -60));
+                const center = this.worldPoint(new Vec2(screen.x, screen.y));
+                this.model.openFlashPack(center.x, center.y, from); break;
+            }
             case 'TopPack': {
                 if (!this.model.packUnlocked(arg)) { this.model.say(this.model.packRequirement(arg)); break; }
                 this.originalHud.close();
@@ -785,15 +933,30 @@ export class Sample extends Component implements InputTarget {
                 if (arg === 'tasks') { this.show('none'); this.originalHud.toggle(); } else this.show(arg as Modal); break;
             case 'Book': this.originalHud.toggle('recipes'); break;
             case 'Settings': this.show('book'); break;
-            case 'ResearchPanel': this.show('research'); break;
-            case 'SellZone': this.model.say('将卡牌拖到这里出售，员工可免费解雇'); break;
+            case 'SupplyChain': this.toggleSupply(); break;
+            case 'SellZone': this.model.say('将卡牌拖到这里回收，员工可免费解雇'); break;
             case 'Pack': this.show('packs'); break;
             case 'Details': this.catalogId = ''; if (!this.model.card(this.selected)) this.selected = this.model.cards[0]?.uid || 0; this.show('detail'); break;
             case 'InspectClose': if (!this.cardInspector.goBack()) { this.show(this.inspectorReturn, false); this.inspectorReturn = 'none'; } break;
+            case 'InspectBadge': {
+                if (!c || this.heldBadge) break;
+                const badge = this.model.detachBadge(c, Number(arg)); if (!badge) break;
+                this.cardInspector.removeBadge(Number(arg), this.model.employeeCapacity(c), this.model.description(c).split('\n\n')[0]);
+                this.carryBadge(badge.uid, this.heldBadgePoint); this.syncViews(); break;
+            }
+            case 'InspectPlaceBadge': {
+                const badge = this.model.card(this.heldBadge), frame = this.heldBadgeSprite?.spriteFrame;
+                if (!c || !badge || !frame) break;
+                const position = this.cardInspector.badgePositionAt(this.heldBadgePoint);
+                if (!this.model.attachBadge(badge, c, position)) break;
+                this.cardInspector.addBadge(frame, position, this.model.employeeCapacity(c), this.model.description(c).split('\n\n')[0]);
+                this.releaseHeldBadge(); this.syncViews(); break;
+            }
+            case 'ExitWithBadge': this.show('none', false); this.inspectorReturn = 'none'; break;
             case 'InspectCard': void this.cardInspector.openCard(this.model, arg); break;
             case 'InspectFlip': this.cardInspector.flip(); break;
             case 'Close': case 'Dismiss': if (this.modal === 'settings') this.show(this.settingsReturn); else if (this.modal !== 'home') this.show('none'); break;
-            case 'Back': this.show(['catalog', 'recipes', 'tasks', 'research'].includes(this.modal) ? 'book' : 'none'); break;
+            case 'Back': this.show(['catalog', 'recipes', 'tasks'].includes(this.modal) ? 'book' : 'none'); break;
             case 'Prev': this.page = Math.max(0, this.page - 1); this.renderPanel(); break;
             case 'Next': this.page = Math.min(this.pageCount - 1, this.page + 1); this.renderPanel(); break;
             case 'Reset': this.fitBoard(); this.show('none'); break;
@@ -802,17 +965,17 @@ export class Sample extends Component implements InputTarget {
                 if (this.buyPackAt(arg, source, -40)) this.show('none'); else this.renderPanel(); break;
             }
             case 'Card': this.catalogId = arg; this.show('detail'); break;
-            case 'Research': this.model.research(arg); this.renderPanel(); break;
             case 'Sell': if (c) this.model.sell(c.sid); this.show('none'); break;
             case 'Withdraw': if (c) this.model.withdraw(c); this.show('none'); break;
-            case 'Link': if (c) this.linkSource = c.uid; this.show('none'); break;
             case 'Unlink': if (c) this.model.disconnect(c.uid); this.show('none'); break;
             case 'Unpack': this.model.openPack(this.selectedPack); this.show('none'); break;
-            case 'Pause': this.model.paused = !this.model.paused; this.show('none'); break;
+            case 'Pause': { const paused = !this.gameplayPaused; this.menuPauseBefore = paused; this.model.paused = paused; this.show('none'); this.updatePausePresentation(); break; }
             case 'Continue': this.hasStarted = true; this.atTitle = false; this.show('none'); break;
-            case 'MenuRecipes': this.show('none'); this.originalHud.toggle('recipes'); break;
             case 'OpenSettings': this.settingsReturn = this.atTitle ? 'home' : 'book'; this.show('settings'); break;
             case 'SettingsBack': this.show(this.settingsReturn); break;
+            case 'ToggleOrientation':
+                setDisplayOrientation(getDisplayOrientation() === 'landscape' ? 'portrait' : 'landscape');
+                this.layout(); break;
             case 'NightShift':
                 this.nightShift = !this.nightShift;
                 try { sys.localStorage.setItem('startx.night-shift', String(this.nightShift)); } catch { /* The current session still applies. */ }
@@ -823,31 +986,29 @@ export class Sample extends Component implements InputTarget {
                 try { sys.localStorage.setItem('startx.test-mode', String(this.testMode)); } catch { /* The current session still applies. */ }
                 this.model.say(this.testMode ? '测试模式已开启：全部卡包解锁，新开局获得余额 50 的账户' : '测试模式已关闭：新开局恢复原版现金与卡包规则');
                 this.renderPanel(); break;
-            case 'Fullscreen': {
-                const task = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
-                void task.then(() => this.layoutPanel()).catch(() => this.model.say('请使用浏览器的全屏按钮')); break;
-            }
             case 'Home': this.atTitle = true; this.show('home'); break;
             case 'Restart':
                 this.hasStarted = true;
                 for (const view of this.board.node.getComponentsInChildren(CardView)) view.node.destroy();
                 this.views.clear(); this.cashFlights.clear(); this.battleView.reset();
-                this.atTitle = false; this.model = new GameModel(this.model.data, Math.random, this.testMode); this.originalHud.reset(this.model); this.selected = this.model.cards[0].uid; this.board.reset(); this.show('none'); this.frameOpening(); break;
+                this.releaseHeldBadge(); this.hintCardUid = 0; this.hintNoticeVersion = -1; this.atTitle = false; this.model = new GameModel(this.model.data, Math.random, this.testMode); this.originalHud.reset(this.model); this.selected = this.model.cards[0].uid; this.board.reset(); this.show('none'); this.frameOpening(); break;
         }
         this.syncViews();
-        this.syncMenuBackdrop(verb === 'NightShift');
+        if (entering) { this.spokenMilestones = new Set(this.model.completed); this.founderSpeech.welcome(); }
+        this.syncMenuBackdrop();
         this.saveProgress();
     }
     hold(_p: Vec2) {
+        const held = this.model.card(this.pressedCard); if (held && this.model.isPassive(held)) return;
         const source = this.views.get(this.pressedCard || this.pressedPack)?.view; if (!source) return;
         this.inspectorReturn = 'none';
         this.selected = this.pressedCard; this.selectedPack = this.pressedPack; this.catalogId = '';
         this.show('inspect');
         const card = this.model.card(this.selected);
         if (card) {
-            const d = this.model.def(card), dynamic = card.uses >= 0 || card.id === 'p3_account';
+            const d = this.model.def(card), dynamic = card.uses >= 0 || card.id === 'p3_account' || !!card.badges?.length || !!this.model.cardStatus(card);
             const functionText = dynamic ? this.model.description(card).split('\n\n')[0] : d.functionText || (d.type === 'cash' ? '用于购买卡包、支付工资' : '与其他卡牌叠放，发现商业模式');
-            this.cardInspector.present(source, d.bodyColor, card.id === 'founder' ? 'foil' : card.id === 'cash' || d.type === 'business_model' ? 'glass' : 'plain', functionText, d.flavor || '');
+            this.cardInspector.present(source, d.bodyColor, cardStyle(card.id, d.type), functionText, d.flavor || '');
             this.cardInspector.setReference(this.model, card.id);
         } else {
             const pack = this.model.packs.find(p => p.uid === this.selectedPack); if (!pack) { this.show('none'); return; }
@@ -875,11 +1036,46 @@ export class Sample extends Component implements InputTarget {
         if (this.pressedPack) return false;
         return this.model.canSellCards(this.movingIds().map(uid => this.model.card(uid)).filter((c): c is CardState => !!c));
     }
+    private cancelSupply() {
+        this.supplyStep = 'none'; this.supplyAnchor = this.supplyCandidate = 0; this.supplyDirection = null; this.supplyMessage = '';
+        for (const frame of this.supplyFrames.values()) frame.node.destroy(); this.supplyFrames.clear();
+    }
+    private toggleSupply() {
+        if (this.model.battle) { this.model.say('商战结束后再连接供应链'); return; }
+        if (this.supplyStep !== 'none') { this.cancelSupply(); return; }
+        this.originalHud.close(); this.syncMenuBackdrop(); this.hideStatusInfo();
+        this.supplyToast.active = false; this.supplyToastTime = 0;
+        this.supplyStep = 'subject'; this.supplyMessage = '选择供应链主体 · 点击一张卡牌或牌堆';
+    }
+    private chooseSupply(uid: number) {
+        const card = this.model.card(uid); if (!card || !this.model.canSupply(card)) return;
+        if (this.supplyStep === 'subject') {
+            this.supplyAnchor = this.model.stack(card.sid)!.cards[0]; this.selected = uid;
+            this.supplyStep = 'target'; this.supplyMessage = '选择另一张卡牌或牌堆 · 自动识别上游或下游'; return;
+        }
+        const anchor = this.model.card(this.supplyAnchor); if (!anchor) { this.cancelSupply(); return; }
+        if (card.sid === anchor.sid) { this.supplyMessage = '请选择主体之外的另一组牌堆'; return; }
+        const candidate = this.model.stack(card.sid)!.cards[0], direction = this.model.supplyDirection(this.supplyAnchor, candidate);
+        if (!direction) { this.supplyMessage = '这组牌堆暂时无法衔接 · 请另选上游或下游'; return; }
+        this.supplyCandidate = candidate; this.supplyDirection = direction; this.finishSupply();
+    }
+    private finishSupply() {
+        const anchor = this.model.card(this.supplyAnchor), candidate = this.model.card(this.supplyCandidate);
+        if (!anchor || !candidate || !this.supplyDirection) { this.cancelSupply(); return; }
+        const upstream = this.supplyDirection === 'upstream', source = upstream ? candidate : anchor, target = upstream ? anchor : candidate;
+        if (!this.model.connect(source.uid, target.uid)) { this.supplyMessage = this.model.notice + ' · 可另选牌堆'; return; }
+        this.linkBirths.set(source.sid + ':' + target.sid, this.supplyClock);
+        const message = `完成供应链${upstream ? '上' : '下'}游组建`;
+        this.supplyToast.getChildByName('Text')!.getComponent(Label)!.string = message;
+        this.supplyToast.active = true; this.supplyToast.setSiblingIndex(this.hud.children.length - 1); this.supplyToastTime = 2.8;
+        this.model.say(message); this.audio.play('aha'); this.selected = candidate.uid;
+        this.cancelSupply(); this.syncViews(); this.saveProgress();
+    }
     private clearDropHint() { this.matchTarget = 0; this.matchArt.node.active = false; this.matchArt.clear(); }
     private updateDropHint(dt: number) {
         let target = 0;
         if (this.dragging && this.pressedCard && this.modal === 'none' && !this.hit(this.find('SellZone'), this.dragPointer)) {
-            const center = this.board.node.getComponent(UITransform)!.convertToWorldSpaceAR(new Vec3(this.dragPoint.x, this.dragPoint.y));
+            const center = this.board.projectWorld(this.board.node.getComponent(UITransform)!.convertToWorldSpaceAR(new Vec3(this.dragPoint.x, this.dragPoint.y)));
             const candidate = this.topAt(new Vec2(center.x, center.y), this.movingIds());
             const source = this.model.card(this.pressedCard)!, card = this.model.card(candidate);
             const sameCards = card && this.movingIds().concat(this.model.stack(card.sid)!.cards).every(uid => this.model.card(uid)?.id === source.id);
@@ -898,13 +1094,11 @@ export class Sample extends Component implements InputTarget {
     private updateCornerFeedback(dt: number) {
         this.sellReady = this.dragging && this.modal === 'none' && this.canSellDragged() && this.hit(this.find('SellZone'), this.dragPointer);
         this.find('SellZone/Feedback').active = this.sellReady;
-        this.researchPulse = Math.min(1, this.researchPulse + dt);
-        const pulse = this.researchPulse < .24 ? Math.sin(this.researchPulse / .24 * Math.PI) : 0;
-        this.find('Research/Feedback').active = this.modal === 'research' || pulse > 0;
-        this.find('Research/Icon').setScale(this.cornerIconScale * (1 - .1 * pulse), this.cornerIconScale * (1 - .1 * pulse), 1);
+        this.find('SupplyChain/Feedback').active = this.supplyStep !== 'none';
     }
     dragStart() {
-        const c = this.model.card(this.pressedCard); if (c && this.model.isCombatant(c.sid)) return;
+        const c = this.model.card(this.pressedCard); if (c && (this.model.isCombatant(c.sid) || this.model.isPassive(c))) return;
+        this.cancelSupply();
         this.dragging = true; this.model.heldStack = c?.sid || -1;
         this.movingIds().forEach(uid => this.views.get(uid)?.view.setHeld(true));
         if (c) this.audio.play('grab');
@@ -924,7 +1118,8 @@ export class Sample extends Component implements InputTarget {
         if (!cancelled) {
             if (this.pressedPack) { const p = this.model.packs.find(v => v.uid === this.pressedPack); if (p) Object.assign(p, this.model.constrainPoint(this.dragPoint.x, this.dragPoint.y, 1, true)); }
             else {
-                const center = this.board.node.getComponent(UITransform)!.convertToWorldSpaceAR(new Vec3(this.dragPoint.x, this.dragPoint.y));
+                const world = this.board.node.getComponent(UITransform)!.convertToWorldSpaceAR(new Vec3(this.dragPoint.x, this.dragPoint.y));
+                const center = this.board.projectWorld(world);
                 const target = this.topAt(new Vec2(center.x, center.y), ids);
                 if (this.hit(this.find('SellZone'), this.dragPointer)) {
                     if (this.canSellDragged()) {
@@ -935,8 +1130,9 @@ export class Sample extends Component implements InputTarget {
                             this.model.sell(dropped.sid, this.worldPoint(new Vec2(icon.x, icon.y)));
                         }
                     } else this.model.say('这组卡牌当前无法出售');
-                } else this.model.move(this.pressedCard, this.dragPoint.x, this.dragPoint.y, target);
+                } else this.model.move(this.pressedCard, this.dragPoint.x, this.dragPoint.y, target, this.views.get(target)?.view.badgePositionAt(new Vec2(world.x, world.y)));
                 this.selected = this.pressedCard; this.catalogId = '';
+                this.hintCardUid = this.pressedCard; this.hintNoticeVersion = this.model.noticeVersion;
             }
         }
         this.dragging = false; this.sellReady = false; this.find('SellZone/Feedback').active = false;
@@ -944,13 +1140,18 @@ export class Sample extends Component implements InputTarget {
         this.model.heldStack = -1; this.syncViews();
         this.saveProgress();
     }
-    pan(delta: Vec2) { if (this.modal === 'none' && !this.model.battle && !this.battleView.restoring) this.board.pan(delta); }
-    uiDrag(delta: Vec2) { this.releaseMenuPress(); if (this.modal === 'inspect' && (this.pressedAction === 'InspectDetails' || this.pressedAction.startsWith('InspectCard:'))) this.cardInspector.dragDetails(delta); else if (this.modal === 'inspect' && this.pressedAction === 'InspectFlip') this.cardInspector.drag(delta); else if (this.modal === 'catalog') this.cardCatalog.drag(delta); else if (this.modal === 'none') this.originalHud.drag(delta); }
+    pan(delta: Vec2, point?: Vec2) {
+        if (this.modal !== 'none' || this.model.battle || this.battleView.restoring) return;
+        const current = point || new Vec2(this.metrics.width / 2, this.metrics.height / 2);
+        const to = this.board.pointerOnPlane(current), from = this.board.pointerOnPlane(new Vec2(current.x - delta.x, current.y - delta.y));
+        this.board.pan(new Vec2(to.x - from.x, to.y - from.y));
+    }
+    uiDrag(delta: Vec2) { this.releaseMenuPress(); if (this.heldBadge) this.moveHeldBadge(new Vec2(this.heldBadgePoint.x + delta.x, this.heldBadgePoint.y + delta.y)); else if (this.modal === 'inspect' && (this.pressedAction === 'InspectDetails' || this.pressedAction.startsWith('InspectCard:'))) this.cardInspector.dragDetails(delta); else if (this.modal === 'inspect' && this.pressedAction === 'InspectFlip') this.cardInspector.drag(delta); else if (this.modal === 'catalog') this.cardCatalog.drag(delta); else if (this.modal === 'none') this.originalHud.drag(delta); }
     uiDragThreshold() { return (this.modal === 'inspect' ? 2 : this.originalHud.isPackGesture ? 3 : 8) * this.inputScale; }
     uiEnd(cancelled: boolean) { this.releaseMenuPress(); if (this.modal === 'catalog') this.cardCatalog.end(); else if (this.modal === 'inspect') this.cardInspector.end(); else this.originalHud.end(cancelled); }
-    hover(p: Vec2) { if (this.atTitle) this.titleScreen.pointer(p); else if (this.modal === 'none') this.originalHud.hover(p); }
+    hover(p: Vec2) { if (this.heldBadge) this.moveHeldBadge(p); else if (this.atTitle) this.titleScreen.pointer(p); else if (this.modal === 'none') this.originalHud.hover(p); }
     uiScroll(p: Vec2, delta: number, horizontal = 0) { return this.modal === 'inspect' ? this.cardInspector.wheel(p, delta) : this.modal === 'catalog' ? this.cardCatalog.wheel(p, delta) : this.modal === 'none' && this.originalHud.wheel(p, delta, horizontal); }
-    zoom(factor: number, p: Vec2) { if (this.model.battle || this.battleView.restoring) return; const local = this.viewport.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(p.x, p.y)); this.board.setZoom(this.board.zoom * factor, new Vec2(local.x, local.y)); }
+    zoom(factor: number, p: Vec2) { if (this.model.battle || this.battleView.restoring) return; const local = this.board.pointerOnPlane(p); this.board.setZoom(this.board.zoom * factor, new Vec2(local.x, local.y)); }
     canZoom(p: Vec2) { return this.ready && this.modal === 'none' && !this.model.battle && !this.battleView.restoring && !this.actionAt(p) && this.hit(this.viewport, p); }
     private frameOpening() {
         const founder = this.model.cards[0], stack = this.model.stack(founder.sid)!; stack.x = 0; stack.y = 0;
@@ -967,42 +1168,103 @@ export class Sample extends Component implements InputTarget {
         const bar = this.find('BottomBar');
         const usableTop = this.boardTop, usableBottom = bar.position.y + bar.getComponent(UITransform)!.height / 2 + 52;
         const usableLeft = -width / 2 + this.find('Toolbar/Book').getComponent(UITransform)!.width + 32, usableRight = width / 2 - 64;
-        const zoom = Math.min(1, (usableRight - usableLeft) / (maxX - minX), (usableTop - usableBottom) / (maxY - minY));
+        const area = this.board.planeArea({ left: usableLeft, right: usableRight, bottom: usableBottom, top: usableTop });
+        const zoom = Math.min(1, (area.right - area.left) / (maxX - minX), (area.top - area.bottom) / (maxY - minY));
         this.board.reset(); this.board.setZoom(zoom);
-        this.board.pan(new Vec2((usableLeft + usableRight) / 2 - (minX + maxX) / 2 * this.board.zoom, (usableTop + usableBottom) / 2 - (minY + maxY) / 2 * this.board.zoom));
+        this.board.pan(new Vec2((area.left + area.right) / 2 - (minX + maxX) / 2 * this.board.zoom, (area.top + area.bottom) / 2 - (minY + maxY) / 2 * this.board.zoom));
     }
     private drawLinks() {
-        const g = this.lineArt; g.clear(); g.lineWidth = 4; g.strokeColor = new Color(93, 124, 76, 180); g.fillColor = g.strokeColor;
+        const g = this.lineArt; g.clear(); g.lineCap = Graphics.LineCap.ROUND; g.lineJoin = Graphics.LineJoin.ROUND;
+        this.supplyRoutes = [];
+        this.supplyTransit = [];
+        const moving = new Set(this.dragging ? this.movingIds() : []);
+        const rectangle = (sid: number): ConnectorRect => {
+            const stack = this.model.stack(sid)!, base = stack.cards[0], p = this.views.get(base)?.view.node.position || stack;
+            const count = stack.cards.filter(uid => moving.has(uid) === moving.has(base)).length;
+            const height = Math.max(0, count - 1) * this.model.stackOffset(sid);
+            return { left: p.x - 150, right: p.x + 150, bottom: p.y - 150 - height, top: p.y + 150 };
+        };
+        const draw = (from: ConnectorRect, to: ConnectorRect, preview = false, reveal = 1) => {
+            const route = shortestSupplyRoute(from, to);
+            if (!preview) this.supplyRoutes.push(route);
+            if (!route.points.length) return;
+            const points = roundSupplyRoute(route), length = supplyPathLength(points);
+            const travel = length * reveal, tip = supplyPathAt(points, travel);
+            g.lineWidth = preview ? 7 : SUPPLY_LINE_WIDTH; g.strokeColor = new Color(38, 42, 34, preview ? 110 : 215); g.fillColor = g.strokeColor;
+            if (preview) for (let d = this.supplyClock * 44 % 25; d < travel; d += 25) {
+                const from = supplyPathAt(points, d), to = supplyPathAt(points, Math.min(travel, d + 14));
+                g.moveTo(from.x, from.y); g.lineTo(to.x, to.y);
+            } else {
+                g.moveTo(points[0].x, points[0].y);
+                for (let d = 4; d < travel; d += 4) {
+                    const p = supplyPathAt(points, d), wobble = Math.sin(d * .36) * .45;
+                    g.lineTo(p.x - p.ny * wobble, p.y + p.nx * wobble);
+                }
+                g.lineTo(tip.x, tip.y);
+            }
+            g.stroke();
+            if (travel > SUPPLY_ARROW_LENGTH) {
+                g.moveTo(tip.x, tip.y);
+                g.lineTo(tip.x - tip.nx * SUPPLY_ARROW_LENGTH - tip.ny * SUPPLY_ARROW_HALF_WIDTH, tip.y - tip.ny * SUPPLY_ARROW_LENGTH + tip.nx * SUPPLY_ARROW_HALF_WIDTH);
+                g.lineTo(tip.x - tip.nx * SUPPLY_ARROW_LENGTH + tip.ny * SUPPLY_ARROW_HALF_WIDTH, tip.y - tip.ny * SUPPLY_ARROW_LENGTH - tip.nx * SUPPLY_ARROW_HALF_WIDTH);
+                g.close(); g.fill();
+            }
+        };
         for (const l of this.model.links) {
             const a = this.model.card(l.source), b = this.model.card(l.target); if (!a || !b || a.sid === b.sid) continue;
-            const p = this.model.position(a), q = this.model.position(b), dx = q.x - p.x, dy = q.y - p.y, length = Math.hypot(dx, dy) || 1;
-            const tx = q.x - dx / length * 150, ty = q.y - dy / length * 150;
-            g.moveTo(p.x, p.y); g.lineTo(tx, ty); g.stroke();
-            g.moveTo(tx, ty); g.lineTo(tx - dx / length * 18 - dy / length * 8, ty - dy / length * 18 + dx / length * 8);
-            g.lineTo(tx - dx / length * 18 + dy / length * 8, ty - dy / length * 18 - dx / length * 8); g.close(); g.fill();
+            const reveal = Math.min(1, (this.supplyClock - (this.linkBirths.get(a.sid + ':' + b.sid) ?? -1)) / .3);
+            draw(rectangle(a.sid), rectangle(b.sid), false, reveal);
         }
+        for (const d of this.model.deliveries) {
+            const source = this.model.card(d.source), target = this.model.card(d.target);
+            const savedRect = (p: typeof d.from): ConnectorRect => ({ left: p.x - 150, right: p.x + 150, top: p.y + 150, bottom: p.y - 150 - p.height });
+            const from = source ? rectangle(source.sid) : savedRect(d.from), to = target ? rectangle(target.sid) : savedRect(d.to);
+            const connected = source && target && this.model.links.some(l => this.model.card(l.source)?.sid === source.sid && this.model.card(l.target)?.sid === target.sid);
+            if (!connected) draw(from, to);
+            const points = roundSupplyRoute(shortestSupplyRoute(from, to)); if (!points.length) continue;
+            const progress = Math.min(1, d.elapsed / d.duration), p = supplyPathAt(points, supplyPathLength(points) * progress);
+            this.supplyTransit.push({ source: d.source, target: d.target, id: d.id, progress, x: p.x, y: p.y });
+        }
+        const anchor = this.model.card(this.supplyAnchor), candidate = this.model.card(this.supplyCandidate);
+        if (anchor && candidate && this.supplyDirection) draw(rectangle(this.supplyDirection === 'upstream' ? candidate.sid : anchor.sid), rectangle(this.supplyDirection === 'upstream' ? anchor.sid : candidate.sid), true);
+        const frames = new Set<number>();
+        if (this.modal === 'none' && !this.dragging) for (const card of [anchor, candidate]) if (card) {
+            const base = this.model.stack(card.sid)!.cards[0], view = this.views.get(base)?.view; if (!view) continue; frames.add(base);
+            let frame = this.supplyFrames.get(base);
+            if (!frame) { const node = this.makeNode('SupplyPreview-' + base, this.board.node, 320, 320); frame = node.addComponent(Graphics); this.supplyFrames.set(base, frame); }
+            const p = this.model.position(this.model.card(base)!); frame.node.setPosition(p.x, p.y - this.model.stackHeight(card.sid) / 2);
+            frame.node.setSiblingIndex(this.board.node.children.length - 1); view.drawDropHint(frame, this.supplyClock, this.model.stackHeight(card.sid));
+        }
+        for (const [uid, frame] of this.supplyFrames) if (!frames.has(uid)) { frame.node.destroy(); this.supplyFrames.delete(uid); }
+        g.fillColor = new Color(0, 0, 0, 255);
+        for (const dot of this.supplyTransit) { g.circle(dot.x, dot.y, 11); g.fill(); }
     }
     private snapshot() {
         const bounds = (n: Node) => {
             const t = n.getComponent(UITransform)!, s = this.metrics.scale;
-            const corners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => t.convertToWorldSpaceAR(new Vec3((x - .5) * t.width, (y - .5) * t.height)));
+            const corners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => this.board.projectWorld(t.convertToWorldSpaceAR(new Vec3((x - .5) * t.width, (y - .5) * t.height))));
             const minX = Math.min(...corners.map(p => p.x)), maxX = Math.max(...corners.map(p => p.x)), minY = Math.min(...corners.map(p => p.y)), maxY = Math.max(...corners.map(p => p.y));
             return { x: minX / s, y: (this.metrics.height - maxY) / s, width: (maxX - minX) / s, height: (maxY - minY) / s };
         };
         const m = this.model, founder = m.cards.find(c => c.id === 'founder'), founderView = founder && this.views.get(founder.uid)?.view;
         const basis = (node: Node) => {
-            const t = node.getComponent(UITransform)!, o = t.convertToWorldSpaceAR(new Vec3()), x = t.convertToWorldSpaceAR(new Vec3(168, 0)), y = t.convertToWorldSpaceAR(new Vec3(0, 168));
+            const t = node.getComponent(UITransform)!, project = (x: number, y: number) => this.board.projectWorld(t.convertToWorldSpaceAR(new Vec3(x, y)));
+            const o = project(0, 0), x = project(168, 0), y = project(0, 168);
             return { x: { x: x.x - o.x, y: x.y - o.y }, y: { x: y.x - o.x, y: y.y - o.y } };
         };
         return { ready: this.ready && this.pending === 0 && this.originalHud.pending === 0 && this.cardCatalog.pending === 0 && this.cardInspector.pending === 0 && !this.menuBackdrop.snapshot().capturing, error: this.lastError, modal: this.modal, zoom: this.board.zoom, wide: this.metrics.wide, nearSquare: this.metrics.nearSquare, nightShift: this.nightShift,
             page: this.page, pageCount: this.pageCount, card: founderView ? bounds(founderView.node) : null, position: founder ? m.position(founder) : null,
-            cards: m.cards.map(c => ({ ...c, name: m.def(c).name, position: m.position(c), bounds: this.views.has(c.uid) ? bounds(this.views.get(c.uid)!.view.node) : null,
+            cards: m.cards.map(c => ({ ...c, name: m.def(c).name, effectiveCapacity: m.employeeCapacity(c), position: m.position(c), bounds: this.views.has(c.uid) ? bounds(this.views.get(c.uid)!.view.node) : null,
                 faceBounds: this.views.has(c.uid) ? bounds(this.views.get(c.uid)!.view.frontNode) : null })),
             packs: m.packs.map(p => ({ ...p, bounds: this.views.has(p.uid) ? bounds(this.views.get(p.uid)!.view.node) : null,
                 faceBounds: this.views.has(p.uid) ? bounds(this.views.get(p.uid)!.view.frontNode) : null })),
             battle: m.battle ? { ...m.battle, rect: m.battleRect } : null, battlePresentation: this.battleView.snapshot(),
-            cash: m.cash, month: m.month, testMode: m.testMode, titleScreen: this.titleScreen.snapshot(), inspector: { ...this.cardInspector.snapshot(), bounds: bounds(this.cardInspector.cardNode), close: bounds(this.cardInspector.closeNode), detailsBounds: bounds(this.cardInspector.detailsNode) }, models: Array.from(m.models), tasks: Array.from(m.completed), rp: m.rp, notice: m.notice, links: m.links,
-            hint: this.label('Hint').string, taskReminder: this.label('TaskReminder').string, taskDrawer: this.originalHud.open, drawerMode: this.originalHud.mode, pitch: this.board.pitch,
+            cash: m.cash, month: m.month, paused: this.gameplayPaused, pauseWash: { active: this.pauseWash.node.active, strength: .3 }, testMode: m.testMode, titleScreen: this.titleScreen.snapshot(), inspector: { ...this.cardInspector.snapshot(), bounds: bounds(this.cardInspector.cardNode), close: bounds(this.cardInspector.closeNode), detailsBounds: bounds(this.cardInspector.detailsNode) }, models: Array.from(m.models), tasks: Array.from(m.completed), notice: m.notice, links: m.links,
+            supply: { step: this.supplyStep, subject: this.supplyAnchor, candidate: this.supplyCandidate, direction: this.supplyDirection, message: this.supplyMessage,
+                markers: [], deliveries: this.model.deliveries, transit: this.supplyTransit, frames: Array.from(this.supplyFrames.keys()), toast: this.supplyToast.active ? this.supplyToast.getChildByName('Text')!.getComponent(Label)!.string : '',
+                connector: { lineWidth: SUPPLY_LINE_WIDTH, arrowLength: SUPPLY_ARROW_LENGTH, cornerRadius: SUPPLY_CORNER_RADIUS, routes: this.supplyRoutes } },
+            hint: this.label('Hint').string, hintAttributes: this.label('HintAttributes').string, taskReminder: this.label('TaskReminder').string, taskDrawer: this.originalHud.open, drawerMode: this.originalHud.mode, pitch: this.board.pitch,
+            founderSpeech: { ...this.founderSpeech.snapshot(), bounds: bounds(this.founderSpeech.node) },
             drawer: bounds(this.find('TaskDrawer')), drawerProgress: this.originalHud.reveal,
             helpText: this.originalHud.helpText, help: this.originalHud.helpText ? bounds(this.find('TaskDrawer/Help')) : null,
             motions: Array.from(this.views.entries()).map(([uid, v]) => ({ uid, ...v.view.motionSnapshot() })),
@@ -1027,7 +1289,7 @@ export class Sample extends Component implements InputTarget {
                 tabs: ['Book', 'Tasks'].map(name => ({ name, bounds: bounds(this.find('Toolbar/' + name)), order: this.find('Toolbar/' + name).getSiblingIndex(),
                     font: this.label('Toolbar/' + name + '/Text').fontSize / this.metrics.scale })),
                 packPrices: m.data.packOrder.map(id => {
-                    const cover = this.find('PackStrip/Covers/Pack-' + id + '/Cover'), label = cover.getChildByPath('Price/Text')!.getComponent(Label)!;
+                    const cover = this.controls.get('TopPack:' + id)!.getChildByName('Cover')!, label = cover.getChildByPath('Price/Text')!.getComponent(Label)!;
                     return { id, price: label.string, cover: bounds(cover), label: bounds(label.node),
                         hasBackground: !!cover.getChildByName('Price')!.getComponent(Surface) };
                 })
@@ -1046,7 +1308,7 @@ export class Sample extends Component implements InputTarget {
     }
     onDestroy() {
         this.flushProgress(); game.off(Game.EVENT_HIDE, this.flushProgress, this);
-        if (typeof window !== 'undefined') { window.removeEventListener('pagehide', this.flushProgress); window.removeEventListener('beforeunload', this.flushProgress); }
+        if (typeof window !== 'undefined') { window.removeEventListener('pagehide', this.flushProgress); window.removeEventListener('beforeunload', this.flushProgress); window.removeEventListener('resize', this.layoutWindow); }
         if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.visibilityChanged);
         this.menuBackdrop?.destroy();
         this.cardCatalog?.destroy();

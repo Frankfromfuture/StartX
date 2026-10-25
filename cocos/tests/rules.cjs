@@ -18,20 +18,20 @@ m.openPack(packId); m.openPack(packId); assert.equal(m.packs.length, 0); assert.
 const founder = m.cards.find(c => c.id === 'founder'), resource = m.cards.find(c => c.id === 'p1_neighborhood');
 m.merge(founder.sid, resource.sid); const uses = resource.uses;
 tick(m, 6); assert.equal(m.cards.filter(c => c.id === 'p1_youth').length, 1); assert.equal(resource.uses, uses - 1);
-assert(m.models.has('p1_recruit_youth')); assert.equal(m.rp, 12); assert.equal(m.cash, 5);
+assert(m.models.has('p1_recruit_youth')); assert(!('rp' in m)); assert.equal(m.cash, 5);
 results.push('Original opening: founder, free pack, five cash, resource production, durability, discovery RP');
-// All 22 production recipes: consumed cards, surviving resource, exact original runtime cash formula.
+// All 30 production recipes: consumed cards, surviving resource, exact Excel cash amounts.
 for (const r of data.recipes) {
  const g = model(); g.cards = []; g.stacks = []; g.packs = [];
  const ids = r.inputs.flatMap(i => Array(i.count).fill(i.id)); if (r.worker_tags.length) ids.push('founder');
  const first = add(g, ids), s = g.stack(first.sid), p = g.production(s.sid);
  assert.equal(p?.recipe.id, r.id, r.id + ' matching/priority');
- const expected = r.outputs.map(o => ({ id: o.id, count: o.id === 'cash' ? ({ p1_cash_pkg_cust: 8, p1_cash_pkg_youth: 6, p1_cash_raw_cust: 6, p1_cash_raw_youth: 4 }[r.id] ?? o.count) : o.count * (1 + Math.floor(Math.max(0, g.stackCapacity(s.sid) - 3) / 4)) }));
+ const expected = r.outputs.map(o => ({id:o.id,count:o.count}));
  g.complete(s, p);
  for (const o of expected) assert.equal(g.cards.filter(c => c.id === o.id).length, o.count, r.id + ' output ' + o.id);
  for (const i of r.inputs) assert.equal(g.cards.filter(c => c.id === i.id).length, i.consume && i.id !== 'p3_bank' ? 0 : i.count, r.id + ' consume ' + i.id);
 }
-results.push('All 22 original recipes: priority, ingredients, workforce, outputs, sale revenue and bank persistence');
+results.push('All 30 original recipes: priority, ingredients, workforce, outputs, sale revenue and bank persistence');
 const pause = model(); pause.packs = []; const loc = pause.spawn('p1_neighborhood', 500, 500), f = pause.cards[0]; pause.merge(f.sid, loc.sid);
 tick(pause, 2); const saved = loc.elapsed; pause.move(f.uid, 1000, 1000); tick(pause, 1); assert.equal(loc.elapsed, saved);
 pause.move(f.uid, 500, 500, loc.uid); tick(pause, 4); assert.equal(pause.cards.filter(c => c.id === 'p1_youth').length, 1);
@@ -41,19 +41,19 @@ accounts.move(cash.uid, 600, 0, account.uid); assert.equal(account.stored, 50); 
 accounts.withdraw(account); assert.equal(account.stored, 45); assert.equal(accounts.cash, 55); assert(accounts.spend(12)); assert.equal(accounts.cash, 43); assert.equal(account.stored, 43);
 results.push('Account capacity 50, withdrawal 5, cash-first spending and conserved balances');
 const unlock = model(); unlock.event('pack_opened', 'garage_pack'); assert.equal(unlock.packUnlocked('Developemnt_pack'), false);
-for (let i = 0; unlock.completed.size < 8; i++) unlock.completed.add('test' + i); assert(unlock.packUnlocked('Developemnt_pack')); assert.equal(unlock.packUnlocked('channel_pack'), false);
-for (let i = 8; unlock.completed.size < 13; i++) unlock.completed.add('test' + i); assert(unlock.packUnlocked('channel_pack'));
+unlock.event('recipe_complete','p1_cash_raw_youth'); assert(unlock.packUnlocked('Developemnt_pack')); assert.equal(unlock.packUnlocked('channel_pack'),false);
+unlock.event('recipe_complete','p2_train_product_specialist'); assert(unlock.packUnlocked('channel_pack'));
 for (const id of data.packOrder) { const cards = unlock.generatePack(id); assert(cards.length >= data.packs[id].minCards); assert(cards.length <= data.packs[id].maxCards + 1); assert(!cards.includes('founder')); for (const c of cards) assert(data.cards[c]); }
-results.push('All 10 packs use the preserved source order, original unlock gates and valid reserved card pools');
+results.push('All 10 packs use the preserved source order, milestone unlock gates and valid reserved card pools');
 const supply = model(); supply.packs = []; supply.cards = []; supply.stacks = [];
 const source = add(supply, ['p1_neighborhood','founder']), dest = add(supply, ['p1_rawprod']);
-supply.revenue = 40; assert(supply.connect(source.uid, dest.uid)); tick(supply, 6.1); assert.equal(supply.links.length, 1); assert(supply.counters['supply_production|'] > 0);
+supply.event('recipe_complete','p1_cash_raw_youth'); supply.event('recipe_complete','p2_train_product_specialist'); assert(supply.connect(source.uid, dest.uid)); tick(supply, 6.1); assert.equal(supply.links.length, 1); assert(supply.counters['supply_production|'] > 0);
 results.push('Supply output reaches compatible target stack and records task progress');
 const payroll = model(); payroll.packs = []; payroll.spawn('p1_office',0,0); add(payroll,Array(5).fill('cash')); payroll.monthTime=.05; payroll.update(.1); assert.equal(payroll.month,2); assert.equal(payroll.cash,3);
 payroll.monthTime=.05; payroll.update(.1); payroll.monthTime=.05; payroll.update(.1); assert(payroll.gameOver);
 const cleanup = model(); cleanup.packs=[]; cleanup.spawn('p1_office',0,0); add(cleanup,Array(30).fill('p1_youth')); cleanup.monthTime=.05; cleanup.update(.1); assert(cleanup.cleanup); const youths=cleanup.cards.find(c=>c.id==='p1_youth'); cleanup.sell(youths.sid); cleanup.update(.1); assert.equal(cleanup.month,2);
 results.push('Monthly payroll, insolvency and capacity cleanup settlement');
 for (const [id] of Object.entries(data.cards)) assert(fs.existsSync(path.join(root,'assets/content/faces',id+'.png')));
-assert.equal(Object.keys(data.cards).length, 53);
+assert.equal(Object.keys(data.cards).length, 66);
 fs.writeFileSync(path.join(root,'review/rules-verification.json'),JSON.stringify({passed:true,results},null,2));
 console.log(JSON.stringify({passed:true,results},null,2));

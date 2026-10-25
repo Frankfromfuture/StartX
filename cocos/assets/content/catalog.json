@@ -18,7 +18,7 @@
       "value": 0,
       "cost": 0,
       "flavor": "不用给钱，啥都能干。梦想是改变世界，合伙人是自己的猫。",
-      "bodyColor": "ffe5e5",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 5/5、工资 $0"
     },
     "cash": {
@@ -32,7 +32,7 @@
       "cost": 0,
       "workRequired": 3,
       "flavor": "让你又爱又恨的东西。",
-      "bodyColor": "d7b052",
+      "bodyColor": "f6da96",
       "functionText": ""
     },
     "p1_neighborhood": {
@@ -44,12 +44,12 @@
       "spaceCapacity": 0,
       "value": 0,
       "cost": 0,
-      "maxUsesMin": 3,
-      "maxUsesMax": 5,
-      "maxUses": 5,
+      "maxUsesMin": 6,
+      "maxUsesMax": 8,
+      "maxUses": 8,
       "flavor": "每个大公司的首批客户都是亲戚朋友和邻居们。",
-      "bodyColor": "adb1af",
-      "functionText": "次数 5/5"
+      "bodyColor": "667db6",
+      "functionText": "次数 8/8"
     },
     "p1_youth": {
       "name": "小区青年",
@@ -62,7 +62,7 @@
       "cost": 0,
       "workRequired": 30,
       "flavor": "不看牌子，便宜好用就行。",
-      "bodyColor": "81978d",
+      "bodyColor": "f6f0db",
       "functionText": "价值 $1"
     },
     "p1_survey": {
@@ -75,7 +75,7 @@
       "value": 1,
       "cost": 0,
       "flavor": "送10个鸡蛋，消费者会在问卷里说实话吗？",
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $1"
     },
     "p1_customer": {
@@ -89,7 +89,7 @@
       "cost": 0,
       "workRequired": 30,
       "flavor": "关注高性价比产品的人。",
-      "bodyColor": "81978d",
+      "bodyColor": "f6f0db",
       "functionText": "价值 $2"
     },
     "p1_university": {
@@ -102,7 +102,7 @@
       "value": 0,
       "cost": 0,
       "flavor": "真好，又回到校园了！",
-      "bodyColor": "6e7071",
+      "bodyColor": "667081",
       "functionText": ""
     },
     "p1_intern": {
@@ -118,7 +118,7 @@
       "cost": 0,
       "workRequired": 30,
       "flavor": "懵懂的眼神，管饭就行。",
-      "bodyColor": "c19799",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 1/1、工资 $1"
     },
     "p1_wholesale": {
@@ -130,12 +130,12 @@
       "spaceCapacity": 0,
       "value": 0,
       "cost": 0,
-      "maxUsesMin": 3,
-      "maxUsesMax": 5,
-      "maxUses": 5,
+      "maxUsesMin": 6,
+      "maxUsesMax": 8,
+      "maxUses": 8,
       "flavor": "“能再便宜点吗，不能我走了啊！”",
-      "bodyColor": "adb1af",
-      "functionText": "次数 5/5"
+      "bodyColor": "667db6",
+      "functionText": "次数 8/8"
     },
     "p1_rawprod": {
       "name": "粗糙产品",
@@ -148,7 +148,7 @@
       "cost": 1,
       "workRequired": 30,
       "flavor": "就这个价格还要啥自行车？",
-      "bodyColor": "d5ab8a",
+      "bodyColor": "e79651",
       "functionText": "价值 $1、成本 $1"
     },
     "p1_marketing": {
@@ -161,7 +161,7 @@
       "value": 1,
       "cost": 0,
       "flavor": "“真正好的产品不需要包装。”但我们的不是",
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $1"
     },
     "p1_package": {
@@ -175,7 +175,7 @@
       "cost": 2,
       "workRequired": 30,
       "flavor": "带包装的自行车。",
-      "bodyColor": "d5ab8a",
+      "bodyColor": "e79651",
       "functionText": "价值 $2、成本 $2"
     },
     "p1_office": {
@@ -188,7 +188,7 @@
       "value": 0,
       "cost": 0,
       "flavor": "联合办公里最便宜的非固定工位，咖啡管够",
-      "bodyColor": "6e7071",
+      "bodyColor": "667081",
       "functionText": "空间容量 +30"
     },
     "rival1": {
@@ -202,7 +202,7 @@
       "cost": 0,
       "hp": 2,
       "flavor": "经常尾随你们的人。",
-      "bodyColor": "9c7071",
+      "bodyColor": "d75c5c",
       "functionText": "产能 2、资金 6/6"
     },
     "p2_law_firm": {
@@ -218,7 +218,7 @@
       "maxUsesMax": 5,
       "maxUses": 5,
       "flavor": "Better Call Me!",
-      "bodyColor": "adb1af",
+      "bodyColor": "667db6",
       "functionText": "次数 5/5"
     },
     "p2_document": {
@@ -232,7 +232,7 @@
       "cost": 0,
       "workRequired": 20,
       "flavor": "写字楼的特产。",
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $0"
     },
     "p2_contract": {
@@ -246,7 +246,7 @@
       "cost": 0,
       "workRequired": 25,
       "flavor": "希望你认真看一下。",
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $0"
     },
     "p2_grad": {
@@ -262,7 +262,7 @@
       "cost": 0,
       "workRequired": 6,
       "flavor": "以管理培训生的名义招来的通用年轻人。",
-      "bodyColor": "c19799",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 2/2、工资 $1"
     },
     "p2_admin_management": {
@@ -275,7 +275,7 @@
       "value": 1,
       "cost": 0,
       "workRequired": 15,
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $1"
     },
     "p2_sales_course": {
@@ -289,7 +289,7 @@
       "cost": 0,
       "workRequired": 40,
       "flavor": "“听懂掌声！”",
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $2"
     },
     "p2_product_course": {
@@ -302,7 +302,7 @@
       "value": 2,
       "cost": 0,
       "workRequired": 40,
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $2"
     },
     "p2_legal_admin_course": {
@@ -315,7 +315,7 @@
       "value": 2,
       "cost": 0,
       "workRequired": 40,
-      "bodyColor": "83949f",
+      "bodyColor": "926746",
       "functionText": "价值 $2"
     },
     "p2_sales_specialist": {
@@ -332,7 +332,7 @@
       "cost": 0,
       "workRequired": 6,
       "flavor": "公司里最活跃的那批人。",
-      "bodyColor": "c19799",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 3/3、工资 $2"
     },
     "p2_product_specialist": {
@@ -349,7 +349,7 @@
       "cost": 0,
       "workRequired": 6,
       "flavor": "专门负责产品升级。",
-      "bodyColor": "c19799",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 3/3、工资 $2"
     },
     "p2_admin_specialist": {
@@ -366,7 +366,7 @@
       "cost": 0,
       "workRequired": 6,
       "flavor": "老板的好助手。",
-      "bodyColor": "c19799",
+      "bodyColor": "f4b9aa",
       "functionText": "产能 3/3、工资 $2"
     },
     "p2_orderly_workstation": {
@@ -380,7 +380,7 @@
       "cost": 0,
       "workRequired": 40,
       "flavor": "几个空的工位和柜子。",
-      "bodyColor": "6e7071",
+      "bodyColor": "667081",
       "functionText": "价值 $1、空间容量 +5"
     },
     "rival2": {
@@ -394,7 +394,7 @@
       "cost": 0,
       "hp": 4,
       "flavor": "经常大声嘲笑你们的人。",
-      "bodyColor": "9c7071",
+      "bodyColor": "d75c5c",
       "functionText": "产能 4、资金 12/12"
     },
     "p3_large_neighborhood": {
@@ -408,7 +408,7 @@
       "cost": 0,
       "workRequired": 60,
       "flavor": "源源不断的顾客。",
-      "bodyColor": "adb1af",
+      "bodyColor": "667db6",
       "functionText": "无限次"
     },
     "p3_wholesale_city": {
@@ -422,7 +422,7 @@
       "cost": 0,
       "workRequired": 60,
       "flavor": "基本什么都能买到。",
-      "bodyColor": "adb1af",
+      "bodyColor": "667db6",
       "functionText": "无限次"
     },
     "p3_bank": {
@@ -435,7 +435,7 @@
       "value": 0,
       "cost": 0,
       "flavor": "大家经常去的地方。",
-      "bodyColor": "adb1af",
+      "bodyColor": "667db6",
       "functionText": "无限次"
     },
     "p3_account": {
@@ -449,8 +449,211 @@
       "cost": 0,
       "workRequired": 50,
       "flavor": "开户以后就能存一笔钱了。",
-      "bodyColor": "8a6a24",
+      "bodyColor": "f6da96",
       "functionText": "账户余额 $0/50、点击取出最多 5 个现金"
+    },
+    "p4_quality": {
+      "name": "合格产品（临）",
+      "type": "product",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 4,
+      "cost": 3,
+      "workRequired": 24,
+      "flavor": "这回真的测过了。至少，测试那天能用。",
+      "functionText": "产品专员＋带包装的产品制成；与靠谱客户成交 $10",
+      "bodyColor": "e79651"
+    },
+    "p4_order": {
+      "name": "限期订单（临）",
+      "type": "order",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 12,
+      "deadlineSeconds": 120,
+      "firstDeadlineSeconds": 180,
+      "expiryPenalty": 2,
+      "flavor": "客户说不着急，只要月底以前。今天已经二十八号了。",
+      "functionText": "点击接单后计时；合格产品×2＋订单交付，回款 $24",
+      "bodyColor": "acda82"
+    },
+    "p4_change": {
+      "name": "临时加单（临）",
+      "type": "event",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 6,
+      "flavor": "“就加一点点。”客户把双手张到了最开。",
+      "functionText": "加一个带包装的产品，赚 $4 并延长原订单 30 秒；叠合同可婉拒",
+      "bodyColor": "b566b7"
+    },
+    "p4_receivable": {
+      "name": "尾款待付（临）",
+      "type": "receivable",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 12,
+      "flavor": "财务说已经走流程了。流程正在散步。",
+      "functionText": "等 45 秒自动收到 $12；叠任意员工可提前催回",
+      "bodyColor": "f6da96"
+    },
+    "p4_referral": {
+      "name": "老客推荐（临）",
+      "type": "event",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 0,
+      "cost": 0,
+      "workRequired": 12,
+      "flavor": "“我有个朋友也需要。”这次，朋友真的来了。",
+      "functionText": "90 秒内叠任意员工接待，获得一张新订单",
+      "bodyColor": "b566b7"
+    },
+    "badge_entrepreneur": {
+      "name": "企业家精神毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_veteran": {
+      "name": "创业元老毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_supply": {
+      "name": "供应链专家毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_craft": {
+      "name": "产品匠心毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_team": {
+      "name": "团队之家毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_courage": {
+      "name": "商战勇气毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_capital": {
+      "name": "资本助力毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_bell": {
+      "name": "敲钟时刻毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_global": {
+      "name": "全球视野毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
+    },
+    "badge_challenger": {
+      "name": "巨头挑战者毛线徽章",
+      "type": "badge",
+      "workTags": [],
+      "salary": 0,
+      "capacity": 0,
+      "spaceCapacity": 0,
+      "value": 1,
+      "cost": 0,
+      "flavor": "柔软的毛线，贴在努力工作的你身上。",
+      "functionText": "拖到员工卡上，产能 +1",
+      "bodyColor": "926746"
     },
     "bm_p2_specialist_make_customer": {
       "name": "拓展靠谱客户",
@@ -460,7 +663,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "销售专员*1+居住小区*1 → 靠谱客户*1"
     },
     "bm_p2_specialist_package_product": {
@@ -471,7 +674,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "产品专员*1+批发市场*1+现金*1 → 带包装的产品*1"
     },
     "bm_p1_recruit_youth": {
@@ -482,7 +685,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "居住小区*1 → 小区青年*1"
     },
     "bm_p1_make_customer": {
@@ -493,7 +696,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "初级客户调研*1+小区青年*1 → 靠谱客户*1"
     },
     "bm_p1_recruit_intern": {
@@ -504,7 +707,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "大学*1 → 实习生*1"
     },
     "bm_p1_make_rawprod": {
@@ -515,7 +718,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "批发市场*1+现金*1 → 粗糙产品*1"
     },
     "bm_p1_package_prod": {
@@ -526,7 +729,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "粗糙产品*1+初级产品策划*1 → 带包装的产品*1"
     },
     "bm_p1_cash_pkg_cust": {
@@ -537,8 +740,8 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
-      "functionText": "带包装的产品*1+靠谱客户*1 → 现金*6"
+      "bodyColor": "b09af6",
+      "functionText": "带包装的产品*1+靠谱客户*1 → 现金*8"
     },
     "bm_p1_cash_pkg_youth": {
       "name": "成交",
@@ -548,8 +751,8 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
-      "functionText": "带包装的产品*1+小区青年*1 → 现金*5"
+      "bodyColor": "b09af6",
+      "functionText": "带包装的产品*1+小区青年*1 → 现金*6"
     },
     "bm_p1_cash_raw_cust": {
       "name": "成交",
@@ -559,8 +762,8 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
-      "functionText": "粗糙产品*1+靠谱客户*1 → 现金*5"
+      "bodyColor": "b09af6",
+      "functionText": "粗糙产品*1+靠谱客户*1 → 现金*6"
     },
     "bm_p1_cash_raw_youth": {
       "name": "成交",
@@ -570,8 +773,8 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
-      "functionText": "粗糙产品*1+小区青年*1 → 现金*3"
+      "bodyColor": "b09af6",
+      "functionText": "粗糙产品*1+小区青年*1 → 现金*4"
     },
     "bm_p2_make_document": {
       "name": "起草文书",
@@ -581,7 +784,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "创始人办公桌*1 → 文书*1"
     },
     "bm_p2_train_grad": {
@@ -592,7 +795,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "合同*1+实习生*1 → 毕业生*1"
     },
     "bm_p2_make_sales_course": {
@@ -603,7 +806,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "文书*1+初级客户调研*1 → 销售技巧课程*1"
     },
     "bm_p2_make_product_course": {
@@ -614,7 +817,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "文书*1+初级产品策划*1 → 产品策划课程*1"
     },
     "bm_p2_make_legal_admin_course": {
@@ -625,7 +828,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "文书*1+初级行政管理*1 → 法务行政课程*1"
     },
     "bm_p2_train_sales_specialist": {
@@ -636,7 +839,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "毕业生*1+销售技巧课程*1 → 销售专员*1"
     },
     "bm_p2_train_product_specialist": {
@@ -647,7 +850,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "毕业生*1+产品策划课程*1 → 产品专员*1"
     },
     "bm_p2_train_admin_specialist": {
@@ -658,7 +861,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "毕业生*1+法务行政课程*1 → 行政专员*1"
     },
     "bm_p2_build_orderly_workstation": {
@@ -669,7 +872,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "创始人办公桌*1+初级行政管理*1+现金*1 → 井井有条的工位*1"
     },
     "bm_p2_make_contract": {
@@ -680,7 +883,7 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "文书*1+律师事务所*1 → 合同*1"
     },
     "bm_p3_open_account": {
@@ -691,8 +894,96 @@
       "capacity": 0,
       "value": 1,
       "cost": 0,
-      "bodyColor": "6b4ca0",
+      "bodyColor": "b09af6",
       "functionText": "银行*1+合同*1 → 账户*1"
+    },
+    "bm_p4_upgrade": {
+      "name": "产品质检（临）",
+      "type": "business_model",
+      "recipeId": "p4_upgrade",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "产品专员*1+带包装的产品*1 → 合格产品（临）*1"
+    },
+    "bm_p4_sell_quality": {
+      "name": "合格产品成交（临）",
+      "type": "business_model",
+      "recipeId": "p4_sell_quality",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "合格产品（临）*1+靠谱客户*1 → 现金*10"
+    },
+    "bm_p4_sell_youth": {
+      "name": "合格产品零售（临）",
+      "type": "business_model",
+      "recipeId": "p4_sell_youth",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "合格产品（临）*1+小区青年*1 → 现金*7"
+    },
+    "bm_p4_deliver": {
+      "name": "按期交付（临）",
+      "type": "business_model",
+      "recipeId": "p4_deliver",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "限期订单（临）*1+合格产品（临）*2 → 现金*24"
+    },
+    "bm_p4_accept_change": {
+      "name": "接下加单（临）",
+      "type": "business_model",
+      "recipeId": "p4_accept_change",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "临时加单（临）*1+带包装的产品*1 → 现金*4"
+    },
+    "bm_p4_decline_change": {
+      "name": "按合同办事（临）",
+      "type": "business_model",
+      "recipeId": "p4_decline_change",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "临时加单（临）*1+合同*1 → 取消加单，合同保留"
+    },
+    "bm_p4_collect": {
+      "name": "催回尾款（临）",
+      "type": "business_model",
+      "recipeId": "p4_collect",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "尾款待付（临）*1 → 现金*12"
+    },
+    "bm_p4_referral_order": {
+      "name": "接待老客推荐（临）",
+      "type": "business_model",
+      "recipeId": "p4_referral_order",
+      "salary": 0,
+      "capacity": 0,
+      "value": 1,
+      "cost": 0,
+      "bodyColor": "b09af6",
+      "functionText": "老客推荐（临）*1 → 限期订单（临）*1"
     }
   },
   "recipes": [
@@ -891,11 +1182,11 @@
       "outputs": [
         {
           "id": "cash",
-          "count": 6
+          "count": 8
         }
       ],
       "packId": "garage_pack",
-      "formula": "带包装的产品*1+靠谱客户*1 → 现金*6"
+      "formula": "带包装的产品*1+靠谱客户*1 → 现金*8"
     },
     {
       "id": "p1_cash_pkg_youth",
@@ -916,11 +1207,11 @@
       "outputs": [
         {
           "id": "cash",
-          "count": 5
+          "count": 6
         }
       ],
       "packId": "garage_pack",
-      "formula": "带包装的产品*1+小区青年*1 → 现金*5"
+      "formula": "带包装的产品*1+小区青年*1 → 现金*6"
     },
     {
       "id": "p1_cash_raw_cust",
@@ -941,11 +1232,11 @@
       "outputs": [
         {
           "id": "cash",
-          "count": 5
+          "count": 6
         }
       ],
       "packId": "garage_pack",
-      "formula": "粗糙产品*1+靠谱客户*1 → 现金*5"
+      "formula": "粗糙产品*1+靠谱客户*1 → 现金*6"
     },
     {
       "id": "p1_cash_raw_youth",
@@ -966,11 +1257,11 @@
       "outputs": [
         {
           "id": "cash",
-          "count": 3
+          "count": 4
         }
       ],
       "packId": "garage_pack",
-      "formula": "粗糙产品*1+小区青年*1 → 现金*3"
+      "formula": "粗糙产品*1+小区青年*1 → 现金*4"
     },
     {
       "id": "p2_make_document",
@@ -1250,6 +1541,208 @@
       ],
       "packId": "channel_pack",
       "formula": "银行*1+合同*1 → 账户*1"
+    },
+    {
+      "id": "p4_upgrade",
+      "name": "产品质检（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p2_product_specialist",
+          "count": 1,
+          "consume": false
+        },
+        {
+          "id": "p1_package",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p4_quality",
+          "count": 1
+        }
+      ],
+      "packId": "product_pack",
+      "workRequired": 0,
+      "formula": "产品专员*1+带包装的产品*1 → 合格产品（临）*1"
+    },
+    {
+      "id": "p4_sell_quality",
+      "name": "合格产品成交（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p4_quality",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_customer",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 10
+        }
+      ],
+      "packId": "product_pack",
+      "workRequired": 0,
+      "formula": "合格产品（临）*1+靠谱客户*1 → 现金*10"
+    },
+    {
+      "id": "p4_sell_youth",
+      "name": "合格产品零售（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p4_quality",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_youth",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 7
+        }
+      ],
+      "packId": "product_pack",
+      "workRequired": 0,
+      "formula": "合格产品（临）*1+小区青年*1 → 现金*7"
+    },
+    {
+      "id": "p4_deliver",
+      "name": "按期交付（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p4_order",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p4_quality",
+          "count": 2,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 24
+        }
+      ],
+      "packId": "product_pack",
+      "effect": "deliver_order",
+      "workRequired": 6,
+      "formula": "限期订单（临）*1+合格产品（临）*2 → 现金*24"
+    },
+    {
+      "id": "p4_accept_change",
+      "name": "接下加单（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p4_change",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p1_package",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 4
+        }
+      ],
+      "packId": "product_pack",
+      "effect": "accept_change",
+      "workRequired": 6,
+      "formula": "临时加单（临）*1+带包装的产品*1 → 现金*4"
+    },
+    {
+      "id": "p4_decline_change",
+      "name": "按合同办事（临）",
+      "worker_tags": [],
+      "inputs": [
+        {
+          "id": "p4_change",
+          "count": 1,
+          "consume": true
+        },
+        {
+          "id": "p2_contract",
+          "count": 1,
+          "consume": false
+        }
+      ],
+      "outputs": [],
+      "packId": "product_pack",
+      "effect": "decline_change",
+      "workRequired": 4,
+      "formula": "临时加单（临）*1+合同*1 → 取消加单，合同保留"
+    },
+    {
+      "id": "p4_collect",
+      "name": "催回尾款（临）",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p4_receivable",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "cash",
+          "count": 12
+        }
+      ],
+      "packId": "product_pack",
+      "effect": "collect_payment",
+      "workRequired": 12,
+      "formula": "尾款待付（临）*1 → 现金*12"
+    },
+    {
+      "id": "p4_referral_order",
+      "name": "接待老客推荐（临）",
+      "worker_tags": [
+        "any"
+      ],
+      "inputs": [
+        {
+          "id": "p4_referral",
+          "count": 1,
+          "consume": true
+        }
+      ],
+      "outputs": [
+        {
+          "id": "p4_order",
+          "count": 1
+        }
+      ],
+      "packId": "product_pack",
+      "effect": "resolve_referral",
+      "workRequired": 12,
+      "formula": "老客推荐（临）*1 → 限期订单（临）*1"
     }
   ],
   "packs": {
@@ -1286,6 +1779,10 @@
           {
             "id": "p1_intern",
             "w": 25
+          },
+          {
+            "id": "badge_entrepreneur",
+            "w": 6
           }
         ],
         [
@@ -1316,6 +1813,12 @@
             "w": 33
           }
         ]
+      ],
+      "requiredTasks": [],
+      "starterCards": [
+        "p1_university",
+        "p1_survey",
+        "p1_marketing"
       ]
     },
     "Developemnt_pack": {
@@ -1341,6 +1844,10 @@
           {
             "id": "p1_university",
             "w": 15
+          },
+          {
+            "id": "badge_veteran",
+            "w": 6
           }
         ],
         [
@@ -1387,6 +1894,14 @@
             "w": 20
           }
         ]
+      ],
+      "requiredTasks": [
+        "main_first_sale"
+      ],
+      "starterCards": [
+        "p2_law_firm",
+        "p2_contract",
+        "p2_product_course"
       ]
     },
     "channel_pack": {
@@ -1430,6 +1945,10 @@
           {
             "id": "p2_product_specialist",
             "w": 15
+          },
+          {
+            "id": "badge_supply",
+            "w": 6
           }
         ],
         [
@@ -1446,62 +1965,66 @@
             "w": 25
           }
         ]
+      ],
+      "requiredTasks": [
+        "org_product"
+      ],
+      "starterCards": [
+        "p3_bank",
+        "p3_large_neighborhood",
+        "p3_wholesale_city"
       ]
     },
     "product_pack": {
       "name": "产品升级",
-      "stage": 2,
-      "price": 10,
+      "stage": 3,
+      "price": 8,
       "minCards": 3,
       "maxCards": 3,
       "slots": [
         [
           {
-            "id": "p1_marketing",
-            "w": 35
-          },
-          {
-            "id": "p2_product_course",
-            "w": 35
-          },
-          {
-            "id": "p2_product_specialist",
-            "w": 30
+            "id": "p4_order",
+            "w": 100
           }
         ],
         [
-          {
-            "id": "p1_rawprod",
-            "w": 35
-          },
           {
             "id": "p1_package",
-            "w": 35
+            "w": 100
           },
           {
-            "id": "p1_wholesale",
-            "w": 30
+            "id": "badge_craft",
+            "w": 6
           }
         ],
         [
           {
-            "id": "p1_survey",
-            "w": 35
+            "id": "p1_package",
+            "w": 60
           },
           {
-            "id": "p2_document",
-            "w": 35
+            "id": "p1_customer",
+            "w": 25
           },
           {
-            "id": "p2_grad",
-            "w": 30
+            "id": "p4_quality",
+            "w": 15
           }
         ]
+      ],
+      "requiredTasks": [
+        "partner_account"
+      ],
+      "starterCards": [
+        "p4_order",
+        "p1_package",
+        "p1_package"
       ]
     },
     "office_pack": {
       "name": "办公空间扩大",
-      "stage": 2,
+      "stage": 3,
       "price": 8,
       "minCards": 3,
       "maxCards": 3,
@@ -1532,6 +2055,10 @@
           {
             "id": "p2_grad",
             "w": 35
+          },
+          {
+            "id": "badge_team",
+            "w": 6
           }
         ],
         [
@@ -1548,11 +2075,15 @@
             "w": 35
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "main_expand_office"
+      ],
+      "starterCards": []
     },
     "rival_pack": {
       "name": "急！商战来袭！",
-      "stage": 3,
+      "stage": 4,
       "price": 12,
       "minCards": 3,
       "maxCards": 3,
@@ -1567,6 +2098,10 @@
           {
             "id": "rival2",
             "w": 100
+          },
+          {
+            "id": "badge_courage",
+            "w": 6
           }
         ],
         [
@@ -1579,11 +2114,15 @@
             "w": 50
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "main_supply_chain"
+      ],
+      "starterCards": []
     },
     "funding_pack": {
       "name": "融资壮大",
-      "stage": 4,
+      "stage": 5,
       "price": 16,
       "minCards": 3,
       "maxCards": 3,
@@ -1614,6 +2153,10 @@
           {
             "id": "p2_law_firm",
             "w": 30
+          },
+          {
+            "id": "badge_capital",
+            "w": 6
           }
         ],
         [
@@ -1630,11 +2173,15 @@
             "w": 30
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "org_all"
+      ],
+      "starterCards": []
     },
     "ipo_pack": {
       "name": "上市IPO 时刻！",
-      "stage": 5,
+      "stage": 6,
       "price": 24,
       "minCards": 3,
       "maxCards": 3,
@@ -1665,6 +2212,10 @@
           {
             "id": "p2_orderly_workstation",
             "w": 30
+          },
+          {
+            "id": "badge_bell",
+            "w": 6
           }
         ],
         [
@@ -1681,11 +2232,15 @@
             "w": 33
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "p4_ten_orders"
+      ],
+      "starterCards": []
     },
     "international_pack": {
       "name": "国际扩张",
-      "stage": 5,
+      "stage": 6,
       "price": 34,
       "minCards": 3,
       "maxCards": 3,
@@ -1716,6 +2271,10 @@
           {
             "id": "p2_grad",
             "w": 25
+          },
+          {
+            "id": "badge_global",
+            "w": 6
           }
         ],
         [
@@ -1732,7 +2291,11 @@
             "w": 30
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "battle_three"
+      ],
+      "starterCards": []
     },
     "fortune500_pack": {
       "name": "战！巨头竞争！",
@@ -1763,6 +2326,10 @@
           {
             "id": "p2_admin_specialist",
             "w": 33
+          },
+          {
+            "id": "badge_challenger",
+            "w": 6
           }
         ],
         [
@@ -1779,7 +2346,11 @@
             "w": 25
           }
         ]
-      ]
+      ],
+      "requiredTasks": [
+        "battle_twenty"
+      ],
+      "starterCards": []
     }
   },
   "packOrder": [
@@ -1816,7 +2387,7 @@
       "triggerType": "pack_opened",
       "targetId": "garage_pack",
       "targetCount": 1,
-      "unlockPack": "Developemnt_pack",
+      "unlockPack": "",
       "order": 2
     },
     {
@@ -1852,7 +2423,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p1_cash_raw_youth",
       "targetCount": 1,
-      "unlockPack": "channel_pack",
+      "unlockPack": "Developemnt_pack",
       "order": 5
     },
     {
@@ -1876,7 +2447,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p1_recruit_intern",
       "targetCount": 1,
-      "unlockPack": "product_pack",
+      "unlockPack": "",
       "order": 7
     },
     {
@@ -1936,7 +2507,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p1_cash_pkg_cust",
       "targetCount": 1,
-      "unlockPack": "funding_pack",
+      "unlockPack": "",
       "order": 12
     },
     {
@@ -1972,7 +2543,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p2_train_product_specialist",
       "targetCount": 1,
-      "unlockPack": "",
+      "unlockPack": "channel_pack",
       "order": 15
     },
     {
@@ -1984,7 +2555,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p2_train_admin_specialist",
       "targetCount": 1,
-      "unlockPack": "ipo_pack",
+      "unlockPack": "",
       "order": 16
     },
     {
@@ -1996,7 +2567,7 @@
       "triggerType": "card_state",
       "targetId": "specialists_all",
       "targetCount": 1,
-      "unlockPack": "",
+      "unlockPack": "funding_pack",
       "order": 17
     },
     {
@@ -2020,7 +2591,7 @@
       "triggerType": "recipe_complete",
       "targetId": "p3_open_account",
       "targetCount": 1,
-      "unlockPack": "",
+      "unlockPack": "product_pack",
       "order": 19
     },
     {
@@ -2032,7 +2603,7 @@
       "triggerType": "rival_defeated",
       "targetId": "",
       "targetCount": 1,
-      "unlockPack": "international_pack",
+      "unlockPack": "",
       "order": 20
     },
     {
@@ -2056,7 +2627,7 @@
       "triggerType": "rival_defeated",
       "targetId": "",
       "targetCount": 3,
-      "unlockPack": "",
+      "unlockPack": "international_pack",
       "order": 22
     },
     {
@@ -2178,6 +2749,212 @@
       "targetCount": 5,
       "unlockPack": "",
       "order": 32
+    },
+    {
+      "id": "p4_open",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "新的生意（临）",
+      "content": "打开产品升级包，查看限期订单的需求与回款。",
+      "triggerType": "pack_opened",
+      "targetId": "product_pack",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 33
+    },
+    {
+      "id": "p4_quality",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "这次真的能用了（临）",
+      "content": "将带包装的产品叠到产品专员上，制成合格产品。",
+      "triggerType": "card_produced",
+      "targetId": "p4_quality",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 34
+    },
+    {
+      "id": "p4_first_order",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "交付第一单（临）",
+      "content": "点击订单接单，再叠入两张合格产品。首单有 180 秒，逾期免罚。",
+      "triggerType": "order_completed",
+      "targetId": "",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 35
+    },
+    {
+      "id": "p4_three_orders",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "客户开始记住你（临）",
+      "content": "按期完成 3 张订单，进入市场竞争阶段（最早第 3 月）。",
+      "triggerType": "order_completed",
+      "targetId": "",
+      "targetCount": 3,
+      "unlockPack": "",
+      "order": 36
+    },
+    {
+      "id": "p4_six_orders",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "生意做起来了（临）",
+      "content": "按期完成 6 张订单，为下一阶段准备经营记录。",
+      "triggerType": "order_completed",
+      "targetId": "",
+      "targetCount": 6,
+      "unlockPack": "",
+      "order": 37
+    },
+    {
+      "id": "p4_ten_orders",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "交付有口碑（临）",
+      "content": "按期完成 10 张订单，积累后期扩张所需的交付记录。",
+      "triggerType": "order_completed",
+      "targetId": "",
+      "targetCount": 10,
+      "unlockPack": "ipo_pack",
+      "order": 38
+    },
+    {
+      "id": "p4_change_done",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "只改一点点（临）",
+      "content": "用包装产品接下加单，或拿出合同婉拒。",
+      "triggerType": "customer_event_resolved",
+      "targetId": "change",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 39
+    },
+    {
+      "id": "p4_receivable_done",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "流程走到头了（临）",
+      "content": "让员工催回尾款，或等待客户自动付款。",
+      "triggerType": "customer_event_resolved",
+      "targetId": "receivable",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 40
+    },
+    {
+      "id": "p4_referral_done",
+      "section": "主任务",
+      "group": "产品与客户（临）",
+      "title": "朋友真的来了（临）",
+      "content": "把任意员工叠到老客推荐上，接待新客户。",
+      "triggerType": "customer_event_resolved",
+      "targetId": "referral",
+      "targetCount": 1,
+      "unlockPack": "",
+      "order": 41
+    }
+  ],
+  "stages": [
+    {
+      "id": "garage",
+      "name": "车库创业",
+      "requiredTasks": [],
+      "minMonth": 1,
+      "minRevenue": 0
+    },
+    {
+      "id": "development",
+      "name": "起步发展",
+      "requiredTasks": [
+        "main_first_sale"
+      ],
+      "minMonth": 1,
+      "minRevenue": 0
+    },
+    {
+      "id": "supply",
+      "name": "供应链管理",
+      "requiredTasks": [
+        "org_product"
+      ],
+      "minMonth": 1,
+      "minRevenue": 0
+    },
+    {
+      "id": "product",
+      "name": "产品升级",
+      "requiredTasks": [
+        "partner_account"
+      ],
+      "minMonth": 2,
+      "minRevenue": 0
+    },
+    {
+      "id": "competition",
+      "name": "市场竞争",
+      "requiredTasks": [
+        "p4_three_orders"
+      ],
+      "minMonth": 3,
+      "minRevenue": 0
+    },
+    {
+      "id": "growth",
+      "name": "融资壮大",
+      "requiredTasks": [
+        "p4_six_orders",
+        "org_all",
+        "battle_three"
+      ],
+      "minMonth": 5,
+      "minRevenue": 0
+    },
+    {
+      "id": "expansion",
+      "name": "扩张上市",
+      "requiredTasks": [
+        "p4_ten_orders",
+        "battle_ten"
+      ],
+      "minMonth": 8,
+      "minRevenue": 300
+    }
+  ],
+  "events": [
+    {
+      "id": "change",
+      "name": "只改一点点（临）",
+      "cardId": "p4_change",
+      "trigger": "accepted",
+      "duration": 60,
+      "extendSeconds": 30,
+      "deferredCash": 0,
+      "message": "客户说“只加一点”：加一个包装产品赚 $4 并延长 30 秒；叠合同可婉拒。不处理则按原单交付。"
+    },
+    {
+      "id": "receivable",
+      "name": "财务正在走流程（临）",
+      "cardId": "p4_receivable",
+      "trigger": "delivered",
+      "duration": 45,
+      "extendSeconds": 0,
+      "deferredCash": 12,
+      "message": "客户先付一半，尾款 $12 将在 45 秒后到账；叠任意员工可提前催回。"
+    },
+    {
+      "id": "referral",
+      "name": "我有个朋友（临）",
+      "cardId": "p4_referral",
+      "trigger": "delivered",
+      "duration": 90,
+      "extendSeconds": 0,
+      "deferredCash": 0,
+      "message": "老客户介绍了朋友：90 秒内叠任意员工接待，免费获得一张订单。"
     }
   ],
   "balance": {
@@ -2186,7 +2963,6 @@
     "office_opex": 1,
     "emergency_seconds": 30,
     "discovery_reward": 1,
-    "research_discovery_reward": 12,
     "start_cards": [
       "founder",
       "sales_rep",
@@ -2195,422 +2971,6 @@
       "market_lead_pool",
       "office"
     ]
-  },
-  "research": {
-    "basic_onboarding": {
-      "name": "基础操作",
-      "chain": "basic",
-      "tier": 1,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 0,
-      "cost": 10,
-      "prereq": [],
-      "desc": "理解卡牌、堆叠、工作进度与月度结算。"
-    },
-    "basic_cashflow": {
-      "name": "现金循环",
-      "chain": "basic",
-      "tier": 2,
-      "lane": 0,
-      "kind": "recipe",
-      "stage": 0,
-      "cost": 18,
-      "prereq": [
-        "basic_onboarding"
-      ],
-      "desc": "强化从资源到产品再到现金的基础循环。"
-    },
-    "basic_recipe_a": {
-      "name": "配方识别",
-      "chain": "basic",
-      "tier": 3,
-      "lane": -1,
-      "kind": "recipe",
-      "stage": 1,
-      "cost": 32,
-      "prereq": [
-        "basic_cashflow"
-      ],
-      "desc": "更快识别可组合卡牌，减少试错成本。"
-    },
-    "basic_board_a": {
-      "name": "桌面整理",
-      "chain": "basic",
-      "tier": 4,
-      "lane": -1,
-      "kind": "feature",
-      "stage": 2,
-      "cost": 56,
-      "prereq": [
-        "basic_recipe_a"
-      ],
-      "desc": "让常用卡牌布局更清晰，降低运营混乱。"
-    },
-    "basic_mastery_a": {
-      "name": "创业手册",
-      "chain": "basic",
-      "tier": 5,
-      "lane": -1,
-      "kind": "feature",
-      "stage": 3,
-      "cost": 92,
-      "prereq": [
-        "basic_board_a"
-      ],
-      "desc": "形成一套稳定的早期公司运营方法。"
-    },
-    "basic_signal_b": {
-      "name": "状态提示",
-      "chain": "basic",
-      "tier": 3,
-      "lane": 1,
-      "kind": "feature",
-      "stage": 1,
-      "cost": 32,
-      "prereq": [
-        "basic_cashflow"
-      ],
-      "desc": "更早看到资金、空间、任务和阶段的变化信号。"
-    },
-    "basic_rhythm_b": {
-      "name": "节奏规划",
-      "chain": "basic",
-      "tier": 4,
-      "lane": 1,
-      "kind": "event",
-      "stage": 2,
-      "cost": 56,
-      "prereq": [
-        "basic_signal_b"
-      ],
-      "desc": "把生产、销售和招聘安排成更稳定的节奏。"
-    },
-    "basic_dash_b": {
-      "name": "经营仪表盘",
-      "chain": "basic",
-      "tier": 5,
-      "lane": 1,
-      "kind": "valuation",
-      "stage": 3,
-      "cost": 92,
-      "prereq": [
-        "basic_rhythm_b"
-      ],
-      "desc": "用核心指标判断公司下一步该投入哪里。"
-    },
-    "org_recruit": {
-      "name": "招聘入口",
-      "chain": "org",
-      "tier": 1,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 0,
-      "cost": 12,
-      "prereq": [],
-      "desc": "建立从实习生到毕业生的基础人才通道。"
-    },
-    "org_training": {
-      "name": "培训体系",
-      "chain": "org",
-      "tier": 2,
-      "lane": 0,
-      "kind": "recipe",
-      "stage": 1,
-      "cost": 34,
-      "prereq": [
-        "org_recruit"
-      ],
-      "desc": "让课程和员工成长形成固定生产线。"
-    },
-    "org_sales_track": {
-      "name": "销售梯队",
-      "chain": "org",
-      "tier": 3,
-      "lane": -1,
-      "kind": "feature",
-      "stage": 2,
-      "cost": 66,
-      "prereq": [
-        "org_training"
-      ],
-      "desc": "二选一方向：强化销售岗位和成交效率。"
-    },
-    "org_product_track": {
-      "name": "产品梯队",
-      "chain": "org",
-      "tier": 3,
-      "lane": 1,
-      "kind": "feature",
-      "stage": 2,
-      "cost": 66,
-      "prereq": [
-        "org_training"
-      ],
-      "desc": "二选一方向：强化产品岗位和研发产能。"
-    },
-    "org_management": {
-      "name": "管理制度",
-      "chain": "org",
-      "tier": 4,
-      "lane": 0,
-      "kind": "event",
-      "stage": 3,
-      "cost": 105,
-      "prereq": [],
-      "anyPrereq": [
-        "org_sales_track",
-        "org_product_track"
-      ],
-      "desc": "统一管理规范，把专员能力沉淀为组织能力。"
-    },
-    "org_departments": {
-      "name": "部门化",
-      "chain": "org",
-      "tier": 5,
-      "lane": 0,
-      "kind": "valuation",
-      "stage": 4,
-      "cost": 165,
-      "prereq": [
-        "org_management"
-      ],
-      "desc": "把重复岗位合并为部门，支撑规模化扩张。"
-    },
-    "supply_source": {
-      "name": "上游资源",
-      "chain": "supply",
-      "tier": 1,
-      "lane": 0,
-      "kind": "recipe",
-      "stage": 0,
-      "cost": 14,
-      "prereq": [],
-      "desc": "认识居住小区、批发市场、律师事务所等资源节点。"
-    },
-    "supply_link": {
-      "name": "供应连接",
-      "chain": "supply",
-      "tier": 2,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 1,
-      "cost": 38,
-      "prereq": [
-        "supply_source"
-      ],
-      "desc": "把产出自动送往下游卡牌，减少搬运。"
-    },
-    "supply_capacity": {
-      "name": "产能路线",
-      "chain": "supply",
-      "tier": 3,
-      "lane": -1,
-      "kind": "feature",
-      "stage": 2,
-      "cost": 72,
-      "prereq": [
-        "supply_link"
-      ],
-      "desc": "二选一方向：扩大基础资源节点的吞吐量。"
-    },
-    "supply_quality": {
-      "name": "质检路线",
-      "chain": "supply",
-      "tier": 3,
-      "lane": 1,
-      "kind": "recipe",
-      "stage": 2,
-      "cost": 72,
-      "prereq": [
-        "supply_link"
-      ],
-      "desc": "二选一方向：提高产品链条的稳定性。"
-    },
-    "supply_network": {
-      "name": "节点网络",
-      "chain": "supply",
-      "tier": 4,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 3,
-      "cost": 118,
-      "prereq": [],
-      "anyPrereq": [
-        "supply_capacity",
-        "supply_quality"
-      ],
-      "desc": "供应链节点成网，生产链条更耐波动。"
-    },
-    "supply_platform": {
-      "name": "供应平台",
-      "chain": "supply",
-      "tier": 5,
-      "lane": 0,
-      "kind": "valuation",
-      "stage": 4,
-      "cost": 178,
-      "prereq": [
-        "supply_network"
-      ],
-      "desc": "让供应链成为公司估值的一部分。"
-    },
-    "comp_watch": {
-      "name": "市场侦察",
-      "chain": "competition",
-      "tier": 1,
-      "lane": 0,
-      "kind": "event",
-      "stage": 0,
-      "cost": 14,
-      "prereq": [],
-      "desc": "提前识别竞争者、风险与市场冲突。"
-    },
-    "comp_response": {
-      "name": "应对预案",
-      "chain": "competition",
-      "tier": 2,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 1,
-      "cost": 40,
-      "prereq": [
-        "comp_watch"
-      ],
-      "desc": "形成基础商战应对方式。"
-    },
-    "comp_defense": {
-      "name": "防守打法",
-      "chain": "competition",
-      "tier": 3,
-      "lane": -1,
-      "kind": "event",
-      "stage": 2,
-      "cost": 78,
-      "prereq": [
-        "comp_response"
-      ],
-      "desc": "二选一方向：稳住现金流和已有客户。"
-    },
-    "comp_attack": {
-      "name": "进攻打法",
-      "chain": "competition",
-      "tier": 3,
-      "lane": 1,
-      "kind": "event",
-      "stage": 2,
-      "cost": 78,
-      "prereq": [
-        "comp_response"
-      ],
-      "desc": "二选一方向：主动抢占市场机会。"
-    },
-    "comp_moat": {
-      "name": "竞争壁垒",
-      "chain": "competition",
-      "tier": 4,
-      "lane": 0,
-      "kind": "valuation",
-      "stage": 3,
-      "cost": 122,
-      "prereq": [],
-      "anyPrereq": [
-        "comp_defense",
-        "comp_attack"
-      ],
-      "desc": "建立别人难以复制的流程和资源组合。"
-    },
-    "comp_dominance": {
-      "name": "行业优势",
-      "chain": "competition",
-      "tier": 5,
-      "lane": 0,
-      "kind": "valuation",
-      "stage": 4,
-      "cost": 188,
-      "prereq": [
-        "comp_moat"
-      ],
-      "desc": "把竞争胜利转化为长期估值优势。"
-    },
-    "cap_accounting": {
-      "name": "财务记账",
-      "chain": "capital",
-      "tier": 1,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 0,
-      "cost": 12,
-      "prereq": [],
-      "desc": "把现金、成本、工资和账户管理接入统一口径。"
-    },
-    "cap_budget": {
-      "name": "预算纪律",
-      "chain": "capital",
-      "tier": 2,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 1,
-      "cost": 36,
-      "prereq": [
-        "cap_accounting"
-      ],
-      "desc": "让扩张前先看到真实资金压力。"
-    },
-    "cap_finance": {
-      "name": "融资路线",
-      "chain": "capital",
-      "tier": 3,
-      "lane": -1,
-      "kind": "valuation",
-      "stage": 2,
-      "cost": 80,
-      "prereq": [
-        "cap_budget"
-      ],
-      "desc": "二选一方向：通过融资提升现金储备。"
-    },
-    "cap_profit": {
-      "name": "利润路线",
-      "chain": "capital",
-      "tier": 3,
-      "lane": 1,
-      "kind": "valuation",
-      "stage": 2,
-      "cost": 80,
-      "prereq": [
-        "cap_budget"
-      ],
-      "desc": "二选一方向：通过利润和复投提升估值。"
-    },
-    "cap_structure": {
-      "name": "资本结构",
-      "chain": "capital",
-      "tier": 4,
-      "lane": 0,
-      "kind": "valuation",
-      "stage": 3,
-      "cost": 130,
-      "prereq": [],
-      "anyPrereq": [
-        "cap_finance",
-        "cap_profit"
-      ],
-      "desc": "管理股权、现金和扩张速度之间的平衡。"
-    },
-    "cap_ipo": {
-      "name": "上市路径",
-      "chain": "capital",
-      "tier": 5,
-      "lane": 0,
-      "kind": "feature",
-      "stage": 4,
-      "cost": 210,
-      "prereq": [
-        "cap_structure"
-      ],
-      "desc": "为 IPO、国际化和巨头竞争准备资本能力。"
-    }
   },
   "ideaPools": {
     "0": [

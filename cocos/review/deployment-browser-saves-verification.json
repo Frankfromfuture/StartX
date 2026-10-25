@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "url": "https://www.iambrizo.com/startx/",
+  "browserContexts": 2,
+  "registrationRequired": false,
+  "independentSaves": true,
+  "reloadRestoresEachSave": true,
+  "runningOnEntry": true,
+  "userA": {
+    "month": 7,
+    "account": 45,
+    "canContinue": true,
+    "paused": false,
+    "title": false,
+    "error": ""
+  },
+  "userB": {
+    "month": 3,
+    "account": 50,
+    "canContinue": true,
+    "paused": false,
+    "title": false,
+    "error": ""
+  },
+  "errors": [],
+  "failed": []
+}

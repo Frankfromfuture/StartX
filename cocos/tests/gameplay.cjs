@@ -22,7 +22,7 @@ const root = path.resolve(__dirname, '..'), center = r => ({ x:r.x+r.width/2, y:
   s=await state();assert.equal(s.packs.length,0);assert.equal(s.cash,5);assert.equal(s.cards.length,9);
   const founder=s.cards.find(c=>c.id==='founder').uid,neighborhood=s.cards.find(c=>c.id==='p1_neighborhood').uid;
   await drag(founder,neighborhood);await page.waitForFunction(()=>window.__STARTX_SAMPLE__().cards.some(c=>c.id==='p1_youth'),null,{timeout:12000});
-  s=await state();assert(s.models.includes('p1_recruit_youth'));assert(s.rp>=12);
+  s=await state();assert(s.models.includes('p1_recruit_youth'));assert(!('rp' in s));
   await drag(founder,s.cards.find(c=>c.id==='p1_wholesale').uid);s=await state();await drag(s.cards.filter(c=>c.id==='cash').at(-1).uid,founder);
   await page.waitForFunction(()=>window.__STARTX_SAMPLE__().cards.some(c=>c.id==='p1_rawprod'),null,{timeout:12000});
   await action('Reset');s=await state();await drag(s.cards.find(c=>c.id==='p1_rawprod').uid,s.cards.find(c=>c.id==='p1_youth').uid);

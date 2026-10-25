@@ -1,4 +1,5 @@
 import { _decorator, Component, input, Input, EventTouch, EventMouse, game, Game, Vec2 } from 'cc';
+import { orientUiPoint } from './Layout';
 const { ccclass } = _decorator;
 
 export interface InputTarget {
@@ -10,7 +11,7 @@ export interface InputTarget {
     dragStart(): void;
     drag(point: Vec2, delta: Vec2): void;
     dragEnd(cancelled: boolean): void;
-    pan(delta: Vec2): void;
+    pan(delta: Vec2, point?: Vec2): void;
     zoom(factor: number, point: Vec2): void;
     context(point: Vec2): void;
     canZoom(point: Vec2): boolean;
@@ -70,7 +71,7 @@ export class InputRouter extends Component {
     private startTouch(e: EventTouch) {
         if (!this.target) return;
         const id = e.getID(); if (id == null) return;
-        const p = e.getUILocation(); this.touches.set(id, p.clone());
+        const p = orientUiPoint(e.getUILocation()); this.touches.set(id, p.clone());
         if (this.touches.size > 1) {
             if (!this.pinching) {
                 if (this.moved && this.kind === 'card') this.target.dragEnd(true);
@@ -89,14 +90,14 @@ export class InputRouter extends Component {
     }
     private moveTouch(e: EventTouch) {
         const id = e.getID(); if (id == null || !this.touches.has(id)) return;
-        const p = e.getUILocation(); this.touches.set(id, p.clone());
+        const p = orientUiPoint(e.getUILocation()); this.touches.set(id, p.clone());
         if (this.pinching) {
             if (this.touches.size >= 2 && this.zoomAllowed) {
                 const [a, b] = Array.from(this.touches.values());
                 const distance = Vec2.distance(a, b);
                 const center = new Vec2((a.x + b.x) / 2, (a.y + b.y) / 2);
                 if (this.pinchDistance > 1) this.target.zoom(distance / this.pinchDistance, center);
-                this.target.pan(new Vec2(center.x - this.pinchCenter.x, center.y - this.pinchCenter.y));
+                this.target.pan(new Vec2(center.x - this.pinchCenter.x, center.y - this.pinchCenter.y), center);
                 this.pinchDistance = distance; this.pinchCenter.set(center);
             }
             return;
@@ -113,7 +114,7 @@ export class InputRouter extends Component {
         }
         if (this.moved) {
             if (this.kind === 'card') this.target.drag(p, delta);
-            else if (this.kind === 'board') this.target.pan(delta);
+            else if (this.kind === 'board') this.target.pan(delta, p);
             else if (this.kind === 'ui') this.target.uiDrag?.(delta);
         }
         this.last.set(p);
@@ -124,16 +125,17 @@ export class InputRouter extends Component {
         if (this.pinching) { if (this.touches.size === 0) this.clear(); return; }
         if (id === this.primary) {
             if (this.moved && this.kind === 'card') this.target.dragEnd(false);
-            else if (!this.moved && !this.held) this.target.tap(e.getUILocation(), this.kind);
+            else if (!this.moved && !this.held) this.target.tap(orientUiPoint(e.getUILocation()), this.kind);
             if (this.kind === 'ui') this.target.uiEnd?.(false);
             this.clear();
         }
     }
-    private mouseDown(e: EventMouse) { if (e.getButton() === EventMouse.BUTTON_RIGHT && this.target) { this.cancel(); this.target.context(e.getUILocation()); } }
-    private mouseMove(e: EventMouse) { if (this.primary === null && !this.touches.size) this.target?.hover?.(e.getUILocation()); }
+    private mouseDown(e: EventMouse) { if (e.getButton() === EventMouse.BUTTON_RIGHT && this.target) { this.cancel(); this.target.context(orientUiPoint(e.getUILocation())); } }
+    private mouseMove(e: EventMouse) { if (this.primary === null && !this.touches.size) this.target?.hover?.(orientUiPoint(e.getUILocation())); }
     private wheel(e: EventMouse) {
-        if (this.target?.uiScroll?.(e.getUILocation(), e.getScrollY(), e.getScrollX())) return;
-        if (this.target?.canZoom(e.getUILocation())) this.target.zoom(Math.exp(e.getScrollY() * 0.001), e.getUILocation());
+        const point = orientUiPoint(e.getUILocation());
+        if (this.target?.uiScroll?.(point, e.getScrollY(), e.getScrollX())) return;
+        if (this.target?.canZoom(point)) this.target.zoom(Math.exp(e.getScrollY() * 0.001), point);
     }
     cancel() {
         if (this.moved && this.kind === 'card' && this.target && !this.pinching) this.target.dragEnd(true);

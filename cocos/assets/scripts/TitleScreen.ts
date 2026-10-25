@@ -104,8 +104,14 @@ export class TitleScreen {
     }
     private layoutButtons(metrics: LayoutMetrics) {
         const { width: w, height: h, scale, top, bottom } = metrics;
-        const buttonW = Math.min(350 * scale, w * (this.portrait ? .78 : .29)) * .7, primaryY = -h * .1;
-        const fit = Math.min(1, Math.max(1, h * .4 - bottom - 16 * scale) / ((this.canContinue ? 161 : 99) * scale));
+        const buttonW = Math.min(350 * scale, w * (this.portrait ? .78 : .29)) * .7;
+        let primaryY = -h * .1, fit = Math.min(1, Math.max(1, h * .4 - bottom - 16 * scale) / ((this.canContinue ? 161 : 99) * scale));
+        if (!this.portrait) {
+            const subtitleBottom = this.subtitle.position.y - this.subtitle.getComponent(UITransform)!.height / 2;
+            const lower = -h / 2 + bottom + 16 * scale;
+            fit = Math.min(fit, Math.max(.1, (subtitleBottom - 8 * scale - lower) / ((this.canContinue ? 194 : 132) * scale)));
+            primaryY = Math.max(lower + (this.canContinue ? 161 : 99) * scale * fit, Math.min(primaryY, subtitleBottom - (8 + 33 * fit) * scale));
+        }
         const primary = this.canContinue ? this.resume : this.start;
         this.start.getChildByName('Text')!.getComponent(Label)!.string = this.canContinue ? '开始创业' : '开始创业  →';
         this.start.getChildByName('Plate')!.getComponent(Surface)!.fill = color(this.canContinue ? cream : gold);
@@ -116,28 +122,36 @@ export class TitleScreen {
         }
         this.resizeButton(this.catalog, buttonW * .84, 48 * scale * fit, 20 * scale * fit);
         this.catalog.setPosition(0, primaryY - (this.canContinue ? 137 : 75) * scale * fit);
-        this.resizeButton(this.settings, 84 * scale * .7, 44 * scale, 20 * scale); this.settings.setPosition(w / 2 - 65 * scale, h / 2 - top - 36 * scale);
+        this.resizeButton(this.settings, 84 * scale * .7, 44 * scale, 20 * scale); this.settings.setPosition(w / 2 - (this.portrait ? 65 : 38) * scale, h / 2 - top - 36 * scale);
         this.content.getComponentsInChildren(Graphics).forEach(graphics => graphics.model?.updateWorldBound());
     }
     layout(metrics: LayoutMetrics) {
         this.metrics = metrics;
         const { width: w, height: h, scale, top, bottom } = metrics;
-        this.width = w; this.height = h; this.portrait = w / h < 1.1;
+        this.width = w; this.height = h; this.portrait = w <= h;
         this.node.getComponent(UITransform)!.setContentSize(w, h);
         const frame = this.background.getComponent(Sprite)!.spriteFrame!, ratio = frame.originalSize.width / frame.originalSize.height;
         const bw = Math.max(w, h * ratio), bh = bw / ratio;
         this.background.getComponent(UITransform)!.setContentSize(bw * 1.035, bh * 1.035);
         const subtitle = this.subtitle.getComponent(Label)!;
-        subtitle.fontSize = (this.portrait ? 26 : 36) * scale; subtitle.lineHeight = subtitle.fontSize * 1.2;
+        subtitle.fontSize = (this.portrait ? 26 : 18) * scale; subtitle.lineHeight = subtitle.fontSize * 1.2;
         this.subtitle.getComponent(UITransform)!.setContentSize(Math.min(w * .84, 650 * scale), subtitle.lineHeight);
         this.subtitle.getComponent(LabelOutline)!.width = 3 * scale;
         const buttonH = 66 * scale;
-        const logoY = h * .2, startY = -h * .1, gap = 16 * scale;
+        const logoY = h * .2, startY = -h * .1, gap = (this.portrait ? 16 : 8) * scale;
         // Keep the 30% and 60% centers fixed; leave room for the subtitle on short screens.
-        const logoMaxH = Math.min(h * .28, Math.max(1, 2 * (logoY - startY - buttonH / 2 - subtitle.lineHeight - gap * 2)));
+        const logoMaxH = Math.min(h * .28, Math.max((this.portrait ? 1 : 40 * scale), 2 * (logoY - startY - buttonH / 2 - subtitle.lineHeight - gap * 2)));
         this.fit(this.heading, this.portrait ? w * .94 : Math.min(w * .65, h * 1.08), logoMaxH);
-        this.heading.setPosition(0, logoY);
-        this.subtitle.setPosition(0, logoY - this.heading.getComponent(UITransform)!.height / 2 - gap - subtitle.lineHeight / 2);
+        const logo = this.heading.getComponent(UITransform)!;
+        let headingY = logoY;
+        if (!this.portrait) {
+            const enlarge = Math.min(2, (w - 32 * scale) / logo.width, h * .55 / logo.height);
+            logo.setContentSize(logo.width * enlarge, logo.height * enlarge);
+            const topMargin = logo.width / 2 > w / 2 - 74 * scale ? 66 * scale : 8 * scale;
+            headingY = h / 2 - top - topMargin - logo.height / 2;
+        }
+        this.heading.setPosition(0, headingY);
+        this.subtitle.setPosition(0, headingY - logo.height / 2 - gap - subtitle.lineHeight / 2);
         this.layoutButtons(metrics);
         const positions = this.portrait ? [
             [-.54, 0, 1.12, -6], [.44, 0, 1.10, 6],

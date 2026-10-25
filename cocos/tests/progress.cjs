@@ -14,8 +14,8 @@ const { GameModel } = load('GameModel'), { readProgress } = load('ProgressSave')
 const data = JSON.parse(fs.readFileSync(path.join(root, 'assets/content/catalog.json'))), clone = v => JSON.parse(JSON.stringify(v));
 const m = new GameModel(data, () => .5, true), account = m.cards.find(c => c.id === 'p3_account');
 m.withdraw(account); m.move(m.cards[0].uid, -620, 430); m.packs[0].x = 800; m.packs[0].y = -500; m.openPack(m.packs[0].uid);
-m.models.add(data.recipes[0].id); m.discovered.add(data.recipes[0].id); m.ideas.add(Object.keys(data.research)[0]); m.completed.add(data.tasks[0].id); m.unlocked.add('Developemnt_pack');
-m.month = 4; m.monthTime = 73.25; m.rp = 126; m.revenue = 48; m.paused = true;
+m.models.add(data.recipes[0].id); m.discovered.add(data.recipes[0].id); m.completed.add(data.tasks[0].id); m.unlocked.add('Developemnt_pack');
+m.month = 4; m.monthTime = 73.25; m.revenue = 48; m.paused = true;
 const saved = clone(m.saveProgress(false)), restored = GameModel.fromProgress(data, saved, () => .5);
 assert(restored); assert.deepEqual(clone(restored.saveProgress()), saved); assert.equal(restored.cards.find(c => c.id === 'p3_account').stored, 45);
 assert.equal(restored.heldStack, -1); assert.equal(restored.appearances.size, 0); assert.equal(restored.paused, false);

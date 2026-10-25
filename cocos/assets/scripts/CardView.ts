@@ -1,10 +1,16 @@
-import { _decorator, Component, Material, Node, Sprite, SpriteFrame, UITransform, UIOpacity, Vec2, Vec3, Vec4, Color, Graphics, Quat } from 'cc';
-import { CardFrameVolume } from './CardFrameVolume';
+import { _decorator, Component, Material, Node, Sprite, SpriteFrame, UITransform, UIOpacity, Vec2, Vec3, Vec4, Color, Graphics, Quat, Label, Font } from 'cc';
+import { CardFrameVolume, paintPackShadow } from './CardFrameVolume';
+import { Surface } from './Surface';
 import type { Appearance } from './GameModel';
-import { BOARD_HALF } from './GameModel';
+import { BADGE_SIZE, BadgePosition, BOARD_HALF, safeBadgePosition } from './GameModel';
 const { ccclass } = _decorator;
 
 export const BATTLE_CARD_Y = -36;
+
+export function cardStyle(id: string, type = ''): 'plain' | 'foil' | 'glass' {
+    if (id === 'founder') return 'foil';
+    return id === 'cash' || id === 'p3_account' || type === 'cash' || type === 'receivable' || type === 'business_model' ? 'glass' : 'plain';
+}
 
 @ccclass('CardView')
 export class CardView extends Component {
@@ -38,8 +44,8 @@ export class CardView extends Component {
     get artwork() { return this.front.spriteFrame; }
     get numberPatch() { return { frame: this.patch.node.active ? this.patch.spriteFrame : null, kind: this.patchKind }; }
     get inspectionLighting() { return this.light; }
-    get rainbowFrame() { return this.holographic; }
-    setInspectionMode(active: boolean) { this.inspecting = active; this.frameVolume.node.active = !active && !this.pack; this.shadow.active = !active; }
+    get frameColor() { return this.holographic ? 'rainbow' : '#141414'; }
+    setInspectionMode(active: boolean) { this.inspecting = active; this.frameVolume.node.active = !active && !this.pack && !this.badgeToken; this.shadow.active = !active && !this.badgeToken; }
     createInspectionMaterial() {
         if (!this.originalMaterial) return null;
         const material = new Material(); material.copy(this.originalMaterial);
@@ -57,13 +63,24 @@ export class CardView extends Component {
     private front!: Sprite;
     private patch!: Sprite;
     private progress!: Graphics;
+    private status: Label | null = null;
+    private statusBack: Graphics | null = null;
+    private statusKey = '';
     private lifted = false;
     private tilt = 0;
     private lift = 0;
     private angle = 0;
     private size = 280;
+    private badgeToken = false;
+    private yarnRoot: Node | null = null;
+    private yarnCapacity: Node | null = null;
+    private yarnData: { frames: SpriteFrame[]; bonus: number; capacity: number; font: Font; positions: BadgePosition[] } | null = null;
+    get isBadgeToken() { return this.badgeToken; }
+    get yarnDecorations() { return this.yarnData; }
     private foil: Material | null = null;
     private holographic = false;
+    private glass = false;
+    private glossPhase = 0;
     private originalMaterial: Material | null = null;
     private foilView = new Vec4(0, 0, 0.22, 0.12);
     private lastRatio = -1;
@@ -80,30 +97,91 @@ export class CardView extends Component {
         this.progress = progress.addComponent(Graphics);
     }
     configure(frame: SpriteFrame | null, color: string, style: 'plain' | 'foil' | 'glass' | 'pack') {
+        this.badgeToken = false;
         if (frame) this.front.spriteFrame = frame;
         this.size = style === 'pack' ? 336 : 280;
         this.pack = style === 'pack';
+        this.holographic = style === 'foil';
+        this.glass = style === 'glass';
+        const artName = this.front.spriteFrame?.name;
+        const enhancedGloss = this.glass && (artName === 'cash' || artName === 'p3_account') ? 1 : 0;
         this.node.getComponent(UITransform)!.setContentSize(this.size, this.size);
         this.front.node.getComponent(UITransform)!.setContentSize(this.size, this.size);
         const thickness = this.face.getChildByName('Thickness')!;
         thickness.active = false;
-        this.frameVolume.node.active = !this.inspecting && !this.pack;
-        this.frameVolume.paint(this.size, this.size * .028, 0, 0, style === 'foil', true);
+        this.frameVolume.node.active = !this.inspecting;
+        if (this.pack) this.frameVolume.paintPack(this.size);
+        else this.frameVolume.paint(this.size, this.size * .028, 0, 0, this.frameColor, true);
+        const shadowSurface = this.shadow.getComponent(Surface)!;
+        shadowSurface.enabled = !this.pack;
         this.shadow.getComponent(UITransform)!.setContentSize(this.size, this.size);
+        if (this.pack) paintPackShadow(this.shadow.getComponent(Graphics)!, this.size, shadowSurface.fill);
+        this.shadow.active = !this.inspecting;
         this.front.customMaterial = this.inspecting || style === 'foil' || style === 'glass' ? this.originalMaterial : null;
-        this.holographic = style === 'foil';
         this.foil = this.inspecting || style === 'foil' || style === 'glass' ? this.front.getMaterialInstance(0) : null;
-        this.foil?.setProperty('foilAndProjection', new Vec4(.15, 2, style === 'glass' ? 1 : style === 'foil' ? 0 : 2, 0));
+        this.foil?.setProperty('foilAndProjection', new Vec4(.15, 2, style === 'glass' ? 1 : style === 'foil' ? 0 : 2, enhancedGloss));
         this.foil?.setProperty('inspectionLight', this.inspecting ? this.light : new Vec4(0, 0, 0, 1));
-        if (this.inspecting && !this.patchLighting) this.patchLighting = this.createInspectionMaterial();
-        this.patch.customMaterial = this.inspecting ? this.patchLighting : null;
+        if ((this.inspecting || this.glass) && !this.patchLighting) this.patchLighting = this.createInspectionMaterial();
+        this.patchLighting?.setProperty('foilAndProjection', new Vec4(0, 2, this.glass ? 1 : 2, enhancedGloss));
+        this.patchLighting?.setProperty('inspectionLight', this.inspecting ? this.light : new Vec4(0, 0, 0, 1));
+        this.patch.customMaterial = this.inspecting || this.glass ? this.patchLighting : null;
         if (this.patch.spriteFrame) this.setPatch(this.patch.spriteFrame, this.patchKind);
+    }
+    setBadgeToken(active: boolean) {
+        this.badgeToken = active;
+        if (!active) return;
+        this.size = this.inspecting ? 280 : 108;
+        this.node.getComponent(UITransform)!.setContentSize(this.size, this.size);
+        this.front.node.getComponent(UITransform)!.setContentSize(this.size, this.size);
+        this.frameVolume.node.active = false; this.shadow.active = false;
+    }
+    private pointOnFace(point: Vec2): BadgePosition {
+        const t = this.front.node.getComponent(UITransform)!, o = t.convertToWorldSpaceAR(new Vec3());
+        const right = t.convertToWorldSpaceAR(new Vec3(1, 0)), up = t.convertToWorldSpaceAR(new Vec3(0, 1));
+        const ax = right.x - o.x, ay = right.y - o.y, bx = up.x - o.x, by = up.y - o.y;
+        const dx = point.x - o.x, dy = point.y - o.y, det = ax * by - ay * bx;
+        return Math.abs(det) > .000001 ? { x: (dx * by - dy * bx) / det, y: (dy * ax - dx * ay) / det } : { x: 0, y: 0 };
+    }
+    badgePositionAt(point: Vec2): BadgePosition { return safeBadgePosition(this.pointOnFace(point)); }
+    containsFace(point: Vec2) { const p = this.pointOnFace(point); return Math.abs(p.x) <= this.size / 2 && Math.abs(p.y) <= this.size / 2; }
+    badgeAt(point: Vec2) {
+        if (!this.yarnRoot?.activeInHierarchy) return -1;
+        const p = this.pointOnFace(point);
+        for (let i = this.yarnRoot.children.length - 1; i >= 0; i--) {
+            const node = this.yarnRoot.children[i], t = node.getComponent(UITransform)!;
+            if (Math.abs(p.x - node.position.x) <= t.width / 2 && Math.abs(p.y - node.position.y) <= t.height / 2) return i;
+        }
+        return -1;
+    }
+    setYarnBadges(frames: SpriteFrame[], bonus: number, capacity: number, font: Font, positions: BadgePosition[] = []) {
+        this.yarnData = { frames, bonus, capacity, font, positions };
+        this.yarnRoot?.destroy(); this.yarnCapacity?.destroy(); this.yarnRoot = this.yarnCapacity = null;
+        if (!bonus) return;
+        const root = this.yarnRoot = new Node('YarnBadges'); root.layer = this.node.layer; this.face.addChild(root);
+        const make = (name: string, parent: Node, x: number, y: number, w: number, h: number) => {
+            const node = new Node(name); node.layer = this.node.layer; parent.addChild(node);
+            node.setPosition(x, y); node.addComponent(UITransform).setContentSize(w, h); return node;
+        };
+        frames.forEach((frame, i) => {
+            const p = safeBadgePosition(positions[i] || { x: -76 + i % 3 * 76, y: 12 - Math.floor(i / 3) * 18 });
+            const n = make('Badge-' + i, root, p.x, p.y, BADGE_SIZE, BADGE_SIZE);
+            const s = n.addComponent(Sprite); s.sizeMode = Sprite.SizeMode.CUSTOM; s.spriteFrame = frame;
+        });
+        const text = (node: Node, value: string, size: number, color: Color) => {
+            const label = node.addComponent(Label); label.font = font; label.useSystemFont = false; label.string = value;
+            label.fontSize = size; label.lineHeight = size + 4; label.color = color;
+            label.horizontalAlign = Label.HorizontalAlign.CENTER; label.verticalAlign = Label.VerticalAlign.CENTER;
+        };
+        const capacityNode = this.yarnCapacity = make('EmployeeCapacity', this.face, 93.33, -94.89, 52, 38);
+        const ink = capacityNode.addComponent(Graphics); ink.fillColor = new Color(0, 0, 0); ink.circle(0, 0, 18); ink.fill();
+        text(make('Value', capacityNode, 0, 0, 50, 38), String(capacity), 26, Color.WHITE.clone());
     }
     setPatch(frame: SpriteFrame | null, kind: 'uses' | 'account' | 'pack') {
         this.patchKind = kind; this.patch.node.active = !!frame; if (!frame) return;
         this.patch.spriteFrame = frame;
         const [x, y, w, h] = kind === 'uses' ? [0, 0, 1024, 244] : kind === 'account' ? [0, 700, 300, 324] : [790, 32, 210, 210];
         const ratio = this.size / 1024;
+        this.patchLighting?.setProperty('cardUVRect', new Vec4(x / 1024, y / 1024, w / 1024, h / 1024));
         this.patch.node.getComponent(UITransform)!.setContentSize(w * ratio, h * ratio);
         this.patch.node.setPosition((x + w / 2 - 512) * ratio, (512 - y - h / 2) * ratio);
     }
@@ -113,6 +191,23 @@ export class CardView extends Component {
         const g = this.progress; g.node.active = ratio > 0; g.clear(); if (ratio <= 0) return;
         g.fillColor = new Color(42, 40, 36); g.roundRect(-140, -18, 280, 36, 4); g.fill();
         g.fillColor = new Color(189, 186, 177); g.roundRect(-138, -16, 276 * Math.max(.02, ratio), 32, 3); g.fill();
+    }
+    setStatus(text: string, urgent: boolean, font: Font) {
+        const key = text + urgent; if (key === this.statusKey) return; this.statusKey = key;
+        if (!text && !this.status) return;
+        if (!this.status) {
+            const back = new Node('CardStatus'); back.layer = this.node.layer; this.face.addChild(back); back.setPosition(0, -109);
+            back.addComponent(UITransform).setContentSize(250, 36); this.statusBack = back.addComponent(Graphics);
+            const n = new Node('Text'); n.layer = this.node.layer; back.addChild(n); n.addComponent(UITransform).setContentSize(242, 36);
+            const label = this.status = n.addComponent(Label); label.font = font; label.useSystemFont = false;
+            label.fontSize = 19; label.lineHeight = 24; label.horizontalAlign = Label.HorizontalAlign.CENTER;
+            label.verticalAlign = Label.VerticalAlign.CENTER; label.overflow = Label.Overflow.SHRINK; label.enableWrapText = false;
+            // Label initialization resizes the box; restore it after applying the font and overflow.
+            n.getComponent(UITransform)!.setContentSize(242, 36);
+        }
+        this.statusBack!.node.active = !!text; this.status.string = text;
+        const g = this.statusBack!; g.clear(); g.fillColor = urgent ? new Color(134, 45, 38, 245) : new Color(28, 29, 29, 235);
+        g.roundRect(-125, -18, 250, 36, 5); g.fill(); this.status.color = new Color(255, 248, 227);
     }
     appear(motion: Appearance, landed?: () => void) {
         this.appearance = motion; this.motionTime = 0;
@@ -181,13 +276,14 @@ export class CardView extends Component {
     motionSnapshot() { return { kind: this.combat ? 'attack' : this.spending ? 'spend' : this.glide ? 'slide' : this.appearance?.kind || (this.retireTime >= 0 ? 'dissolve' : ''), time: this.glide?.time ?? this.motionTime, delay: this.spending?.delay || this.appearance?.delay || 0, scale: this.face.scale.x, offset: { x: this.face.position.x, y: this.face.position.y }, pulse: this.pulseTime < .22 }; }
     setHeld(held: boolean) { this.lifted = held; if (held) { this.appearance = null; this.landed = null; this.glide = null; } if (!held) this.tilt = 0; }
     setDragDelta(dx: number) { this.tilt = Math.max(-5, Math.min(5, -dx * 0.22)); }
-    contains(world: Vec2) {
+    contains(world: Vec2 | Vec3) {
         // Flying cards must not intercept the next tap on the pack beneath them.
         if (this.retireTime >= 0 || this.appearance || this.spending || this.glide) return false;
-        const local = this.front.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(world.x, world.y));
+        const local = this.front.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(world.x, world.y, 'z' in world ? world.z : 0));
         return Math.abs(local.x) <= this.size / 2 && Math.abs(local.y) <= this.size / 2;
     }
     update(dt: number) {
+        if (this.glass) this.glossPhase = (this.glossPhase + Math.min(dt, .05) * .08) % 1;
         const back = (t: number) => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2);
         let x = 0, y = 0, sx = 1, sy = 1, rotation = 0;
         if (this.appearance) {
@@ -255,13 +351,18 @@ export class CardView extends Component {
                 Math.max(-limitY, Math.min(limitY, p.y + face.y)) - p.y, 0);
         }
         this.shadow.setPosition(x + 10 + this.lift * .25, y - 13 - this.lift * .4, 0);
+        this.shadow.angle = this.pack ? this.face.angle : 0;
         this.shadow.setScale((1 + this.lift / 240) * sx * this.battleScale, (1 + this.lift / 240) * sy * this.battleScale, 1);
         // The board represents camera pitch with Y scale; detail cards remain square.
         const worldScale = this.node.worldScale;
         const pitch = worldScale.y / Math.max(.001, worldScale.x);
         const viewTilt = this.holographic ? (1 - pitch) * 2.2 : 0;
-        if (!this.inspecting && !this.pack) this.frameVolume.paint(this.size, this.size * .028, viewTilt * 20, this.angle, this.holographic, true);
-        this.foilView.set(this.angle * Math.PI / 180 + this.inspectionAngles.x, this.lift / 360 + viewTilt + this.inspectionAngles.y, this.holographic ? .32 : .22, .12);
+        if (!this.inspecting && !this.badgeToken) {
+            if (this.pack) this.frameVolume.paintPack(this.size);
+            else this.frameVolume.paint(this.size, this.size * .028, viewTilt * 20, this.angle, this.frameColor, true);
+        }
+        this.foilView.set(this.angle * Math.PI / 180 + this.inspectionAngles.x, this.lift / 360 + viewTilt + this.inspectionAngles.y, this.holographic ? .32 : .22, this.glass ? this.glossPhase : .12);
         this.foil?.setProperty('viewAndStrength', this.foilView);
+        if (this.glass && this.patch.node.active) this.patchLighting?.setProperty('viewAndStrength', this.foilView);
     }
 }

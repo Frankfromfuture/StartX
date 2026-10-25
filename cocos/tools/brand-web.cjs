@@ -7,6 +7,8 @@ module.exports = function brandWeb(output) {
  const settingsFile = fs.readdirSync(path.join(output, 'src')).find(n => /^settings(?:\.[^.]+)?\.json$/.test(n));
  const settingsPath = path.join(output, 'src', settingsFile), settings = JSON.parse(fs.readFileSync(settingsPath));
  settings.splashScreen = { ...settings.splashScreen, totalTime: 0, logo: { type: 'none' } };
+ // The frame owns its logical dimensions when a player selects landscape or portrait.
+ settings.screen = { ...settings.screen, exactFitScreen: false };
  fs.writeFileSync(settingsPath, JSON.stringify(settings));
  const index = path.join(output, 'index.html');
  let html = fs.readFileSync(index, 'utf8').replace(/<title>.*?<\/title>/, '<title>StartX</title>');

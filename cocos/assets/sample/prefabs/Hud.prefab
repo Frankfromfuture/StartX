@@ -2448,7 +2448,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Research",
+    "_name": "SupplyChain",
     "_objFlags": 0,
     "_parent": {
       "__id__": 1
@@ -2609,7 +2609,7 @@
     "fileId": "02d7cZGNylV+IIZiFzAy4kT"
   },
   {
-    "__type__": "cc.Sprite",
+    "__type__": "1e3d9ViKfdQoJbtLv6rLz9U",
     "_name": "",
     "_objFlags": 0,
     "node": {
@@ -2618,32 +2618,7 @@
     "_enabled": true,
     "__prefab": null,
     "_id": "4faefNgmkNS4a50VXbzU7Ti",
-    "_customMaterial": null,
-    "_srcBlendFactor": 2,
-    "_dstBlendFactor": 4,
-    "_color": {
-      "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
-    },
-    "_spriteFrame": {
-      "__uuid__": "e7f34865-7664-535c-9853-60f19f74dee7@f9941"
-    },
-    "_type": 0,
-    "_fillType": 0,
-    "_sizeMode": 0,
-    "_fillCenter": {
-      "__type__": "cc.Vec2",
-      "x": 0,
-      "y": 0
-    },
-    "_fillStart": 0,
-    "_fillRange": 0,
-    "_isTrimmedMode": false,
-    "_useGrayscale": false,
-    "_atlas": null
+    "kind": "SupplyNode"
   },
   {
     "__type__": "cc.Node",
@@ -2808,7 +2783,7 @@
     "fileId": "6c69cVWNB1SN6WSrW/af200"
   },
   {
-    "__type__": "cc.Sprite",
+    "__type__": "1e3d9ViKfdQoJbtLv6rLz9U",
     "_name": "",
     "_objFlags": 0,
     "node": {
@@ -2817,32 +2792,7 @@
     "_enabled": true,
     "__prefab": null,
     "_id": "fd10bGu9VRQs6eej/rjwLt4",
-    "_customMaterial": null,
-    "_srcBlendFactor": 2,
-    "_dstBlendFactor": 4,
-    "_color": {
-      "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
-    },
-    "_spriteFrame": {
-      "__uuid__": "1193ec12-6a93-5381-b629-e4e4aadd183f@f9941"
-    },
-    "_type": 0,
-    "_fillType": 0,
-    "_sizeMode": 0,
-    "_fillCenter": {
-      "__type__": "cc.Vec2",
-      "x": 0,
-      "y": 0
-    },
-    "_fillStart": 0,
-    "_fillRange": 0,
-    "_isTrimmedMode": false,
-    "_useGrayscale": false,
-    "_atlas": null
+    "kind": "Recycle"
   },
   {
     "__type__": "cc.Node",
@@ -3455,7 +3405,7 @@
       "b": 47,
       "a": 255
     },
-    "_string": "公\n司\n任\n务",
+    "_string": "发\n展\n里\n程\n碑",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 22,
@@ -4120,7 +4070,7 @@
       "b": 37,
       "a": 255
     },
-    "_string": "公司任务",
+    "_string": "发展里程碑",
     "_horizontalAlign": 0,
     "_verticalAlign": 1,
     "_actualFontSize": 30,

@@ -23,7 +23,7 @@ function workbook(sheets, file) {
 (async () => {
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'startx-data-')), checks = [];
     try {
-        const config = Object.fromEntries(['balance', 'research', 'idea_pools'].map(k => [k === 'idea_pools' ? 'ideaPools' : k, JSON.parse(fs.readFileSync(path.join(root, 'data', k + '.json')))]));
+        const config = Object.fromEntries(['balance', 'idea_pools'].map(k => [k === 'idea_pools' ? 'ideaPools' : k, JSON.parse(fs.readFileSync(path.join(root, 'data', k + '.json')))]));
         const sheets = readWorkbook(path.join(root, 'data/startx_data.xlsx')), baseline = catalogFromSheets(sheets, config);
         for (const [id, card] of Object.entries(baseline.cards)) { card.bodyColor = colors(id, card).body.slice(1); card.functionText = functionText(id, card, baseline); }
         assert.deepEqual(baseline, JSON.parse(fs.readFileSync(path.join(root, 'assets/content/catalog.json'))));

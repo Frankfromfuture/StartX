@@ -1,0 +1,71 @@
+{
+  "release": "20261025-startx-ui-saves-01",
+  "files": 944,
+  "archiveBytes": 54777591,
+  "archiveSha256": "6b1e0e6435c0fff74207cc0e35b96925952c77a0f86300fa4590c10d1e1fc5c7",
+  "indexSha256": "8f8356a5b0bf57e3e9414715a17bf37fca0d73821d67a8459bb06e75b51d5c39",
+  "state": "active",
+  "filesVerified": 944,
+  "previousReleaseRetained": true,
+  "homepageUnchanged": true,
+  "homepageSha256": "311682be8d9b2599f157191f475a1cdafe1a51ef2a8d50145bddf3601660aa97",
+  "url": "https://www.iambrizo.com/startx/",
+  "publicFiles": [
+    {
+      "path": "index.html",
+      "httpStatus": 200,
+      "sha256": "8f8356a5b0bf57e3e9414715a17bf37fca0d73821d67a8459bb06e75b51d5c39",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/main/index.44263.js",
+      "httpStatus": 200,
+      "sha256": "2925f9a888ce5092b4c7d5ccd22f084bd564b8e97fc421cd31e18ed8e300cd2c",
+      "matchesBuild": true
+    },
+    {
+      "path": "src/settings.2eb00.json",
+      "httpStatus": 200,
+      "sha256": "3efbbea7d720dce744bc6da0f9662283e7e6342a0583a5b5a2668fc7e5ac157a",
+      "matchesBuild": true
+    }
+  ],
+  "online": {
+    "url": "https://www.iambrizo.com/startx/?review=publication-20261025",
+    "title": "StartX",
+    "runningOnEntry": true,
+    "rewardStars": 3,
+    "pauseIconPixels": 38.88,
+    "loadingRemoved": true,
+    "error": ""
+  },
+  "browserSaves": {
+    "passed": true,
+    "url": "https://www.iambrizo.com/startx/",
+    "browserContexts": 2,
+    "registrationRequired": false,
+    "independentSaves": true,
+    "reloadRestoresEachSave": true,
+    "runningOnEntry": true,
+    "userA": {
+      "month": 7,
+      "account": 45,
+      "canContinue": true,
+      "paused": false,
+      "title": false,
+      "error": ""
+    },
+    "userB": {
+      "month": 3,
+      "account": 50,
+      "canContinue": true,
+      "paused": false,
+      "title": false,
+      "error": ""
+    },
+    "errors": [],
+    "failed": []
+  },
+  "reusedVerifiedBuild": true,
+  "passed": true
+}

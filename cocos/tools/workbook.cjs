@@ -72,19 +72,20 @@ function catalogFromSheets(sheets, config) {
     for (const row of sheets.cards) {
         const card = { name: row.name || row.id, type: row.type || 'tool', workTags: tags(row.workTags) };
         for (const key of ['salary', 'capacity', 'spaceCapacity', 'value', 'cost']) card[key] = integer(row, key);
-        for (const key of ['hp', 'attack', 'workRequired', 'funds']) if (row[key]) card[key] = integer(row, key);
+        for (const key of ['hp', 'attack', 'workRequired', 'funds', 'deadlineSeconds', 'firstDeadlineSeconds', 'expiryPenalty']) if (row[key]) card[key] = integer(row, key);
         if (row.maxUses) {
             const range = row.maxUses.match(/^(\d+)\s*-\s*(\d+)$/);
             if (range) { card.maxUsesMin = Number(range[1]); card.maxUsesMax = Number(range[2]); card.maxUses = card.maxUsesMax; }
             else card.maxUses = integer(row, 'maxUses');
             if (card.maxUses < 0 || (range && card.maxUsesMin > card.maxUsesMax)) throw Error(`${row.id}.maxUses 范围无效`);
         }
-        for (const key of ['flavor', 'recipeId', 'businessModelId', 'unlocksRecipeId']) if (row[key]) card[key] = row[key];
+        for (const key of ['flavor', 'recipeId', 'businessModelId', 'unlocksRecipeId', 'functionText']) if (row[key]) card[key] = row[key];
         cards[row.id] = card;
     }
     for (const row of sheets.recipes) {
         const recipe = { id: row.id, name: row.name || row.id, worker_tags: tags(row.worker_tags), inputs: io(row, true), outputs: io(row, false) };
-        for (const key of ['requiredIdeaId', 'output_zone', 'packId']) if (row[key]) recipe[key] = row[key];
+        for (const key of ['output_zone', 'packId', 'effect']) if (row[key]) recipe[key] = row[key];
+        if (row.workRequired) recipe.workRequired = integer(row, 'workRequired');
         recipes.push(recipe);
         cards['bm_' + row.id] = { name: recipe.name, type: 'business_model', recipeId: row.id, salary: 0, capacity: 0, value: 1, cost: 0 };
     }
@@ -97,7 +98,8 @@ function catalogFromSheets(sheets, config) {
         else slots = String(row.slots || '').split('|').filter(Boolean).map(s => s.split(',').filter(Boolean).map(v => {
             const [id, weight] = v.trim().split(':'); return { id: id.trim(), w: number(weight, row.id + '.weight') };
         }));
-        packs[row.id] = { name: row.name || row.id, stage: integer(row, 'stage'), price: integer(row, 'price'), minCards: integer(row, 'minCards'), maxCards: integer(row, 'maxCards'), slots };
+        packs[row.id] = { name: row.name || row.id, stage: integer(row, 'stage'), price: integer(row, 'price'), minCards: integer(row, 'minCards'), maxCards: integer(row, 'maxCards'), slots,
+            requiredTasks: tags(row.requiredTasks), starterCards: tags(row.starterCards) };
     }
     const tasks = sheets.tasks.map(row => ({ id: row.id, section: row.section || '主任务', group: row.group || '其他', title: row.title || row.id,
         content: row.content || '', triggerType: row.triggerType || '', targetId: row.targetId || '', targetCount: Math.max(1, integer(row, 'targetCount', 1)), unlockPack: row.unlockPack || '', order: integer(row, 'order') })).sort((a, b) => a.order - b.order);
@@ -106,20 +108,33 @@ function catalogFromSheets(sheets, config) {
         if (entry.count != null && entry.count <= 0) throw Error(`${owner} 的卡牌数量必须大于 0`);
     };
     for (const r of recipes) {
-        if (!r.inputs.length || !r.outputs.length) throw Error(`配方 ${r.id} 必须填写输入和产出`);
+        if (r.effect && !['deliver_order', 'accept_change', 'decline_change', 'collect_payment', 'resolve_referral'].includes(r.effect)) throw Error(`配方 ${r.id} 的 effect 无效：${r.effect}`);
+        if (r.workRequired != null && r.workRequired < 0) throw Error(`配方 ${r.id} 的 workRequired 必须为非负数，0 表示沿用产出卡的工作量`);
+        if (!r.inputs.length || (!r.outputs.length && r.effect !== 'decline_change')) throw Error(`配方 ${r.id} 必须填写输入和产出`);
         [...r.inputs, ...r.outputs].forEach(e => reference(r.id, e));
         if (r.packId && !packs[r.packId]) throw Error(`配方 ${r.id} 的卡包不存在：${r.packId}`);
         for (const o of r.outputs) if (!(cards[o.id].workRequired > 0)) throw Error(`配方 ${r.id} 的产出 ${o.id} 缺少 workRequired`);
         const label = entries => entries.map(e => `${cards[e.id].name}*${e.count}`).join('+');
-        r.formula = label(r.inputs) + ' → ' + label(r.outputs);
+        r.formula = label(r.inputs) + ' → ' + (r.outputs.length ? label(r.outputs) : '取消加单，合同保留');
     }
     for (const [id, pack] of Object.entries(packs)) {
         if (pack.minCards < 0 || pack.maxCards < pack.minCards) throw Error(`卡包 ${id} 数量范围无效`);
         for (const slot of pack.slots) for (const option of slot) { reference(id, option); if (option.w <= 0) throw Error(`卡包 ${id} 的抽取权重必须大于 0`); }
+        pack.starterCards.forEach(card => reference(id, { id: card }));
+        for (const task of pack.requiredTasks) if (!tasks.some(t => t.id === task)) throw Error(`卡包 ${id} 的任务不存在：${task}`);
     }
     for (const task of tasks) if (task.unlockPack && !packs[task.unlockPack]) throw Error(`任务 ${task.id} 解锁了不存在的卡包：${task.unlockPack}`);
     for (const id of ['founder', 'cash', 'p3_account']) if (!cards[id]) throw Error(`缺少游戏基础卡牌：${id}`);
-    return { cards, recipes, packs, packOrder: Object.keys(packs), tasks, ...config, source: 'data/startx_data.xlsx; tools/sync-content.cjs' };
+    const stages = (sheets.stages || []).map(row => ({ id: row.id, name: row.name, requiredTasks: tags(row.requiredTasks), minMonth: integer(row, 'minMonth', 1), minRevenue: integer(row, 'minRevenue') }));
+    for (const stage of stages) for (const task of stage.requiredTasks) if (!tasks.some(t => t.id === task)) throw Error(`阶段 ${stage.id} 的任务不存在：${task}`);
+    const events = (sheets.events || []).map(row => ({ id: row.id, name: row.name, cardId: row.cardId, trigger: row.trigger,
+        duration: integer(row, 'duration'), extendSeconds: integer(row, 'extendSeconds'), deferredCash: integer(row, 'deferredCash'), message: row.message }));
+    for (const event of events) {
+        reference(event.id, { id: event.cardId });
+        if (!['accepted', 'delivered'].includes(event.trigger) || event.duration <= 0 || event.deferredCash < 0 || event.extendSeconds < 0) throw Error(`客户事件 ${event.id} 配置无效`);
+    }
+    for (const [id, card] of Object.entries(cards)) if (card.type === 'order' && (!(card.deadlineSeconds > 0) || !(card.firstDeadlineSeconds > 0) || !(card.expiryPenalty >= 0))) throw Error(`订单 ${id} 的时限或逾期扣款无效`);
+    return { cards, recipes, packs, packOrder: Object.keys(packs), tasks, stages, events, ...config, source: 'data/startx_data.xlsx; tools/sync-content.cjs' };
 }
 
 module.exports = { readWorkbook, catalogFromSheets };

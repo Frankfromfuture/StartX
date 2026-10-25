@@ -1,5 +1,7 @@
 import { _decorator, Color, Component, Graphics, UITransform } from 'cc';
 const { ccclass, property, executeInEditMode, requireComponent } = _decorator;
+export const FILE_TAB_RADIUS = .26;
+export const DIMMED_BACKGROUND_COLOR = new Color(16, 19, 25, 190);
 
 /** Editable rounded panel. Geometry follows its UITransform in editor and runtime. */
 @ccclass('Surface')
@@ -22,7 +24,7 @@ export class Surface extends Component {
     private gridZoom = 1;
     private gridX = 0;
     private gridY = 0;
-    private edgeGaps: [number, number][] = [];
+    private edgeGaps: [number, number][] | null = null;
 
     setEdgeGaps(gaps: [number, number][]) { this.edgeGaps = gaps; this.paint(); }
 
@@ -46,7 +48,7 @@ export class Surface extends Component {
             // Brizo's 10px crown + 8px concave shoulders, rotated into a vertical tab.
             // Cubic quarter circles meet the straight edges with matching tangents.
             const left = -w / 2 + inset, right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset;
-            const shoulder = w * .20, radius = w * .26, k = .55228475;
+            const shoulder = w * .20, radius = w * FILE_TAB_RADIUS, k = .55228475;
             const outline = () => {
             g.moveTo(left, top);
             g.bezierCurveTo(left, top - shoulder * k, left + shoulder * (1 - k), top - shoulder, left + shoulder, top - shoulder);
@@ -58,23 +60,31 @@ export class Surface extends Component {
             g.bezierCurveTo(left + shoulder * (1 - k), bottom + shoulder, left, bottom + shoulder * k, left, bottom);
             };
             outline(); g.close(); g.fill();
+            if (this.openLeft && this.lineWidth) {
+                // Cover the shared seam, including any inactive tab border underneath it.
+                g.rect(left - inset, bottom, this.lineWidth, top - bottom); g.fill();
+            }
             if (this.lineWidth) {
                 outline(); if (!this.openLeft) g.close();
                 g.lineWidth = this.lineWidth; g.strokeColor = this.stroke; g.stroke();
             }
             return;
-        } else if (this.openLeft) {
-            const left = -w / 2, right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset, r = this.radius;
-            g.roundRect(left - r, bottom, w + r - inset, h - this.lineWidth, r); g.fill();
+        } else if (this.openLeft || this.edgeGaps !== null) {
+            const left = -w / 2 + (this.openLeft ? 0 : inset), right = w / 2 - inset, bottom = -h / 2 + inset, top = h / 2 - inset;
+            const r = Math.min(this.radius, (right - left) / 2, (top - bottom) / 2), k = .55228475;
+            g.roundRect(left - r, bottom, right - left + r, top - bottom, r); g.fill();
             if (this.lineWidth) {
                 g.lineWidth = this.lineWidth; g.strokeColor = this.stroke;
-                g.moveTo(left, bottom); g.lineTo(right - r, bottom); g.quadraticCurveTo(right, bottom, right, bottom + r);
+                g.moveTo(left, bottom); g.lineTo(right - r, bottom);
+                g.bezierCurveTo(right - r * (1 - k), bottom, right, bottom + r * (1 - k), right, bottom + r);
                 let y = bottom + r;
-                for (const [from, to] of this.edgeGaps.slice().sort((a, b) => a[0] - b[0])) {
+                for (const [from, to] of (this.edgeGaps || []).slice().sort((a, b) => a[0] - b[0])) {
                     const a = Math.max(y, Math.min(top - r, from)), b = Math.max(a, Math.min(top - r, to));
                     g.lineTo(right, a); g.moveTo(right, b); y = b;
                 }
-                g.lineTo(right, top - r); g.quadraticCurveTo(right, top, right - r, top); g.lineTo(left, top); g.stroke();
+                g.lineTo(right, top - r);
+                g.bezierCurveTo(right, top - r * (1 - k), right - r * (1 - k), top, right - r, top);
+                g.lineTo(left, top); if (!this.openLeft) g.lineTo(left, bottom); g.stroke();
             }
             return;
         } else g.roundRect(-w / 2 + inset, -h / 2 + inset, w - this.lineWidth, h - this.lineWidth, this.radius);

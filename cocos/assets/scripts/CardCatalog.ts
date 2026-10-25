@@ -1,7 +1,7 @@
-import { Camera, Color, director, Director, EffectAsset, Font, Graphics, Label, Mask, Material, Node, RenderTexture, Sprite, SpriteFrame, UITransform, Vec2, Vec3, Vec4 } from 'cc';
+import { Color, Font, Label, Mask, Node, Sprite, SpriteFrame, UITransform, Vec2, Vec3 } from 'cc';
 import { GameModel } from './GameModel';
 import { LayoutMetrics } from './Layout';
-import { Surface } from './Surface';
+import { DIMMED_BACKGROUND_COLOR, Surface } from './Surface';
 import { roundCard } from './RoundedCard';
 
 type Sort = 'rarity' | 'type' | 'name';
@@ -28,30 +28,11 @@ export class CardCatalog {
     private columns = 1;
     private dragging = false;
     private generation = 0;
-    private opened = false;
-    private texture = new RenderTexture();
-    private capturedFrame = new SpriteFrame();
-    private blur: Material;
-    private captureCamera: Camera | null = null;
-    private previousTarget: RenderTexture | null = null;
-    private finishCapture = () => {
-        if (this.captureCamera?.isValid) this.captureCamera.targetTexture = this.previousTarget;
-        this.captureCamera = null;
-        if (this.opened) {
-            this.node.active = true;
-            // Capture hides the overlay for a frame, so transform change flags may expire before its graphics render.
-            this.node.getComponentsInChildren(Graphics).forEach(graphics => graphics.model?.updateWorldBound());
-        }
-    };
-
-    constructor(parent: Node, private font: Font, private back: SpriteFrame, effect: EffectAsset,
+    constructor(parent: Node, private font: Font, private back: SpriteFrame,
         private loadFrame: (path: string) => Promise<SpriteFrame>, private reportError: (error: unknown) => void) {
         this.node = this.make('CardCatalog', parent, 720, 1280);
-        this.background = this.make('BlurredBackground', this.node, 720, 1280);
-        this.texture.initialize({ width: 16, height: 16 });
-        this.capturedFrame.texture = this.texture; this.capturedFrame.flipUVY = true;
-        const sprite = this.background.addComponent(Sprite); sprite.spriteFrame = this.capturedFrame; sprite.sizeMode = Sprite.SizeMode.CUSTOM;
-        this.blur = new Material(); this.blur.initialize({ effectAsset: effect }); sprite.customMaterial = this.blur;
+        this.background = this.make('DimmedBackground', this.node, 720, 1280);
+        const shade = this.background.addComponent(Surface); shade.fill = DIMMED_BACKGROUND_COLOR.clone(); shade.radius = 0; shade.paint();
         this.title = this.text('Title', this.node, '卡牌图鉴', 26);
         this.count = this.text('UnlockedCount', this.node, '', 18);
         this.close = this.text('Close', this.node, '×', 34).node;
@@ -76,49 +57,36 @@ export class CardCatalog {
         l.horizontalAlign = Label.HorizontalAlign.LEFT; l.enableWrapText = false; l.overflow = Label.Overflow.SHRINK; return l;
     }
     open(model: GameModel, metrics: LayoutMetrics) {
-        this.model = model; this.opened = true; this.offset = 0;
+        this.model = model; this.node.active = true; this.offset = 0;
         this.rebuild(); this.layout(metrics);
     }
-    cancelCapture() {
-        if (!this.captureCamera) return;
-        director.off(Director.EVENT_AFTER_DRAW, this.finishCapture); this.finishCapture();
-    }
-    hide() { this.opened = false; this.cancelCapture(); this.node.active = false; this.dragging = false; }
-    capture(camera: Camera) {
-        if (this.captureCamera) return;
-        this.node.active = false;
-        const { width, height, scale } = this.metrics, ratio = Math.min(1, 768 / Math.max(width / scale, height / scale));
-        this.texture.resize(Math.max(1, Math.round(width / scale * ratio)), Math.max(1, Math.round(height / scale * ratio)));
-        this.capturedFrame.reset({ texture: this.texture }, true); this.capturedFrame.flipUVY = true;
-        this.captureCamera = camera; this.previousTarget = camera.targetTexture;
-        camera.targetTexture = this.texture;
-        director.once(Director.EVENT_AFTER_DRAW, this.finishCapture);
-    }
+    hide() { this.node.active = false; this.dragging = false; }
     layout(metrics: LayoutMetrics) {
         this.metrics = metrics;
         const { width: w, height: h, scale: s, top, bottom } = metrics;
-        const margin = Math.max(32 * s, Math.min(w, h) * .08), width = w - margin * 2, headerH = 108 * s;
+        const landscape = w > h, ui = s * (landscape ? .72 : 1);
+        const margin = landscape ? 16 * s : Math.max(32 * s, Math.min(w, h) * .08), width = w - margin * 2, headerH = (landscape ? 100 : 108) * ui;
         this.node.getComponent(UITransform)!.setContentSize(w, h); this.background.getComponent(UITransform)!.setContentSize(w, h);
-        this.blur.setProperty('blurStep', new Vec4(6 * s / w, 6 * s / h, .94, .42));
         const topY = h / 2 - top - margin;
-        this.title.node.setPosition(-width / 2, topY - 18 * s);
-        this.title.fontSize = 26 * s; this.title.lineHeight = 34 * s;
-        this.title.node.getComponent(UITransform)!.setContentSize(width, 36 * s); this.title.node.getComponent(UITransform)!.setAnchorPoint(0, .5);
-        this.count.fontSize = 18 * s; this.count.lineHeight = 24 * s;
-        this.count.node.getComponent(UITransform)!.setContentSize(Math.min(200 * s, width * .54), 28 * s);
+        this.title.node.setPosition(-width / 2, topY - 18 * ui);
+        this.title.fontSize = 26 * ui; this.title.lineHeight = 34 * ui;
+        this.title.node.getComponent(UITransform)!.setContentSize(width, 36 * ui); this.title.node.getComponent(UITransform)!.setAnchorPoint(0, .5);
+        this.count.fontSize = 18 * ui; this.count.lineHeight = 24 * ui;
+        this.count.node.getComponent(UITransform)!.setContentSize(Math.min(200 * ui, width * .54), 28 * ui);
         this.count.node.getComponent(UITransform)!.setAnchorPoint(1, .5); this.count.horizontalAlign = Label.HorizontalAlign.RIGHT;
-        this.count.node.setPosition(width / 2 - 42 * s, topY - 18 * s);
-        this.close.getComponent(UITransform)!.setContentSize(40 * s, 40 * s); this.close.setPosition(width / 2 - 15 * s, topY - 18 * s);
-        const close = this.close.getComponent(Label)!; close.fontSize = 34 * s; close.lineHeight = 40 * s;
-        const buttonGap = 10 * s, buttonW = Math.min(140 * s, (width - buttonGap * 2) / 3), rowW = buttonW * 3 + buttonGap * 2;
+        this.count.node.setPosition(width / 2 - 42 * ui, topY - 18 * ui);
+        const closeTarget = (landscape ? 44 : 40) * s;
+        this.close.getComponent(UITransform)!.setContentSize(closeTarget, closeTarget); this.close.setPosition(width / 2 - 15 * ui, topY - 18 * ui);
+        const close = this.close.getComponent(Label)!; close.fontSize = 34 * ui; close.lineHeight = 40 * ui;
+        const buttonGap = 10 * ui, buttonW = Math.min(140 * ui, (width - buttonGap * 2) / 3), rowW = buttonW * 3 + buttonGap * 2;
         let i = 0;
         for (const [key, n] of this.buttons) {
-            n.setPosition(-rowW / 2 + buttonW / 2 + i++ * (buttonW + buttonGap), topY - 72 * s);
-            n.getComponent(UITransform)!.setContentSize(buttonW, 40 * s);
+            n.setPosition(-rowW / 2 + buttonW / 2 + i++ * (buttonW + buttonGap), topY - 72 * ui);
+            n.getComponent(UITransform)!.setContentSize(buttonW, 40 * ui);
             const surface = n.getComponent(Surface)!; surface.fill = key === this.sort ? new Color(255, 213, 74) : new Color(252, 248, 238);
-            surface.lineWidth = 2 * s; surface.radius = 5 * s; surface.paint();
-            const label = n.getChildByName('Text')!.getComponent(Label)!; label.fontSize = 18 * s; label.lineHeight = 24 * s;
-            label.node.getComponent(UITransform)!.setContentSize(buttonW - 12 * s, 34 * s);
+            surface.lineWidth = 2 * ui; surface.radius = 5 * ui; surface.paint();
+            const label = n.getChildByName('Text')!.getComponent(Label)!; label.fontSize = 18 * ui; label.lineHeight = 24 * ui;
+            label.node.getComponent(UITransform)!.setContentSize(buttonW - 12 * ui, 34 * ui);
         }
         const viewH = Math.max(1, h - top - bottom - margin * 2 - headerH);
         this.viewport.getComponent(UITransform)!.setContentSize(width, viewH); this.viewport.setPosition(0, topY - headerH - viewH / 2);
@@ -150,7 +118,7 @@ export class CardCatalog {
         return stage + (1 - chance) * .9;
     }
     private rebuild() {
-        const generation = ++this.generation, data = this.model.data, types = ['employee', 'facility', 'resource', 'tool', 'customer', 'product', 'cash', 'business_model', 'rival'];
+        const generation = ++this.generation, data = this.model.data, types = ['employee', 'facility', 'resource', 'tool', 'badge', 'customer', 'product', 'order', 'event', 'receivable', 'cash', 'business_model', 'rival'];
         this.cells.forEach(c => { c.node.active = false; c.node.destroy(); });
         const ids = Object.keys(data.cards).sort((a, b) => {
             const lockedOrder = Number(this.model.drawn.has(b)) - Number(this.model.drawn.has(a));
@@ -208,14 +176,11 @@ export class CardCatalog {
             return { x: a.x / this.metrics.scale, y: (this.metrics.height - a.y - t.height) / this.metrics.scale, width: t.width / this.metrics.scale, height: t.height / this.metrics.scale };
         };
         return { active: this.node.activeInHierarchy, pending: this.pending, sort: this.sort, offset: this.offset, maximum: this.maximum, columns: this.columns,
-            unlocked: this.model ? this.cells.filter(c => c.unlocked).length : 0, total: this.cells.length, blurred: !!this.blur, capturing: !!this.captureCamera,
+            unlocked: this.model ? this.cells.filter(c => c.unlocked).length : 0, total: this.cells.length, blurred: false, capturing: false, shadeAlpha: DIMMED_BACKGROUND_COLOR.a,
             viewport: this.metrics ? bounds(this.viewport) : null,
             controls: this.metrics ? [['CatalogClose', this.close] as const, ...Array.from(this.buttons, ([s, n]) => ['CatalogSort:' + s, n] as const)]
                 .reduce((out, [key, n]) => { out[key] = bounds(n); return out; }, {} as Record<string, ReturnType<typeof bounds>>) : {},
             cards: this.metrics ? this.cells.map(c => ({ id: c.id, unlocked: c.unlocked, face: c.sprite.spriteFrame !== this.back, rounded: !!c.node.getComponent(Mask), bounds: bounds(c.node) })) : [] };
     }
-    destroy() {
-        director.off(Director.EVENT_AFTER_DRAW, this.finishCapture); this.opened = false; this.finishCapture();
-        this.capturedFrame.destroy(); this.texture.destroy(); this.blur.destroy();
-    }
+    destroy() { this.node.destroy(); }
 }

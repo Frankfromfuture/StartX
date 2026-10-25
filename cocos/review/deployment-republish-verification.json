@@ -1,0 +1,36 @@
+{
+  "release": "20261025-startx-republish-01",
+  "files": 945,
+  "archiveBytes": 58651216,
+  "archiveSha256": "0d31a3048c56b8774b5e6bef78806684bb465723f046e589879b2df789927afa",
+  "indexSha256": "96cdd7d425d430a6001223ce57f98335465b6a403a0261bb64843275260ea2ef",
+  "sourceRelease": "20261025-startx-operations-logo-01",
+  "sourceCommit": "766cfe3a7384f770cded0e467f1ef8aa5a922de9",
+  "reusedVerifiedBuild": true,
+  "state": "active",
+  "filesVerified": 945,
+  "previousReleaseRetained": true,
+  "homepageUnchanged": true,
+  "url": "https://www.iambrizo.com/startx/",
+  "publicFiles": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "matchesBuild": true,
+      "lastModified": "Sun, 25 Oct 2026 05:20:15 GMT"
+    },
+    {
+      "path": "assets/main/index.a51e7.js",
+      "status": 200,
+      "matchesBuild": true,
+      "lastModified": "Sun, 25 Oct 2026 05:20:15 GMT"
+    },
+    {
+      "path": "startx-icon-0db945f26578.png",
+      "status": 200,
+      "matchesBuild": true,
+      "lastModified": "Sun, 25 Oct 2026 05:20:15 GMT"
+    }
+  ],
+  "passed": true
+}

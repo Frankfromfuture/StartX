@@ -11,11 +11,11 @@ try{
  const cardPoint=async uid=>{const s=await state(),b=s.cards.find(c=>c.uid===uid).bounds;return{x:b.x+b.width/2,y:b.y+b.height/2};};
  const tapCard=async uid=>{const p=await cardPoint(uid);await page.touchscreen.tap(p.x,p.y);await frame();};
  let s=await state();assert(!s.controls.ResearchPanel);assert(!('rp' in s));assert(s.controls.SupplyChain.width>=44&&s.controls.SupplyChain.height>=44);
- await tap('SupplyChain');s=await state();assert.equal(s.supply.step,'subject');assert(s.hint.includes('选择供应链主体'));
+ await tap('SupplyChain');await page.waitForFunction(()=>window.__STARTX_SAMPLE__().founderSpeech.text.includes('选择供应链主体'));s=await state();assert.equal(s.supply.step,'subject');assert(s.founderSpeech.text.includes('选择供应链主体'));
  await tapCard(fixture.b);assert.equal((await state()).supply.step,'target');await page.waitForFunction(()=>window.__STARTX_SAMPLE__().supply.frames.length===1);await tapCard(fixture.a);
- await page.waitForFunction(()=>window.__STARTX_SAMPLE__().links.length===1);s=await state();assert.equal(s.supply.step,'none');assert.equal(s.supply.toast,'完成供应链上游组建');assert.equal(s.supply.markers.length,0);
+ await page.waitForFunction(()=>window.__STARTX_SAMPLE__().links.length===1&&window.__STARTX_SAMPLE__().founderSpeech.text==='完成供应链上游组建');s=await state();assert.equal(s.supply.step,'none');assert.equal(s.founderSpeech.text,'完成供应链上游组建');assert.equal(s.supply.markers.length,0);
  await tap('SupplyChain');await tapCard(fixture.b);await tapCard(fixture.c);
- await page.waitForFunction(()=>window.__STARTX_SAMPLE__().links.length===2);s=await state();assert.equal(s.supply.markers.length,0);assert.equal(s.supply.toast,'完成供应链下游组建');
+ await page.waitForFunction(()=>window.__STARTX_SAMPLE__().links.length===2&&window.__STARTX_SAMPLE__().founderSpeech.text==='完成供应链下游组建');s=await state();assert.equal(s.supply.markers.length,0);assert.equal(s.founderSpeech.text,'完成供应链下游组建');
  const icons=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews);return{left:c.find('SupplyChain/Icon').getComponents(window.cc.Component).map(c=>c.kind).filter(Boolean),right:c.find('SellZone/Icon').getComponents(window.cc.Component).map(c=>c.kind).filter(Boolean),research:c.hud.getChildByName('Research')!==null}});
  assert.deepEqual(icons,{left:['SupplyNode'],right:['Recycle'],research:false});
  await page.waitForTimeout(360);await page.screenshot({path:root+'/review/screenshots/supply-touch-complete.png'});
@@ -26,6 +26,6 @@ try{
  const trash=await page.evaluate(()=>{const c=window.cc.director.getScene().getComponentsInChildren(window.cc.Component).find(c=>c.model&&c.syncViews),v=c.model.spawn('p1_youth',-500,-470);c.syncViews();c.fitBoard();return v.uid;});await settled();s=await state();const before=s.cash,from=await cardPoint(trash),zone=s.controls.SellZone,to={x:zone.x+zone.width/2,y:zone.y+zone.height/2};
  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});for(let i=1;i<=16;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:from.x+(to.x-from.x)*i/16,y:from.y+(to.y-from.y)*i/16}]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await page.waitForFunction(uid=>!window.__STARTX_SAMPLE__().cards.some(c=>c.uid===uid),trash);s=await state();assert.equal(s.cash,before+1);assert.equal(s.links.length,2);assert.deepEqual(errors,[]);
- const report={passed:true,icons,checks:['One mobile supply button highlights the subject; tapping a valid upstream or downstream stack immediately connects it','Automatic connection draws directed links and the correct completion toast without placing icons above stacks','Cancellation preserves existing edges; long press still opens the card preview; dragging to the recycle icon still sells the card'],errors};
+ const report={passed:true,icons,checks:['One mobile supply button highlights the subject; tapping a valid upstream or downstream stack immediately connects it','Automatic connection draws directed links and the correct founder completion speech without placing icons above stacks','Cancellation preserves existing edges; long press still opens the card preview; dragging to the recycle icon still sells the card'],errors};
  fs.writeFileSync(root+'/review/supply-touch-ui.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

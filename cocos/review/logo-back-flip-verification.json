@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "typecheck": true,
+  "build": "web-mobile",
+  "logoVersion": 2,
+  "geometryPassed": true,
+  "geometryThresholdPixels": 0.05,
+  "testedPoses": [
+    [
+      -10,
+      -8
+    ],
+    [
+      45,
+      25
+    ],
+    [
+      88,
+      30
+    ],
+    [
+      105,
+      -25
+    ],
+    [
+      170,
+      20
+    ],
+    [
+      235,
+      -30
+    ]
+  ],
+  "landscapePose": [
+    145,
+    32
+  ],
+  "flipClick": {
+    "before": {
+      "back": true,
+      "yaw": 145,
+      "target": 145,
+      "x": 159.99999999999997,
+      "y": 180,
+      "viewport": [
+        640,
+        360
+      ]
+    },
+    "after": {
+      "back": false,
+      "yaw": 316.05444419377363,
+      "target": 325,
+      "perspective": true,
+      "error": ""
+    }
+  },
+  "cardBackFullBleed": true,
+  "oldWhiteCornerWedgesRemoved": true
+}

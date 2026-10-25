@@ -1,0 +1,52 @@
+{
+  "build": true,
+  "typecheck": true,
+  "document": {
+    "removed": true,
+    "cashBefore": 50,
+    "cashAfter": 50,
+    "speech": "已回收文书（无现金收益）",
+    "hint": "「公司的地板光亮如新，有可能是创始人晚上擦的」",
+    "error": ""
+  },
+  "supply": {
+    "links": 2,
+    "speech": {
+      "visible": true,
+      "text": "完成供应链下游组建",
+      "queued": true,
+      "age": 0.46729999998211885,
+      "width": 158,
+      "height": 51,
+      "entrance": 1,
+      "tailDirection": "down",
+      "shadow": {
+        "x": 2.760101567774958,
+        "y": -1.6171550994312929
+      },
+      "origin": {
+        "x": 13.811328473115879,
+        "y": 387.73931623931634
+      },
+      "destination": {
+        "x": 13.811328473115879,
+        "y": 397.5170940170941
+      }
+    },
+    "hint": "「公司的地板光亮如新，有可能是创始人晚上擦的」",
+    "oldToastPresent": false,
+    "milestoneNotice": "已完成 创业啦！",
+    "error": ""
+  },
+  "cardHint": {
+    "attributes": "创始人 · 员工　月薪 $0　产能 5",
+    "flavor": "「不用给钱，啥都能干。梦想是改变世界，合伙人是自己的猫。」",
+    "speechVisible": false,
+    "noticeKind": "hint"
+  },
+  "icon": {
+    "href": "http://127.0.0.1:4173/startx-icon-0db945f26578.png",
+    "apple": "http://127.0.0.1:4173/startx-icon-0db945f26578.png"
+  },
+  "passed": true
+}

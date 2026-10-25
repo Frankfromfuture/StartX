@@ -82,8 +82,6 @@ export class Sample extends Component implements InputTarget {
     private supplyTransit: { source: number; target: number; id: string; progress: number; x: number; y: number }[] = [];
     private linkBirths = new Map<string, number>();
     private supplyRoutes: ConnectorRoute[] = [];
-    private supplyToast!: Node;
-    private supplyToastTime = 0;
     private pressedAction = '';
     private pressedCard = 0;
     private pressedPack = 0;
@@ -163,9 +161,6 @@ export class Sample extends Component implements InputTarget {
             const pauseIcon = this.makeNode('Icon', pause, 64, 64); pauseIcon.addComponent(Icon).kind = 'Pause';
             const attributes = this.text(this.hud, 'HintAttributes', '', 640, 40, 0, 0, 26, 'F7F7F3').getComponent(Label)!;
             attributes.horizontalAlign = Label.HorizontalAlign.CENTER; attributes.enableWrapText = false;
-            this.supplyToast = this.makeNode('SupplyToast', this.hud, 420, 54);
-            const toastSurface = this.supplyToast.addComponent(Surface); toastSurface.fill = new Color(255, 249, 233); toastSurface.stroke = new Color(35, 34, 30); toastSurface.lineWidth = 2.5; toastSurface.radius = 9; toastSurface.paint();
-            this.text(this.supplyToast, 'Text', '', 400, 44, 0, 0, 22, '24221F'); this.supplyToast.active = false;
             for (const name of ['Stage', 'Month', 'Supply', 'Space', 'Cash']) this.controls.set('StatusInfo:' + name, this.find('Status/' + name));
             this.originalHud = new OriginalHud(this.hud, this.model, this.font, this.controls, path => this.loadFrame(path));
             this.founderSpeech = new FounderSpeech(this.hud, this.font, point => this.board.projectWorld(point));
@@ -231,7 +226,7 @@ export class Sample extends Component implements InputTarget {
             if (appearance) {
                 view.appear(appearance, () => { if (appearance.landSound && this.model.card(uid)) this.audio.play(appearance.landSound); });
             }
-        } catch (e) { this.lastError = String(e); console.error('[StartX] Card asset', id, e); this.model.say('卡面加载失败，请刷新重试'); }
+        } catch (e) { this.lastError = String(e); console.error('[StartX] Card asset', id, e); this.model.say('卡面加载失败，请刷新重试', 'hint'); }
         finally { this.pending--; }
     }
     private patch(v: ViewState, path: string, kind: 'uses' | 'account' | 'pack') {
@@ -343,7 +338,6 @@ export class Sample extends Component implements InputTarget {
         if (!this.ready) return;
         this.supplyClock += dt;
         if (this.supplyStep !== 'none' && this.supplyAnchor && !this.model.card(this.supplyAnchor)) this.cancelSupply();
-        if (this.supplyToastTime > 0) { this.supplyToastTime -= dt; this.supplyToast.active = this.supplyToastTime > 0 && this.modal === 'none' && !this.atTitle; }
         this.titleScreen.tick(dt);
         this.cardInspector.tick(dt);
         this.model.update(Math.min(dt, .1)); this.syncViews();
@@ -358,6 +352,10 @@ export class Sample extends Component implements InputTarget {
         this.originalHud.tick(dt, this.modal === 'none' && !this.atTitle);
         let milestone = false;
         for (const id of this.model.completed) if (!this.spokenMilestones.has(id)) { this.spokenMilestones.add(id); milestone = true; }
+        if (this.model.operationNotice) {
+            const message = this.model.operationNotice; this.model.operationNotice = '';
+            if (!this.atTitle) this.founderSpeech.speak(message);
+        }
         if (milestone && !this.atTitle) this.founderSpeech.celebrate();
         const founder = this.model.cards.find(c => c.id === 'founder');
         this.founderSpeech.tick(dt, founder ? this.views.get(founder.uid)?.view.frontNode : undefined,
@@ -400,9 +398,10 @@ export class Sample extends Component implements InputTarget {
         const properties = card ? this.model.cardHint(card).replace(/^「|」$/g, '') : '';
         attributes.string = card && properties !== this.model.def(card).name ? properties : '';
         const landscape = this.metrics.width > this.metrics.height;
+        const notice = this.model.noticeKind === 'operation' && !this.model.gameOver ? DEFAULT_HINT : this.model.notice;
         attributes.node.active = !this.atTitle && !landscape && !!attributes.string;
         hint.string = card ? quoteFlavor(this.model.def(card).flavor) : battle ? `商战  对手资金 ${Math.max(0, battle.enemyHp).toFixed(1)} · 我方资金 ${Math.max(0, battle.playerHp).toFixed(1)}` :
-            this.supplyStep !== 'none' ? this.supplyMessage : this.model.notice.startsWith('「') ? this.model.notice : `「${this.model.notice}」`;
+            notice.startsWith('「') ? notice : `「${notice}」`;
         if (landscape && attributes.string) hint.string = attributes.string + (hint.string ? '　' + hint.string : '');
         const split = !landscape && !!attributes.string, rowHeight = hint.lineHeight, rowOffset = rowHeight * .625;
         this.position('HintAttributes', 0, this.hintCenterY + rowOffset);
@@ -556,14 +555,9 @@ export class Sample extends Component implements InputTarget {
         }
         this.position('PauseControl', 0, iconY(cornerArt * .8 * .9), cornerTarget, cornerTarget);
         this.find('PauseControl/Icon').setScale(this.cornerIconScale * .9, this.cornerIconScale * .9, 1);
-        this.supplyToast.getComponent(UITransform)!.setContentSize(Math.min(400 * scale, w - 28 * scale), 48 * scale);
-        this.supplyToast.getChildByName('Text')!.getComponent(UITransform)!.setContentSize(Math.min(380 * scale, w - 48 * scale), 44 * scale);
-        this.supplyToast.getChildByName('Text')!.getComponent(Label)!.fontSize = 18 * scale;
-        this.supplyToast.getComponent(Surface)!.paint();
         const stripH = 72 * scale, stripTop = topY - statusH - (landscape ? 10 * unit : 12 * unit);
         const stripW = w - margin * 2;
         this.boardTop = landscape ? stripTop - 12 * scale : stripTop - stripH - 20;
-        this.supplyToast.setPosition(0, this.boardTop - 30 * scale);
         this.originalHud.layout(w, stripTop - stripH / 2, stripH, stripW, -h / 2 + bottom + footerH + 16 * unit, scale, landscape, unit, nearSquare);
         const hint = this.label('Hint'), reminder = this.label('TaskReminder'), reminderH = hint.lineHeight * 2.2;
         this.position('TaskReminder', 0, stripTop - stripH - 10 * scale - reminderH / 2, w - margin * 2, reminderH);
@@ -626,7 +620,7 @@ export class Sample extends Component implements InputTarget {
     private get plainMenu() { return ['book', 'settings', 'home'].includes(this.modal); }
     private get menuRows() { return this.modal === 'settings' ? 5 + (canSetDisplayOrientation() ? 1 : 0) : this.entries().length; }
     private show(modal: Modal, resetPage = true) {
-        if (modal !== 'none') { this.cancelSupply(); this.supplyToast.active = false; }
+        if (modal !== 'none') this.cancelSupply();
         this.releaseMenuPress();
         this.hideStatusInfo();
         if (modal !== 'none') { this.originalHud.close(); this.originalHud.closePacks(); }
@@ -891,9 +885,9 @@ export class Sample extends Component implements InputTarget {
             if (this.supplyStep !== 'none') { this.chooseSupply(this.pressedCard); return; }
             this.selected = this.pressedCard; this.selectedPack = 0; this.catalogId = '';
             const card = this.model.card(this.selected);
-            if (card) { this.model.say(this.model.cardHint(card)); if (card.id === 'p3_account') this.model.withdraw(card); else if (this.model.def(card).type === 'order') this.model.acceptOrder(card); this.hintCardUid = card.uid; this.hintNoticeVersion = this.model.noticeVersion; } this.saveProgress(); return;
+            if (card) { this.model.say(this.model.cardHint(card), 'hint'); if (card.id === 'p3_account') this.model.withdraw(card); else if (this.model.def(card).type === 'order') this.model.acceptOrder(card); this.hintCardUid = card.uid; this.hintNoticeVersion = this.model.noticeVersion; } this.saveProgress(); return;
         }
-        if (kind === 'board') { this.cancelSupply(); this.selected = 0; this.hintCardUid = 0; this.originalHud.close(); this.syncMenuBackdrop(); this.model.say(DEFAULT_HINT); return; }
+        if (kind === 'board') { this.cancelSupply(); this.selected = 0; this.hintCardUid = 0; this.originalHud.close(); this.syncMenuBackdrop(); this.model.say(DEFAULT_HINT, 'hint'); return; }
         const action = this.actionAt(p); if (action && action === this.pressedAction) this.perform(action.replace(/^(Row|Title):/, ''));
     }
     private perform(action: string) {
@@ -914,7 +908,7 @@ export class Sample extends Component implements InputTarget {
             }
             case 'Tasks': this.originalHud.toggle(); break;
             case 'TaskFold': this.originalHud.fold(arg); break;
-            case 'TaskItem': { const text = this.originalHud.infoFor(arg); this.originalHud.showInfo(arg); if (text) this.model.say(text); break; }
+            case 'TaskItem': { const text = this.originalHud.infoFor(arg); this.originalHud.showInfo(arg); if (text) this.model.say(text, 'hint'); break; }
             case 'TaskHelpClose': this.originalHud.hideInfo(); break;
             case 'FlashPack': {
                 const source = this.controls.get('FlashPack')!.worldPosition;
@@ -984,7 +978,7 @@ export class Sample extends Component implements InputTarget {
             case 'TestMode':
                 this.testMode = !this.testMode; this.model.testMode = this.testMode;
                 try { sys.localStorage.setItem('startx.test-mode', String(this.testMode)); } catch { /* The current session still applies. */ }
-                this.model.say(this.testMode ? '测试模式已开启：全部卡包解锁，新开局获得余额 50 的账户' : '测试模式已关闭：新开局恢复原版现金与卡包规则');
+                this.model.say(this.testMode ? '测试模式已开启：全部卡包解锁，新开局获得余额 50 的账户' : '测试模式已关闭：新开局恢复原版现金与卡包规则', 'hint');
                 this.renderPanel(); break;
             case 'Home': this.atTitle = true; this.show('home'); break;
             case 'Restart':
@@ -1044,31 +1038,29 @@ export class Sample extends Component implements InputTarget {
         if (this.model.battle) { this.model.say('商战结束后再连接供应链'); return; }
         if (this.supplyStep !== 'none') { this.cancelSupply(); return; }
         this.originalHud.close(); this.syncMenuBackdrop(); this.hideStatusInfo();
-        this.supplyToast.active = false; this.supplyToastTime = 0;
         this.supplyStep = 'subject'; this.supplyMessage = '选择供应链主体 · 点击一张卡牌或牌堆';
+        this.model.say(this.supplyMessage);
     }
     private chooseSupply(uid: number) {
         const card = this.model.card(uid); if (!card || !this.model.canSupply(card)) return;
         if (this.supplyStep === 'subject') {
             this.supplyAnchor = this.model.stack(card.sid)!.cards[0]; this.selected = uid;
-            this.supplyStep = 'target'; this.supplyMessage = '选择另一张卡牌或牌堆 · 自动识别上游或下游'; return;
+            this.supplyStep = 'target'; this.supplyMessage = '选择另一张卡牌或牌堆 · 自动识别上游或下游'; this.model.say(this.supplyMessage); return;
         }
         const anchor = this.model.card(this.supplyAnchor); if (!anchor) { this.cancelSupply(); return; }
-        if (card.sid === anchor.sid) { this.supplyMessage = '请选择主体之外的另一组牌堆'; return; }
+        if (card.sid === anchor.sid) { this.supplyMessage = '请选择主体之外的另一组牌堆'; this.model.say(this.supplyMessage); return; }
         const candidate = this.model.stack(card.sid)!.cards[0], direction = this.model.supplyDirection(this.supplyAnchor, candidate);
-        if (!direction) { this.supplyMessage = '这组牌堆暂时无法衔接 · 请另选上游或下游'; return; }
+        if (!direction) { this.supplyMessage = '这组牌堆暂时无法衔接 · 请另选上游或下游'; this.model.say(this.supplyMessage); return; }
         this.supplyCandidate = candidate; this.supplyDirection = direction; this.finishSupply();
     }
     private finishSupply() {
         const anchor = this.model.card(this.supplyAnchor), candidate = this.model.card(this.supplyCandidate);
         if (!anchor || !candidate || !this.supplyDirection) { this.cancelSupply(); return; }
         const upstream = this.supplyDirection === 'upstream', source = upstream ? candidate : anchor, target = upstream ? anchor : candidate;
-        if (!this.model.connect(source.uid, target.uid)) { this.supplyMessage = this.model.notice + ' · 可另选牌堆'; return; }
-        this.linkBirths.set(source.sid + ':' + target.sid, this.supplyClock);
         const message = `完成供应链${upstream ? '上' : '下'}游组建`;
-        this.supplyToast.getChildByName('Text')!.getComponent(Label)!.string = message;
-        this.supplyToast.active = true; this.supplyToast.setSiblingIndex(this.hud.children.length - 1); this.supplyToastTime = 2.8;
-        this.model.say(message); this.audio.play('aha'); this.selected = candidate.uid;
+        if (!this.model.connect(source.uid, target.uid, message)) { this.supplyMessage = this.model.notice + ' · 可另选牌堆'; return; }
+        this.linkBirths.set(source.sid + ':' + target.sid, this.supplyClock);
+        this.audio.play('aha'); this.selected = candidate.uid;
         this.cancelSupply(); this.syncViews(); this.saveProgress();
     }
     private clearDropHint() { this.matchTarget = 0; this.matchArt.node.active = false; this.matchArt.clear(); }
@@ -1261,7 +1253,7 @@ export class Sample extends Component implements InputTarget {
             battle: m.battle ? { ...m.battle, rect: m.battleRect } : null, battlePresentation: this.battleView.snapshot(),
             cash: m.cash, month: m.month, paused: this.gameplayPaused, pauseWash: { active: this.pauseWash.node.active, strength: .3 }, testMode: m.testMode, titleScreen: this.titleScreen.snapshot(), inspector: { ...this.cardInspector.snapshot(), bounds: bounds(this.cardInspector.cardNode), close: bounds(this.cardInspector.closeNode), detailsBounds: bounds(this.cardInspector.detailsNode) }, models: Array.from(m.models), tasks: Array.from(m.completed), notice: m.notice, links: m.links,
             supply: { step: this.supplyStep, subject: this.supplyAnchor, candidate: this.supplyCandidate, direction: this.supplyDirection, message: this.supplyMessage,
-                markers: [], deliveries: this.model.deliveries, transit: this.supplyTransit, frames: Array.from(this.supplyFrames.keys()), toast: this.supplyToast.active ? this.supplyToast.getChildByName('Text')!.getComponent(Label)!.string : '',
+                markers: [], deliveries: this.model.deliveries, transit: this.supplyTransit, frames: Array.from(this.supplyFrames.keys()), toast: '',
                 connector: { lineWidth: SUPPLY_LINE_WIDTH, arrowLength: SUPPLY_ARROW_LENGTH, cornerRadius: SUPPLY_CORNER_RADIUS, routes: this.supplyRoutes } },
             hint: this.label('Hint').string, hintAttributes: this.label('HintAttributes').string, taskReminder: this.label('TaskReminder').string, taskDrawer: this.originalHud.open, drawerMode: this.originalHud.mode, pitch: this.board.pitch,
             founderSpeech: { ...this.founderSpeech.snapshot(), bounds: bounds(this.founderSpeech.node) },

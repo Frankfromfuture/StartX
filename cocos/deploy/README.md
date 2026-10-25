@@ -2,6 +2,8 @@
 
 线上地址：https://www.iambrizo.com/startx/ 。`/startx` 自动重定向到带斜线的地址，游戏资源沿子目录加载。
 
+2026-10-25 发布 `20261025-startx-operations-logo-01`：文书可零收益回收，供应链组建、交易和生产等经营提示由创始人气泡说出；卡牌属性和 flavor 留在底栏，发展里程碑通知保持独立。同步第二版 Logo、新卡背与翻转投影修复。子站通过相对路径设置卡背 favicon 和 Apple 图标，主站图标不变。945 个文件校验后原子替换，上一版保存在该发布目录的 `previous-startx/`；浏览器存档格式未变。验证记录见 `review/operation-speech-icon-verification.json` 和 `review/deployment-operations-logo-verification.json`。
+
 2026-10-25 发布 `20261025-startx-view-shadows-01`：卡牌、棋盘卡包、创始人气泡、侧边标签和开始页按钮的现有阴影改为共用视角光源，在各自平面投影，随位置、缩放和卡牌抬起、转动更新。顶部一排卡包保持原样。类型检查、完整构建、横竖屏验证通过；944 个文件校验后原子替换，官网首页保持不变，上一版保存在该发布目录的 `previous-startx/`。存档格式和保存位置沿用原有设置。核验记录见 `review/view-shadows-verification.json` 与 `review/deployment-view-shadows-verification.json`。
 
 2026-10-25 发布 `20261025-startx-ui-saves-01`：同步当前卡牌、供应链、奖励礼包和横竖屏界面；奖励礼包使用黑色纹理与 3 颗随机闪星，暂停图案为 38.88 像素，从开始页进入游戏默认运行。复用已验证的最新构建，944 个文件逐一校验后原子替换游戏目录，官网首页哈希保持不变；上一版保存在 `/srv/brizo-landing/releases/20261025-startx-ui-saves-01/previous-startx/`。

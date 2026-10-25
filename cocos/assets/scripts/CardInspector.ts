@@ -1,6 +1,6 @@
-import { Color, EffectAsset, Font, instantiate, Label, Mask, Material, Node, Prefab, Sprite, SpriteFrame, UITransform, Vec2, Vec3, Vec4 } from 'cc';
+import { Camera, Canvas, Color, EffectAsset, Font, instantiate, Label, Mask, Material, Node, Prefab, Sprite, SpriteFrame, UITransform, Vec2, Vec3, Vec4 } from 'cc';
 import { CardView, cardStyle } from './CardView';
-import { CardFrameVolume, PACK_DEPTH_RATIO } from './CardFrameVolume';
+import { CardFrameVolume, FrameProjection, PACK_DEPTH_RATIO } from './CardFrameVolume';
 import { INSPECTOR_CONTENT_SCALE, INSPECTOR_SCREEN_SIZE, LayoutMetrics } from './Layout';
 import { DIMMED_BACKGROUND_COLOR, Surface } from './Surface';
 import { Catalog, GameModel, quoteFlavor, Recipe } from './GameModel';
@@ -48,8 +48,12 @@ export class CardInspector {
     private targetYaw = 0;
     private targetPitch = 0;
     private backVisible = false;
+    private camera: Camera | null;
+    private frameEye = new Vec3();
+    private frameProjection: FrameProjection = { key: '', eye: this.frameEye, project: point => this.projectFramePoint(point) };
 
     constructor(parent: Node, private font: Font, prefab: Prefab, backFrame: SpriteFrame, lineEffect: EffectAsset, private loadFrame: (path: string) => Promise<SpriteFrame>) {
+        this.camera = parent.getComponent(Canvas)?.cameraComponent || null;
         this.lineMaterial = new Material(); this.lineMaterial.initialize({ effectAsset: lineEffect });
         this.packLineMaterial = new Material(); this.packLineMaterial.initialize({ effectAsset: lineEffect });
         this.packLineMaterial.setProperty('lineMode', new Vec4(1, 0, 0, 0));
@@ -100,6 +104,7 @@ export class CardInspector {
         this.front.setYarnBadges([], 0, 0, this.font);
         this.functionLabel.string = functionText; this.descriptionLabel.string = pack ? description : quoteFlavor(description);
         this.yaw = this.targetYaw = -10; this.pitch = this.targetPitch = -8;
+        this.placeFaces();
         this.front.node.setScale(this.size / (pack ? 336 : 280), this.size / (pack ? 336 : 280), 1);
         this.reference = null; this.detailsOffset = 0; this.layoutDetails();
         this.tick(0);
@@ -226,11 +231,11 @@ export class CardInspector {
         const detailsW = Math.min(350 * scale, w - this.size - columnGap - 64 * metrics.scale);
         this.cardNode.setPosition(landscape ? -(detailsW + columnGap) / 2 : 0, landscape ? (bottom - top) / 2 : h * .2);
         this.frameVolume.node.setPosition(this.cardNode.position);
-        this.front.node.setPosition(0, 0, this.size * .035 / 2);
-        this.back.setPosition(0, 0, -this.size * .035 / 2);
+        this.placeFaces();
         const faceScale = this.size / (this.front.pack ? 336 : 280); this.front.node.setScale(faceScale, faceScale, 1);
         this.back.getComponent(UITransform)!.setContentSize(this.size, this.size);
-        this.back.getChildByName('Artwork')!.getComponent(UITransform)!.setContentSize(this.size, this.size); roundCard(this.back, this.size);
+        this.back.getChildByName('Artwork')!.getComponent(UITransform)!.setContentSize(this.size, this.size);
+        roundCard(this.back, this.size, this.size * .014, this.size * .044);
         const detailsTop = this.cardNode.position.y - this.size / 2 - 10 * scale, detailsBottom = -h / 2 + bottom + 20 * scale;
         this.detailsNode.getComponent(UITransform)!.setContentSize(landscape ? detailsW : Math.min(w - 40 * scale, 350 * scale),
             landscape ? Math.max(40 * scale, h - top - bottom - 64 * metrics.scale) : Math.max(40 * scale, detailsTop - detailsBottom));
@@ -281,17 +286,34 @@ export class CardInspector {
         this.targetPitch = Math.max(-40, Math.min(40, this.targetPitch + delta.y / this.metrics.scale * .42));
     }
     flip() { this.targetYaw += 180; }
+    private placeFaces() {
+        const depth = this.size * (this.current?.pack ? PACK_DEPTH_RATIO : .035);
+        this.front.node.setPosition(0, 0, this.current?.pack ? 0 : depth / 2);
+        this.back.setPosition(0, 0, this.current?.pack ? -depth : -depth / 2);
+    }
+    private projectFramePoint(point: Vec3) {
+        const world = this.cardNode.getComponent(UITransform)!.convertToWorldSpaceAR(point), eye = this.camera?.node.worldPosition;
+        if (eye) {
+            const ratio = eye.z / (eye.z - world.z);
+            world.set(eye.x + (world.x - eye.x) * ratio, eye.y + (world.y - eye.y) * ratio, 0);
+        }
+        return this.frameVolume.node.getComponent(UITransform)!.convertToNodeSpaceAR(world);
+    }
     tick(dt: number) {
         if (!this.node.active) return;
         const response = dt ? 1 - Math.exp(-18 * Math.min(dt, .05)) : 1;
         this.yaw += (this.targetYaw - this.yaw) * response; this.pitch += (this.targetPitch - this.pitch) * response;
         this.cardNode.setRotationFromEuler(this.pitch, this.yaw, 0);
-        this.backVisible = Math.cos(this.yaw * Math.PI / 180) * Math.cos(this.pitch * Math.PI / 180) < 0;
+        const eye = this.camera?.node.worldPosition;
+        if (eye) this.cardNode.getComponent(UITransform)!.convertToNodeSpaceAR(eye, this.frameEye);
+        else this.frameEye.set(0, 0, 10000);
+        this.backVisible = this.frameEye.z < 0;
         this.front.node.active = !this.backVisible; this.back.active = this.backVisible;
         this.front.setInspectionAngles(this.pitch, this.yaw);
         this.backMaterial?.setProperty('inspectionLight', this.front.inspectionLighting);
-        if (this.current?.pack) this.frameVolume.paintPack(this.size, this.pitch, this.yaw, false);
-        else this.frameVolume.paint(this.size, this.size * .035, this.pitch, this.yaw, this.front.frameColor);
+        this.frameProjection.key = [this.pitch.toFixed(4), this.yaw.toFixed(4), this.cardNode.position.x, this.cardNode.position.y, eye?.z].join('|');
+        if (this.current?.pack) this.frameVolume.paintPack(this.size, this.pitch, this.yaw, false, false, this.frameProjection);
+        else this.frameVolume.paint(this.size, this.size * .035, this.pitch, this.yaw, this.front.frameColor, false, this.frameProjection);
     }
     snapshot() { return { active: this.node.active, yaw: this.yaw, pitch: this.pitch, back: this.backVisible,
         size: this.size, depth: this.size * (this.current?.pack ? PACK_DEPTH_RATIO : .035), frame: this.frameVolume.snapshot(), lighting: !!this.backMaterial,

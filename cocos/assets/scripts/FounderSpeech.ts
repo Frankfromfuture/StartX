@@ -44,8 +44,13 @@ export class FounderSpeech {
     }
 
     welcome() { this.queued = false; this.present(WELCOME, 6.5); }
+    speak(text: string) {
+        if (!text || text === this.text && this.age < this.duration) return;
+        if (this.text === MILESTONE && this.age < this.duration) this.queued = true;
+        this.present(text, Math.max(2.8, Math.min(7, text.length * .09)));
+    }
     celebrate() {
-        if (this.text === WELCOME && this.age < this.duration) this.queued = true;
+        if (this.text !== MILESTONE && this.age < this.duration) this.queued = true;
         else if (this.text !== MILESTONE || this.age >= this.duration) this.present(MILESTONE, 5);
     }
     private present(text: string, duration: number) {

@@ -89,6 +89,8 @@ export class GameModel {
     cleanup = false; gameOver = false; paused = false; heldStack = -1;
     battle: Battle | null = null;
     notice = DEFAULT_HINT; noticeVersion = 0; revision = 0;
+    noticeKind: 'hint' | 'operation' = 'hint';
+    operationNotice = '';
     private sequence = 1;
     private maxSpace = 0;
     private rivalClock = 0;
@@ -219,7 +221,10 @@ export class GameModel {
     }
     stackHeight(sid: number) { return Math.max(0, (this.stack(sid)?.cards.length || 1) - 1) * this.stackOffset(sid); }
     position(c: CardState) { const s = this.stack(c.sid)!; return { x: s.x, y: s.y - s.cards.indexOf(c.uid) * this.stackOffset(s.sid) }; }
-    say(text: string) { this.notice = text; this.noticeVersion++; }
+    say(text: string, kind: 'hint' | 'operation' = 'operation') {
+        this.notice = text; this.noticeVersion++; this.noticeKind = kind;
+        if (kind === 'operation') this.operationNotice = text;
+    }
     get cash() { return this.cards.reduce((n, c) => n + (c.id === 'cash' ? 1 : c.stored), 0); }
     get capacity() { return this.cards.reduce((n, c) => n + this.def(c).spaceCapacity, 0); }
     get count() { return this.cards.filter(c => c.id !== 'cash').length; }
@@ -594,15 +599,16 @@ export class GameModel {
         if (arr.every(c => this.def(c).type === 'order' && !c.orderNumber)) return true;
         if (arr.some(c => c.orderNumber || c.customerEvent)) return false;
         if (arr.every(c => c.id !== 'founder' && this.def(c).type === 'employee')) return true;
-        if (this.cleanup) return arr.every(c => this.def(c).type !== 'employee' && this.def(c).value > 0);
+        if (arr.every(c => c.id === 'p2_document')) return true;
+        if (this.cleanup) return arr.every(c => this.def(c).type !== 'employee' && (this.def(c).value > 0 || c.id === 'p2_document'));
         return arr.every(c => !['facility', 'employee', 'resource'].includes(this.def(c).type)) && arr.reduce((n, c) => n + this.def(c).value, 0) > 0;
     }
     sell(sid: number, origin?: { x: number; y: number }) {
         if (!this.canSell(sid)) { this.say('这组卡牌当前无法出售'); return; }
         const s = this.stack(sid)!, arr = this.members(sid), firing = arr.every(c => this.def(c).type === 'employee');
-        const value = arr.reduce((n, c) => n + this.def(c).value, 0); arr.forEach(c => this.remove(c));
-        if (!firing) { this.output('cash', value, origin?.x ?? s.x, origin?.y ?? s.y, undefined, !!origin); this.event('card_sold'); }
-        this.say(firing ? `已免费解雇 ${arr.length} 名员工` : `出售获得 $${value}`);
+        const value = arr.reduce((n, c) => n + (c.id === 'p2_document' ? 0 : this.def(c).value), 0); arr.forEach(c => this.remove(c));
+        if (!firing) { if (value > 0) this.output('cash', value, origin?.x ?? s.x, origin?.y ?? s.y, undefined, !!origin); this.event('card_sold'); }
+        this.say(firing ? `已免费解雇 ${arr.length} 名员工` : value > 0 ? `出售获得 $${value}` : arr.every(c => c.id === 'p2_document') ? '已回收文书（无现金收益）' : '已回收');
     }
     event(trigger: string, target = '', amount = 1) {
         const key = trigger + '|' + target; this.counters[key] = trigger === 'supply_nodes' ? Math.max(this.counters[key] || 0, amount) : (this.counters[key] || 0) + amount;
@@ -772,13 +778,13 @@ export class GameModel {
             const key = a.sid + ':' + b.sid; if (seen.has(key)) return false; seen.add(key); return true;
         });
     }
-    connect(sourceUid: number, targetUid: number) {
+    connect(sourceUid: number, targetUid: number, message = '供应链已连接，产出将自动送入目标牌堆') {
         if (!this.canConnect(sourceUid, targetUid)) { this.say('这两组牌堆的产出与需求暂时接不上'); return false; }
         const source = this.card(sourceUid)!, target = this.card(targetUid)!;
         if (this.links.some(l => this.card(l.source)?.sid === source.sid && this.card(l.target)?.sid === target.sid)) { this.say('这条供应链已经连接'); return false; }
         this.links.push({ source: this.stack(source.sid)!.cards[0], target: this.stack(target.sid)!.cards[0] }); this.event('supply_chain_created');
         this.event('supply_nodes', '', new Set(this.links.reduce((a, l) => a.concat(l.source, l.target), [] as number[])).size);
-        this.say('供应链已连接，产出将自动送入目标牌堆'); this.revision++; return true;
+        this.say(message); this.revision++; return true;
     }
     disconnect(uid: number) { const sid = this.card(uid)?.sid; this.links = this.links.filter(l => this.card(l.source)?.sid !== sid); this.say('供应链已解除'); this.revision++; }
     isCombatant(sid: number) { return !!this.battle && [this.card(this.battle.rival)?.sid, this.card(this.battle.employee)?.sid].includes(sid); }

@@ -1,0 +1,70 @@
+{
+  "release": "20261025-startx-music-crayon-01",
+  "sourceCommit": "f5a43470842908a3822cd92d5ccc1575877d07c1",
+  "files": 956,
+  "archiveBytes": 64530684,
+  "archiveSha256": "05f2a353395f301a970f9d09e29c2941bfd82870b7f1d8613c9a9d482427d8ae",
+  "indexSha256": "4f64af1361630aa5145e3789469ef755a859eecb0f3e7b7eab73ca22bcd4b571",
+  "reusedVerifiedBuild": true,
+  "url": "https://www.iambrizo.com/startx/",
+  "mainScript": "assets/main/index.30774.js",
+  "siteRoot": "/srv/brizo-landing/releases/20261004-figure-baseline/site",
+  "homepageSha256": "311682be8d9b2599f157191f475a1cdafe1a51ef2a8d50145bddf3601660aa97",
+  "previousIndexSha256": "38a1d3758b6af145a42066421963a3de2fa41aa974788e025f2a16aaf37d6835",
+  "state": "active",
+  "filesVerified": 956,
+  "previousReleaseRetained": true,
+  "homepageUnchanged": true,
+  "atomicDirectoryExchange": true,
+  "publicFiles": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/main/index.30774.js",
+      "status": 200,
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/content/native/4f/4f4a8beb-8096-4852-9159-d9ef829c000c.cd9a3.m4a",
+      "status": 200,
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/content/native/c3/c336f8dc-cb88-42e1-8a2f-cc2cf24e5196.ffd59.m4a",
+      "status": 200,
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/content/native/dd/dd6e1ded-6278-418f-a5ba-f2075d2de657.69fb2.m4a",
+      "status": 200,
+      "matchesBuild": true
+    }
+  ],
+  "publicHomepageUnchanged": true,
+  "uiVerification": {
+    "passed": true,
+    "url": "https://www.iambrizo.com/startx/",
+    "checks": [
+      "线上开始页播放 Theme",
+      "线上游戏切换 BGM1，竖屏标签 28px、面板 156px、描边 1.8px；提示文案正确"
+    ],
+    "borders": [
+      {
+        "name": "Book",
+        "width": 1.8,
+        "openLeft": true
+      },
+      {
+        "name": "Tasks",
+        "width": 1.8,
+        "openLeft": true
+      }
+    ],
+    "errors": []
+  },
+  "passed": true,
+  "verificationDate": "2026-10-25"
+}

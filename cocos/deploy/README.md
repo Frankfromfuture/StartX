@@ -2,6 +2,8 @@
 
 线上地址：https://www.iambrizo.com/startx/ 。`/startx` 自动重定向到带斜线的地址，游戏资源沿子目录加载。
 
+2026-10-25 发布 `20261025-startx-office-crayon-01`，源码提交为 `4a10bf9`：开始页使用办公室望向纽约的手绘窗景，移除人物、金币和星星，按钮改用蜡笔描边与浅灰涂抹阴影；同步卡包曲面、侧栏分组和固定提示字号。复用已验证构建，954 个文件校验后原子切换，上一版保存在该发布目录的 `previous-startx/`。公网入口和主脚本与本地构建一致，官网首页保持原样。发布记录见 `review/deployment-office-crayon-verification.json`。
+
 2026-10-25 按请求重新发布 `20261025-startx-republish-01`：复用提交 `766cfe3` 对应的已验证构建，945 个文件逐一校验后原子切换，保留上一版以便回退。当前游戏功能和浏览器独立存档保持原样，主站首页未改。公网入口、主脚本和卡背网页图标与本地构建一致，记录见 `review/deployment-republish-verification.json`。
 
 2026-10-25 发布 `20261025-startx-operations-logo-01`：文书可零收益回收，供应链组建、交易和生产等经营提示由创始人气泡说出；卡牌属性和 flavor 留在底栏，发展里程碑通知保持独立。同步第二版 Logo、新卡背与翻转投影修复。子站通过相对路径设置卡背 favicon 和 Apple 图标，主站图标不变。945 个文件校验后原子替换，上一版保存在该发布目录的 `previous-startx/`；浏览器存档格式未变。验证记录见 `review/operation-speech-icon-verification.json` 和 `review/deployment-operations-logo-verification.json`。

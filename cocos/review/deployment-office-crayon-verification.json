@@ -1,0 +1,30 @@
+{
+  "release": "20261025-startx-office-crayon-01",
+  "sourceCommit": "4a10bf99d1840f4327542279bbc3d08006282b9e",
+  "files": 954,
+  "archiveBytes": 64820783,
+  "archiveSha256": "891f3831d09d332631767b9450f82d92327c19c1ea9f4475ce6bc2725d472d2a",
+  "indexSha256": "38a1d3758b6af145a42066421963a3de2fa41aa974788e025f2a16aaf37d6835",
+  "reusedVerifiedBuild": true,
+  "url": "https://www.iambrizo.com/startx/",
+  "siteRoot": "/srv/brizo-landing/releases/20261004-figure-baseline/site",
+  "homepageSha256": "311682be8d9b2599f157191f475a1cdafe1a51ef2a8d50145bddf3601660aa97",
+  "previousIndexSha256": "96cdd7d425d430a6001223ce57f98335465b6a403a0261bb64843275260ea2ef",
+  "state": "active",
+  "filesVerified": 954,
+  "previousReleaseRetained": true,
+  "homepageUnchanged": true,
+  "publicFiles": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/main/index.da440.js",
+      "status": 200,
+      "matchesBuild": true
+    }
+  ],
+  "passed": true
+}
